@@ -1,0 +1,79 @@
+from osgeo import ogr
+import numpy as np
+import matplotlib.path as mpath
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import os
+import pandas as pd
+import math
+
+colors = {0:"green",1:"yellow"}
+
+os.chdir("/Users/marybarker/Dropbox/Tarleton/forfun/gerrymandering/NewHampshire/HarvardData/")
+
+def package_vtds():
+    this_geom = {}
+    # get extents of the geometry first of all 
+    ds = ogr.Open("./nh_final.shp")
+    nlay = ds.GetLayerCount()
+    lyr = ds.GetLayer(0)
+    ext = lyr.GetExtent()
+    xoffset = (ext[1] - ext[0])/50
+    yoffset = (ext[3] - ext[2])/50
+    this_geom['xlim'] = [ext[0]-xoffset,ext[1]+xoffset]
+    this_geom['ylim'] = [ext[2]-yoffset,ext[3]+yoffset]
+
+    lyr.ResetReading()
+    names = []
+    paths = []
+
+    for vtd in lyr:
+        names.append(vtd['VTDST10_1'])
+        geom = vtd.geometry()
+        codes = []
+        x = []
+        y = []
+        for i in range(geom.GetGeometryCount()):
+            r = geom.GetGeometryRef(i)
+            all_x = [r.GetX(j) for j in range(r.GetPointCount())]
+            all_y = [r.GetY(j) for j in range(r.GetPointCount())]
+            thing = [mpath.Path.MOVETO] + (len(all_x) - 1)*[mpath.Path.LINETO]
+            codes = codes + thing
+            x = x + all_x
+            y = y + all_y
+        x = np.asarray(x)
+        y = np.asarray(y)
+        A = np.column_stack((x, y))
+        path = mpath.Path(vertices=A, codes=np.asarray(codes[:len(x)]))
+        paths.append(path)
+
+    this_geom['paths'] = paths
+    this_geom['names'] = names
+    return this_geom
+
+
+#geom_to_plot: xlim, ylim, paths, names
+
+def color_these_states(geom_to_plot, list_of_states):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+
+    paths = geom_to_plot['paths']
+    names = geom_to_plot['names']
+
+    for state in list_of_states:
+        redistricting = state[0]
+        for p in range(len(paths)):
+            path = paths[p]
+            facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
+            patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
+            ax.add_patch(patch)
+        ax.set_aspect(1.0)
+        plt.show()
+
+
+
+g = package_vtds()
+color_these_states(g, [trial1])

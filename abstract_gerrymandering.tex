@@ -1,0 +1,32 @@
+\documentclass[twoside,11pt,reqno]{amsart}
+\usepackage{amsmath,amssymb,amscd,mathrsfs,epic,wasysym,latexsym,tikz,mathrsfs,cite,hyperref}
+\makeatletter
+
+\hfuzz 3pt
+\vfuzz 2pt
+
+\textheight 200mm
+\textwidth 135mm
+
+\raggedbottom
+
+\begin{document}
+
+\begin{center}
+{\scshape{A Merry Gander at Gerrymandering}}
+\end{center}
+\vspace{.5cm}
+In a startling ruling this month, federal judges voided three Texas districts on the grounds 
+that the distribution unfairly diluted minority votes to diminish their representation. 
+This result highlights the need for a metric that quantifies the ‘fairness’ of a proposed 
+district. 
+With congressional and state redistricting approaching, this has become a pressing concern nationwide. 
+
+While arguments can be made for and against given districts, we need a more concrete 
+and well-defined method for evaluating these characteristics in a legal framework. 
+
+Our contribution is to apply a Metropolis-Hastings algorithm with probabilities taken from a 
+function space over metrics including compactness (geographic shape), compliance (Voting Rights Act), and efficiency (party distribution).
+For each function we find an optimal redistricting, and compare with results from other functions in the space. 
+This allows us to identify characteristics that lead to a more fair district and quantify differences between redistricting plans.
+\end{document}
