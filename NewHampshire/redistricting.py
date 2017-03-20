@@ -161,6 +161,32 @@ def goodness(state):
 def switchDistrict(current_goodness, possible_goodness):
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/4.0))
 
+def contiguousStart():
+    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd-1)])
+    state.columns = ['key', 'value']
+
+    missingdist = set(range(ndistricts))
+    while len(list(missingdist)) > 0:
+        state.value[random.randint(0,nvtd-1)] = list(missingdist)[0]
+        missingdist = set.difference(set(range(ndistricts)), set(state['value']))
+    
+    while ndistricts in set(state['value']):
+        
+        subframe = state.loc[state.value!=ndistricts]
+        detDists = set(subframe.key)
+        tbdDists = set.difference(set(state.key), detDists)
+        relevantAdjacencies = adjacencyFrame.loc[(adjacencyFrame.low.isin(detDists)) != (adjacencyFrame.high.isin(detDists))]
+        #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
+        
+        #choose entry in relevantAdjacencies and switch the value of the other node.
+        temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
+        if temp.high in tbdDists:
+            state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+        else:
+            state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+            
+    return state
+
 ###############################
 
 #Lookup number of congressional districts state gets
@@ -184,16 +210,3 @@ adjacencyFrame.high = [x[5:] for x in adjacencyFrame.high]
 blockstats = pd.read_csv("../HarvardData/NHVTDstats.csv")
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats.set_index(blockstats.VTD)
-
-steps = 10
-starting_state = pd.DataFrame([[blockstats.VTD[i], np.random.choice(range(ndistricts))] for i in range(0,nvtd-1)])
-starting_state.columns = ['key', 'value']
-
-trial1 = MH(starting_state, steps, neighbor, goodness, switchDistrict)
-trialtemp = MH(trial1[0], steps, neighbor, goodness, switchDistrict)
-trialtemp = MH(trialtemp[0], steps, neighbor, goodness, switchDistrict)
-trialtemp
-
-trial_10 = MH_swarm([[[y for y in x] for x in starting_state] for i in range(10)], steps, neighbor, goodness, switchDistrict)
-
-print trial_10[0]
