@@ -1,0 +1,6 @@
+Metric idea:
+	1	omit efficiency
+	2	find districts based on population, cont., etc.
+	3	run 1000s of times
+	4	compare efficiency gap kinds of things to these
+			district plans to get a baseline fairness.

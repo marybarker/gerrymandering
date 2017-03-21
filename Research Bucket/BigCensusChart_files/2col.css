@@ -1,0 +1,3 @@
+#outer-column-container, #inner-column-container { border-right-width: 0; }
+#right-column {	display: none; }
+#source-order-container { margin: 0; }

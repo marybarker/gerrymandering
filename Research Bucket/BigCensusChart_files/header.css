@@ -1,0 +1,1125 @@
+/* GLOBAL header styles */
+
+
+
+#desktopHeader div { 
+
+	padding: 0px; 
+
+}
+
+
+
+#innerPage {
+
+   background-image: url("//www.census.gov/main/responsive-header/images/main-bg-alt.png");
+
+   background-repeat: repeat-x;
+
+}
+
+
+
+.container-fluid.mobile-container {
+
+	margin-left: 0px;
+
+	margin-right: 0px;
+
+}
+
+
+
+.grid_header {
+
+   background-image: url('//www.census.gov/main/responsive-header/images/headerbg.jpg');
+
+   width: 960px;
+
+   height: 72px;
+
+}
+
+
+
+#logo {
+
+  margin-left: 0px;
+
+  margin-top: 0px; /*original 20px*/
+
+  width:167px;
+
+  position:relative;
+
+  left:0px;
+
+  top: -7px; /*-62px; */ 
+
+  z-index:5000;
+
+}
+
+
+
+#logoText h1 a{
+
+  margin-left: 0px;
+
+  margin-top: 0px;
+
+  position:relative;
+
+  left:3px;
+
+  top:12px;
+
+  z-index:1000;
+
+  color: #041C5D;
+
+  font-family: Arial,serif;
+
+  font-size:11px;
+
+  font-weight: normal;
+
+  letter-spacing:0em;
+
+}
+
+
+
+#logoText h1 a:focus{
+
+  margin-left: 0px;
+
+  margin-top: 0px;
+
+  position:relative;
+
+  left:78px;
+
+  top:12px;
+
+  z-index:1000;
+
+  color: #041C5D;
+
+  font-family: Arial,serif;
+
+  font-size:11px;
+
+  font-weight: bold;
+
+  letter-spacing:0em;
+
+}
+
+
+
+#logoText a{
+
+  margin-left: 0px;
+
+  margin-top: 0px;
+
+  position:relative;
+
+  left:10px;
+
+  top:12px;
+
+  z-index:1000;
+
+  color: #041C5D;
+
+  font-family: Arial,serif;
+
+  font-size:11px;
+
+  font-weight: normal;
+
+  letter-spacing:0em;
+
+}
+
+
+
+#logoText a:hover{
+
+  color: #1C6C96;
+
+}
+
+
+
+.header_top_links { 
+
+  /*float:right;*/
+
+  margin-right:0px;
+
+  padding-left:0px;
+
+  padding-right: 0px;
+
+  text-align: right;
+
+  color:#6d6d6d;
+
+  margin-top: 10px;
+
+  /*width: 500px;*/
+
+}
+
+
+
+#desktopHeader .header_top_links a{  /*added #desktopHeader  8/26-CJS */
+
+  color: #333333;
+
+  font-weight: normal;
+
+  font: x-small Arial,Verdana,sans-serif; 
+
+}
+
+
+
+#desktopHeader .header_top_links a:hover, .header_top_links a:focus{  /*added #desktopHeader  8/26-CJS */
+
+  font:x-small Arial,Verdana,sans-serif; 
+
+  text-decoration:underline;
+
+}
+
+
+
+#desktopHeader .header_top_socialLinks{  /*added #desktopHeader  8/26-CJS */
+
+  margin-top: 15px;
+
+  margin-bottom:10px;
+
+  padding-left: 0px;
+
+}
+
+
+
+/* MOBILE STYLES */
+
+
+
+body {  
+
+    min-width: 100%;
+
+}
+
+
+
+.mobileMenuIcon {  
+
+    font-size: 30px;
+
+    font-weight: 600;
+
+    padding-right: 15px;
+
+	padding-top: 3px;
+
+}
+
+
+
+.clickableIcon:hover {  
+
+    cursor: pointer;
+
+}
+
+
+
+.chevron {
+
+    float: right;
+
+    padding-right: 5px;
+
+}
+
+
+
+#mobileHeader {
+
+    color: white;
+
+    font-family: 'Arial Regular', 'Arial';
+
+    font-weight: bold;
+
+    font-size: 14px;
+
+}
+
+
+
+#mobileTitleRow {
+
+	background-image: url("//www.census.gov/main/responsive-header//images/MobileNav.png");
+
+	background-repeat: no-repeat;
+
+	height: 65px;
+
+	background-color: white;
+
+}
+
+
+
+#mobileHeader .panel-group .panel + .panel {
+
+	margin-top: 0px;
+
+}
+
+
+
+#mobileHeader .panel-collapse > .panel-body {
+
+	border: 0px;
+
+}
+
+
+
+#mobileHeader .panel,
+
+#mobileHeader .panel-body, 
+
+#mobileHeader .panel-heading {
+
+	background-color: inherit;
+
+	border: none;
+
+}
+
+
+
+#mobileHeader .panel-body {
+
+	padding-left: 5px;
+
+	padding-right: 5px;
+
+	padding-top: 5px;
+
+	padding-bottom: 0px;
+
+}
+
+
+
+#mobileHeader .panel-heading {
+
+	padding: 10px 15px;
+
+}
+
+
+
+#mobileHeader .panel-title {
+
+	margin: 0px;
+
+	background-color: inherit;
+
+	border: 0px solid transparent;
+
+	padding-bottom: 0px;
+
+}
+
+
+
+#mobileHeader .level1.shadowed .endShadow {
+
+	box-shadow: 0px -3px 5px 0px rgba(0,0,0,0.5);
+
+	height: 5px;
+
+	margin-top: 20px;
+
+	margin-left: -7px;
+
+	margin-right: -7px;
+
+}
+
+
+
+#mobileHeader .level1.shadowed .panel-heading {
+
+	box-shadow: 0px 3px 5px 0px rgba(0,0,0,0.5);
+
+	margin-bottom: 10px;
+
+}
+
+
+
+#mobileHeader .panel-group {
+
+	margin: 0;
+
+}
+
+
+
+#mobileHeader a {
+
+	color: white;
+
+}
+
+
+
+#mobileHeader .mobileMenuEntry1 {
+
+	font-weight: bold;
+
+}
+
+
+
+#mobileHeader .mobileMenuEntry2 {
+
+	width: 100%;
+
+	display: inline-block;
+
+	font-weight: normal;
+
+}
+
+
+
+#mobileHeader .mobileMenuEntry3 {
+
+	font-weight: normal;
+
+	padding-left: 20px;
+
+	height: 40px;
+
+}
+
+
+
+#mobileHeader div.headerBlue  {
+
+	background-color:  #0c6291;
+
+	color: white;
+
+}
+
+
+
+#mobileHeader .mobileMenuArea2 {
+
+	border: 1px solid #0197c1;
+
+    margin-bottom: 0px;
+
+    margin-top: 5px;
+
+    height: 40px;
+
+    width: 100%;
+
+    padding:0px 5px 0px 5px;
+
+    display: table;
+
+}
+
+
+
+#mobileHeader .mobileMenuArea2 > a {
+
+
+
+	display: table-cell;
+
+	vertical-align: middle;
+
+}
+
+
+
+#mobileHeader .mobileMenuArea3 {
+
+	padding-top: 5px;
+
+}
+
+
+
+#mobileHeader div.mobileMenuEntry3.headerBlue,
+
+#mobileHeader div.mobileMenuArea3.headerBlue {
+
+	background-color: #0197c1;
+
+}
+
+
+
+#mobileSearch, #mobileMainMenu {
+
+	display: none;
+
+}
+
+
+
+#mobileSearchbox {
+
+	margin: 20px 10px 20px 10px;
+
+}
+
+
+
+#mobileHeader .mobileCloseButton {
+
+    border-top: 2px solid white;
+
+    border-left: 2px solid white;
+
+    border-right: 2px solid white;
+
+    border-bottom: 0px;
+
+    background-color: #0c6291;
+
+    width: 130px;
+
+    height: 35px;
+
+}
+
+
+
+#mobileHeader .learnMoreButton {
+
+	width: 275px;
+
+	color: #0197c1;
+
+	background-color: white;
+
+	font-weight: bold;
+
+	padding: 10px;
+
+	margin-bottom: 10px;
+
+	border-radius: 0px;
+
+	box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.35);
+
+}
+
+
+
+#mobileHeader .menuHeader, 
+
+#mobileHeader .menuFooter {
+
+    position:fixed;
+
+    left:0;
+
+    width:100%;
+
+    z-index: 200;
+
+    opacity: 1;
+
+}
+
+
+
+#mobileHeader .menuHeader {
+
+    top:0;
+
+}
+
+
+
+#mobileHeader .menuFooter {
+
+    bottom:0;
+
+    height: 35px;
+
+    background-color: #0c6291;
+
+}
+
+
+
+#mobileHeader .menuContent {
+
+    min-height:100%;
+
+    width:100%;
+
+    padding:70px 0px 0px 0px;
+
+    overflow: auto;
+
+    background-color: #0c6291;
+
+    z-index: 100;
+
+}
+
+
+
+/* DESKTOP HEADER */
+
+#desktopHeader body {
+
+	background-image: none;
+
+}
+
+
+
+#desktopHeader #topHeader {
+
+	background-image: url("//www.census.gov/main/responsive-header//images/headerbg.jpg");
+
+	background-repeat: no-repeat;
+
+	position: relative;
+
+	padding-bottom: 2em;
+
+	height: 120px;
+
+}
+
+
+
+#desktopHeader .nav-tabs > li,
+
+#desktopHeader .nav-tabs > li > a,
+
+#desktopHeader .nav-tabs > li > a:hover,
+
+#desktopHeader .nav-tabs > li > a:focus,
+
+#desktopHeader .nav-tabs > li > a:active
+
+{
+
+    border: 0px solid transparent;
+
+    border-radius: 0px;
+
+    background-color: transparent !important;
+
+	
+
+}
+
+
+
+#desktopHeader a:hover
+
+{
+
+	background-color: transparent;
+
+}
+
+
+
+#desktopHeader #mainTabs li a:hover {
+
+	background-color: #2481A6 !important;	
+
+}
+
+
+
+#desktopHeader, .nav-tabs {
+
+	color: white;
+
+	font-family: 'Arial Regular', 'Arial';
+
+	font-weight: bold;
+
+	margin-bottom: 0;
+
+	text-align:left;
+
+}
+
+
+
+#desktopHeader #mainTabs {
+
+	display: inline-block;
+
+	/*margin: 0px 0px 0px 150px;*/
+
+	padding: 0px;
+
+	height: 40px;
+
+	border: 0px solid transparent;
+
+	background-image: url("//www.census.gov/main/responsive-header//images/demo-container-bg.png");
+
+	background-repeat: no-repeat;
+
+	color: white;
+
+}
+
+
+
+#desktopHeader #mainTabs li div.subHeader {
+
+	font: xx-small Helvetica, Arial, sans-serif;
+
+	font-weight: bold;
+
+	color: white;
+
+}
+
+
+
+#desktopHeader .categories {
+
+	margin-left: 10px;
+
+	margin-right: 0px;
+
+	margin-top: 5px;
+
+	margin-bottom: 0px;
+
+	padding-left: 10px;
+
+	padding-right: 10px;
+
+	border: 1px solid rgb(2, 135, 180);
+
+	width: 198px;
+
+	display: table;
+
+}
+
+
+
+#desktopHeader .categories a {
+
+	text-wrap: normal;
+
+	color: white;
+
+}
+
+
+
+#desktopHeader .categories:hover, #desktopHeader .categories a:hover,
+
+#desktopHeader .categories:focus, #desktopHeader .categories.active,
+
+#desktopHeader .categories a:focus, #desktopHeader .categories.active a {
+
+	background-color: #0287b4 !important;
+
+	cursor: pointer;
+
+}
+
+
+
+#desktopHeader .categories.active {
+
+	padding-bottom: 10px;;
+
+	background-color: #0287b4 !important;
+
+	margin-bottom: 0;
+
+}
+
+
+
+#desktopHeader .tab-content {
+
+	background-color: #0287b4 !important;
+
+	margin-left: 10px;
+
+	margin-bottom: 5px;
+
+}
+
+
+
+#desktopHeader .subLink {
+
+	padding-left: 10px;
+
+}
+
+
+
+#desktopHeader .subLink a {
+
+	color: white !important;
+
+	line-height: 18px;		
+
+}
+
+
+
+#desktopHeader .kicker {
+
+	background-color: white;
+
+	color: black;
+
+	width: 360px;
+
+	height: 185px;
+
+	margin: 15px;
+
+	padding: 10px;
+
+	box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.35);
+
+}
+
+
+
+#desktopHeader .subLinks {
+
+	height: 180px;
+
+	width: 390px;
+
+	margin: 15px;
+
+}
+
+
+
+#desktopHeader #kickerSeparator {
+
+	height: 15px;
+
+}
+
+
+
+#desktopHeader .kickerLink > a {
+
+	line-height: 18px;
+
+}
+
+
+
+
+
+#desktopHeader .clickable {
+
+	cursor: pointer;
+
+}
+
+
+
+#desktopHeader .linksDropDown {
+
+	background-color: #036195;
+
+	padding-top: 20px;
+
+	box-shadow: inset 3px 3px 5px 0px rgba(0,0,0,0.5);
+
+}
+
+
+
+#desktopHeader div.subCategoriesContainer {
+
+	width: 832px;
+
+	margin:auto;
+
+}
+
+/*
+
+@media (min-width: 1260px) {
+
+  #desktopHeader #mainTabs {
+
+    margin-left: 245px;
+
+  }
+
+}
+
+*/
+
+
+
+#desktopHeader .linksDropDown .nav > li > a {
+
+	text-align: center;
+
+	padding: 0px;
+
+	height: 50px;
+
+	display: table-cell;
+
+	vertical-align: middle;
+
+	line-height: 14px;	
+
+}
+
+
+
+#desktopHeader .headerCategories.activeCategory {
+
+	box-shadow: inset 3px 3px 5px 0px rgba(0,0,0,0.5);
+
+	background-color: #036195 !important;
+
+}
+
+
+
+#desktopHeader #mainTabs .headerCategories.activeCategory> a {
+
+	background-color: transparent !important;
+
+	height: 48px;
+
+	z-index: 100;
+
+	background-image: url('//www.census.gov/main/responsive-header/images/narrowblue.png');
+
+	background-repeat: no-repeat;
+
+	background-position: bottom left;
+
+}
+
+
+
+#desktopHeader #mainTabs .headerCategories.activeCategory > a:hover {
+
+	background-color: transparent !important;
+
+}
+
+
+
+#desktopHeader #mainTabs.nav > li > a {
+
+	margin: 0px;
+
+	padding-top: 3px;
+
+	padding-bottom: 0px;
+
+	padding-left:12px;
+
+	padding-right: 12px;
+
+	height: 40px;
+
+}
+
+
+
+#desktopHeader .tab-pane {
+
+	font-weight: normal;
+
+}
+
+
+
+#desktopHeader .longDisplay + a {
+
+	font-size: 10px;
+
+	padding-top: 10px !important;	
+
+}
+
+
+
+#desktopHeader #closeMainNav {
+
+	font-size: 16px;
+
+	text-align: center;
+
+	vertical-align: bottom;
+
+	cursor: pointer;
+
+	padding-bottom:5px;
+
+	padding-top: 5px;
+
+}
+
+
+
+#headerTopRow {
+
+	background-image: url('//www.census.gov/main/responsive-header/images/headerbg.jpg');
+
+	background-repeat: no-repeat;
+
+	height: 72px;
+
+}
+
+
+
+#headerBottomRow {
+
+	height: 40px;
+
+}
+
+
+
+#mainNavHeaders {
+
+	height: 40px; 
+
+	background-image: url('//www.census.gov/main/responsive-header/images/demo-container-bg.png'); 
+
+	background-repeat: no-repeat; 
+
+	background-color: #0c6291;
+
+}
+
+
+
+#desktopHeader #mainTabs li div.subHeader {
+
+     font: bold xx-small Helvetica,Arial,sans-serif;
+
+ }
+
+
+
+#desktopHeader #mainTabs li div.header {
+
+	color: white;
+
+	font-size: 13px;
+
+	line-height: 19.5px;
+
+	background-color:transparent;
+
+	text-indent:0px;
+
+	padding:0px;
+
+ }
+
+
+
+#desktopHeader #mainTabs.nav > li > a {
+
+     text-decoration: none;
+
+ }
+
+
+
+#desktopHeader .linksDropDown .nav > li > a {
+
+     font-size: 13px;
+
+ }
+
+
+
+#desktopHeader .kickerLink > a {
+
+     font-size: 13px;
+
+	 font-weight: normal;
+
+ }
+
+
+
+#desktopHeader .subLink a {
+
+     font-size: 13px;
+
+	 font-weight: normal;
+
+ }
+
+ 
+
+#desktopHeader a {
+
+     text-decoration: none; 
+
+ }
+
+ 
+
+#desktopHeader a:hover {
+
+     text-decoration: underline; 
+
+ }
+
+ 
+
+#desktopHeader fieldset { 
+
+	position: static; background: none; 
+
+}

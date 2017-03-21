@@ -1,0 +1,63 @@
+/*Print Style Sheet
+
+--------------------------------------------------
+version:   1.0
+date:      05/04/07
+author:    carollynn hammersmith
+email:     [ch AT ssd dot census dot gov]
+website:   [www.census.gov]
+-----------------------------------------------------
+*/
+
+body { font-family: Arial, Helvetica, sans-serif; background-color: #fff; color: #000; }
+
+#cb_header, #cb_header a, #cb_footer, #cb_footer a, #dropdown, #toolbar, #breadcrumbs { display: none; }
+
+#left-column, #right-column, .hnav, #left-column img, #right-column img
+{
+        display: none;          /* hide the left and right columns as well as
+                                   the horizontal menu at the top of the
+                                   page */
+}
+
+#masthead #image { background-image: none; }
+
+#titles {
+        display: block;
+        background: none;
+        color: #000;
+}
+
+#page-container, #outer-column-container, #source-order-container,
+#middle-column, #inner-column-container {
+        border-width: 0;
+        margin: 0;
+        padding: 0;             /* get rid of any gutter space and borders
+                                   on elements that are no longer needed with
+                                   the removal of the left and right columns */
+}
+#page-container, #inner-column-container
+{
+        border-width: 0;        /* remove borders around the page */
+}
+#source-order-container, #middle-column
+{
+        float: none;            /* no need to float anything now since we're
+                                   just showing the middle column. */
+}
+*
+{
+        color: #000 !important; /* make sure everything is black text */
+}
+a, a:link, a:visited {
+        text-decoration: underline;
+        background-color: #EFEFEF;
+}
+
+#middle-column .inside { 0 };
+
+li {padding: 5px; }
+
+.thumbNav, .infobox img { display: none; }
+
+/******************************************************************************/

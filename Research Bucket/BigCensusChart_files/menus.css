@@ -1,0 +1,277 @@
+@charset "UTF-8";
+/****** General Menu Mechanics */
+ul.rMenu,
+ul.rMenu ul,
+ul.rMenu li,
+ul.rMenu a
+{
+	display: block;	/* make these objects blocks so they're easier
+					   to deal with */
+	margin: 0;
+	padding: 0;		/* get rid of padding/margin values that these
+					   elements may have by default */
+}
+ul.rMenu,
+ul.rMenu li,
+ul.rMenu ul {list-style: none;}
+
+ul.rMenu ul {display: none;		/* hide the sub-menus until needed */}
+
+ul.rMenu li
+{	position: relative;	/* so sub-menus position relative to their parent LI element */
+	z-index: 1;
+}
+ul.rMenu li:hover
+{	z-index: 999;		/* make sure this and any sub-menus that pop 
+						   appear above everything else on the page */
+}
+ul.rMenu li:hover > ul/* hide from IE5.0 because it gets confused by this selector */
+{
+	display: block;		/* show the sub-menu */
+	position: absolute;	/* remove the sub-menus from the flow of the layout */
+}
+
+/*******************************************************************************
+ * Extended Menu Mechanics
+ *
+ * These rules exist only for specific menu types, such as horizontal or
+ * vertical menus, right or left aligned menus.
+ */
+ul.rMenu-hor li
+{
+	float: left;
+	width: auto;
+}
+
+ul.rMenu-ver li
+{	float: none;	/* clear this so vertical sub-menus that are
+					   children of horizontal menus won't have
+					   their LI widths set to auto. */
+}
+ul.rMenu-ver, ul.rMenu-ver ul
+{
+	width: 12em;	/* sub-menus need a defined width, especially
+					   vertical sub-menus. salt to taste. */
+}
+ul.rMenu-wide
+{
+	width: 100%;	/* apply this rule if you want the top-level
+					   menu to go as wide as possible. this is 
+					   something you might want if your top-level
+					   is a vertical menu that spans the width
+					   of a column which has its width 
+					   pre-defined. IE/Win 5 seems to prefer
+					   a value of 100% over auto. */
+}
+
+/*******************************************************************************
+ * DROP POSITIONS  */
+ul.rMenu-hor ul
+{
+	top: auto;		/* a value of 100% creates a problem in IE 5.0 
+					   and Opera 7.23 */
+	right: auto;
+	left: auto;		/* typically want a value of 0 here but set to
+					   auto for same reasons detailed above */
+	margin-top: -1px;	/* so the top border of the dropdown menu 
+						   overlaps the bottom border of its parent
+						   horizontal menu. */
+}
+ul.rMenu-ver ul
+{
+	left: 60%;
+	right: auto;
+	top: auto;
+	margin-top: -0.5em;	/* i prefer top: 80% but this creates a problem
+						   in iCab so negative top margin must be used.
+						   salt to taste. */
+}
+
+
+/*******************************************************************************
+ * PRESENTATION : General*/
+
+ul.rMenu-hor li
+{
+	margin-bottom: -1px;	
+	margin-left: -1px;	
+	font-weight: bold;
+}
+ul.rMenu-hor
+{	padding-left: 1px ;	/* compensate for the 1px left jog created by
+						   the above negative margin. */
+}
+ul.rMenu-ver li
+{
+	margin-left: 0;
+	margin-top: -1px;	/* same thing above except for vertical
+						   menus */
+}
+
+ul.rMenu li {margin: 0 .25em -1px .25em;}
+
+/*******************************************************************************
+ * PRESENTATION : Expand */
+
+
+ul.rMenu-hor li.rMenu-expand a
+{
+	padding-left: 5px;	/* reset padding */
+	padding-right: 25px;
+}
+ul.rMenu li.rMenu-expand li a,
+ul.rMenu li.rMenu-expand li.rMenu-expand li a,
+ul.rMenu li.rMenu-expand li.rMenu-expand li.rMenu-expand li a
+{
+	background-image: none;
+	padding-right: 5px;	/* reset padding */
+	padding-left: 5px;	/* reset padding */
+}
+
+/*******************************************************************************
+ * HACKS : General */
+* html ul.rMenu
+{
+	display: inline-block;	/* this is for IE/Mac. it forces IE/Mac to 
+							   expand the element's dimensions to contain 
+							   its floating child elements without a 
+							   clearing element. */
+	/* \*/ display: block;	/* override above rule for every other 
+							   browser using IE/Mac backslash hack */
+	position: relative;		/* IE 5.0/Mac needs this or it may clip the
+							   dropdown menus */
+	/* \*/ position: static;/* reset position attribute for IE/Win as it
+							   causes z-index problems */
+}
+* html ul.rMenu ul
+{
+	float: left;	/* IE/Mac 5.0 needs this, otherwise hidden 
+					   menus are not completely removed from the
+					   flow of the document. */
+	/* \*/ float: none;	/* reset the rule for non-Macs */
+}
+
+* html ul.rMenu-ver li,
+* html ul.rMenu-hor li ul.rMenu-ver li
+{
+					/* the second selector above is there 
+					   because of problems IE/Mac has with 
+					   inheritance and what rules should take
+					   precedence. and to serve as a reminder on
+					   how to work around the issue if it's 
+					   encountered again down the road. */
+	width: 100%;
+	float: left;
+	clear: left;	/* IE likes to stick space below any LI
+					   in :hover state with a sub-menu. floating
+					   the LIs seems to work around this issue. But
+					   note that this also triggers hasLayout 
+					   because we need a width of 100% on floats. */
+}
+*:first-child+html ul.rMenu-ver > li:hover ul/* hide from IE5.0 because it gets confused by this selector */
+{
+	min-width: 0;	/* this fixes a similar problem as described in the
+					   rule set that exists in IE7 (and later?). However
+					   the whitespace only appears when the LI element is
+					   in a :hover state. */
+}
+ul.rMenu li a
+{
+	position: relative;	/* trigger hasLayout for IE on anchor 
+						   elements. without hasLayout on anchors
+						   they would not expand the full width 
+						   of the menu. this rule may not trigger
+						   hasLayour in later versions of IE and
+						   if you find this system broken in new
+						   versions of IE, this is probably the
+						   source. */
+	min-width: 0;		/* triggers hasLayout for IE 7 */
+}
+* html ul.rMenu-hor li
+{
+	width: 12em;	/* IE Mac doesn't do auto widths so specify a width 
+				   for the sake of IE/Mac. Salt to taste. */
+	/* \*/ width: auto;	/* now undo previous rule for non Macs by using 
+						   the IE Mac backslash comment hack */
+}
+
+/*******************************************************************************
+ * HACKS : Suckerfish w/Form Field Support (for IE 5.5 & 6.x) */
+* html ul.rMenu ul
+{
+	display: block;
+	position: absolute;	/* ovewrite original functionality of hiding
+				   element so we can hide these off screen */
+}
+
+ul.rMenu ul{	background-color:  #fff ; /*for IE7 only */}
+
+* html ul.rMenu ul,
+* html ul.rMenu-hor ul,
+* html ul.rMenu-ver ul
+
+{
+	left: -10000px;		/* move menus off screen. note we're ovewriting
+				   the dropdown position rules that use the 
+				   LEFT property, thus all the selectors. */
+}
+* html ul.rMenu li.sfhover
+{
+	z-index: 999;		/* not totally needed, but keep the menu 
+				   that pops above all other elements within
+				   it's parent menu system */
+}
+* html ul.rMenu li.sfhover ul
+{
+	left: auto;		/* pull the menus that were off-screen back 
+				   onto the screen */
+}
+* html ul.rMenu li.sfhover ul ul,
+* html ul.rMenu li.sfhover ul ul ul
+{ 
+	display: none;		/* IE/Suckerfish alternative for browsers that
+				   don't support :hover state on LI elements */
+}
+* html ul.rMenu li.sfhover ul,
+* html ul.rMenu li li.sfhover ul,
+* html ul.rMenu li li li.sfhover ul
+{
+	display: block;		/* ^ ditto ^ */
+}
+
+* html ul.rMenu-ver li.sfhover ul{	left: 60%;	}
+
+* html ul.rMenu iframe
+{	/* filter:progid:DXImageTransform.Microsoft.Alpha(style=0,opacity=0); */
+				/* the above rule is now applied in the 
+				   javascript used to generate the IFRAME this
+				   is applied to. it allows the CSS to validate
+				   while keeping the original functionality. */
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: -1;		
+}
+
+/*******************************************************************************
+ * HACKS : Clearfix*/
+.clearfix:after
+{
+    content: "."; 
+    display: block; 
+    height: 0; 
+    clear: both; 
+    visibility: hidden;
+}
+.clearfix
+{
+	min-width: 0;		/* trigger hasLayout for IE7 */
+	display: inline-block;
+	/* \*/	display: block;	/* Hide from IE Mac */
+}
+* html .clearfix
+{
+	/* \*/  height: 1%;	/* Hide from IE Mac */ 
+}
+
+/******************************************************************************/

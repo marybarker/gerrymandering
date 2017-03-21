@@ -5,6 +5,10 @@ import math
 from osgeo import ogr
 import os
 
+print(os.getcwd())
+
+os.chdir('./HarvardData/')
+
 ###################################################
 def MH(start, steps, neighbor, goodness, moveprob):
     #  object starting state   |         |
@@ -87,7 +91,7 @@ def contiguousness(state, district):
     
     subframe = adjacencyFrame[[(adjacencyFrame['low'][i] in regionlist) and (adjacencyFrame['high'][i] in regionlist) \
                                for i in range(adjacencyFrame.shape[0])]]
-    subedges = subframe[['low','high']]
+    subedges = subframe[subframe.length != 0][['low','high']]
     
     while len(regionlist) > 0:
         regions += 1
@@ -156,10 +160,13 @@ def goodness(state):
     steffic = [efficiency(state, i) for i in range(ndistricts)]
     stbiz   = [bizarreness(state, i) for i in range(ndistricts)]
     
-    return -3000*abs(sum(stconts) - ndistricts) - 0.1*(max(stpops)-min(stpops)) - 10*abs(sum(steffic)) -10*np.nansum(stbiz)
+    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in stpops])/(2*(1-float(1)/ndistricts))
+    
+    #return -3000*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*abs(sum(steffic)) -10*np.nansum(stbiz)
+    return -3000*abs(sum(stconts) - ndistricts) - 100*modTotalVar -10*np.nansum(stbiz)
 
-def switchDistrict(current_goodness, possible_goodness):
-    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/4.0))
+def switchDistrict(current_goodness, possible_goodness): # fix
+    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
 
 def contiguousStart():
     state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd-1)])
@@ -210,3 +217,5 @@ adjacencyFrame.high = [x[5:] for x in adjacencyFrame.high]
 blockstats = pd.read_csv("../HarvardData/NHVTDstats.csv")
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats.set_index(blockstats.VTD)
+
+totalpopulation = sum(blockstats.population)

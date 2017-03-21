@@ -1,0 +1,51 @@
+/* Start CMS Footer styles 4/10/2014 */
+/* HVN - 3/26/2014 - Footer style sheet saved as individual style sheet */
+/* RCG - 4/10/2014 - Changed beta.census.gov references to www.census.gov */
+ 
+@charset "utf-8";
+
+.offscreen{position:absolute;left:-999px;z-index:50000;overflow:hidden;}
+
+.footer{height:auto;width:100%;}
+.grid_footer_links{width:960px;height:200px;}
+.foot_col1{width:160px;}
+.foot_col2{width:160px;}
+.foot_col3{width:160px;}
+.foot_col4{width:160px;}
+.foot_col5{width:160px;}
+.foot_col6{width:160px;}
+.foot_bottom{width:100%;height:auto;}
+.foot_bottom_links{width:960px;}
+.footer{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-main-bg.png");background-repeat:repeat-x;background-color:#0c6291;}
+.grid_footer_links{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines-bottom.png");background-repeat:no-repeat;background-position:bottom;margin:0 auto;height:285px;}
+.foot_col_headers{font:x-small Arial,Verdana,sans-serif;color:#e7f0f4;font-weight:bold;margin-bottom:5px;margin-top:20px;}
+.foot_col{width:148px;float:left;font:x-small Arial,Verdana,sans-serif;line-height:18px;margin-top:10px;height:auto;}
+.foot_col1{width:160px;float:left;background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines.png");background-repeat:no-repeat;font:x-small Arial,Verdana,sans-serif;background-position:120px 0;line-height:18px;margin-top:10px;height:auto;}
+.foot_col2{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines.png");background-repeat:no-repeat;margin-top:10px;background-position:120px 0;height:auto;font:x-small Arial,Verdana,sans-serif;line-height:18px;float:left;}
+.foot_col3{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines.png");background-repeat:no-repeat;margin-top:10px;height:auto;background-position:130px 0;font:x-small Arial,Verdana,sans-serif;line-height:18px;float:left;}
+.foot_col4{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines.png");background-repeat:no-repeat;margin-top:10px;height:auto;background-position:145px 0;font:x-small Arial,Verdana,sans-serif;line-height:18px;float:left;}
+.foot_col5{background-image:url("https://www.census.gov/main/img/new_census_head_foot/footer-lines.png");background-repeat:no-repeat;margin-top:10px;height:auto;font:x-small Arial,Verdana,sans-serif;color:#e7f0f4;background-position:140px 0;line-height:18px;float:left;}
+.foot_col6{margin-top:10px;padding-left:10px;width:120px;min-height:280px;font:x-small Arial,Verdana,sans-serif;color:#000;line-height:18px;float:left;}
+.foot_col a,.foot_col1 a,.foot_col2 a,.foot_col3 a,.foot_col4 a,.foot_col5 a,.foot_col6 a{color:#fff;}
+.foot_bottom{background-color:#0c6291;padding-bottom:10px;font-size:10px;height:auto;}
+.foot_bottom_links{padding-left:0;padding-right:0;text-align:center;color:#fff;margin:0 auto;}
+.foot_bottom_links a{color:#fff;font:x-small Arial,Verdana,sans-serif;}
+.foot_bottom_links a:hover{font:x-small Arial,Verdana,sans-serif;text-decoration:underline;}
+.foot_bottom_links a:focus{font:x-small Arial,Verdana,sans-serif;text-decoration:underline;}
+.foot_bottom_socialLinks{margin-top:15px;font:bold x-small Arial,Verdana,sans-serif;margin-bottom:10px;padding-left:0;}
+a.foot_bottom_socialLinks{font:bold x-small Arial,Verdana,sans-serif;}
+a:hover.foot_bottom_socialLinks{font:bold x-small Arial,Verdana,sans-serif;text-decoration:underline;}
+.foot_bottom_socialLinks:focus{margin-top:15px;margin-bottom:10px;padding-left:0;}
+.grid_footer_links a {text-decoration: none;}
+.footerbottom a {text-decoration: none;}
+.foot_col a:hover,.foot_col1 a:hover,.foot_col2 a:hover,.foot_col3 a:hover,.foot_col4 a:hover,.foot_col5 a:hover,.foot_col6 a:hover{text-decoration:underline;}
+.foot_col a:focus,.foot_col1 a:focus,.foot_col2 a:focus,.foot_col3 a:focus,.foot_col4 a:focus,.foot_col5 a:focus,.foot_col6 a:focus{text-decoration:underline;}
+.footer .grid_footer_links a:hover {background-color: #0c6291;text-decoration: underline;}
+.footer .grid_footer_links a:focus {background-color: #0c6291;text-decoration: underline;}
+
+.footer .footerbottom a:hover {background-color: #0c6291;text-decoration: underline;}
+.footer .footerbottom a:focus {background-color: #0c6291;text-decoration: underline;}
+
+
+
+

@@ -1,0 +1,930 @@
+/*** uncss> filename: hdr/oldcss/extra.css ***/
+
+
+
+/*
+
+  Contains width and height code and some basic positioning for each DIV in the grid.(margins ,float, etc.) You only need to touch this file if you are changing the width or height of DIVS in pages or basic positioning of the DIVS.
+
+   Please see style.css for more comprehensive styling changes.
+
+*/
+
+
+
+.no-gutter [class*='col-'] {
+
+  padding-right: 1px;
+
+  padding-left: 1px;
+
+}
+
+
+
+/* Container
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+.container-fluid {
+
+  margin-left: 7px;
+
+  margin-right: 7px;
+
+}
+
+
+
+.desktopHeaderWrapper {
+
+  margin-left: auto;
+
+  margin-right: auto;
+
+  position: relative;
+
+}
+
+
+
+@media ( min-width : 960px) {
+
+  .container-fluid {
+
+    margin: 0px;
+
+    padding: 0px;
+
+  }
+
+
+
+  .desktopHeaderWrapper {
+
+    width: 960px;
+
+  }
+
+
+
+  .row {
+
+    /*in desktop when wrapper is fixed no need for row -15 margin */
+
+    margin-left: 0px;
+
+    margin-right: 0px;
+
+  }
+
+}
+
+
+
+@media ( min-width : 1260px) {
+
+  .desktopHeaderWrapper {
+
+    width: 1260px;
+
+  }
+
+}
+
+
+
+/* GLOBAL FOOTER Layout. Begin--------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* `Grid >> Header
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* `Grid >> Global
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* This ID changes the background image for the inner pages. Use this ID for all pages except the homepage. Place in the body tag (i.e <body body id="innerPage">)--------------------------------------------------------------*/
+
+
+
+/* `Grid >> Global content for  Grid DIVS
+
+------------------------------------------------------------------START----------------------------------*/
+
+
+
+/* `Grid >> Global content for  Grid DIVS
+
+--------------------------------------------------------------------END--------------------------------*/
+
+
+
+/* Main NAV
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* Details Visual Page layout. Begin---------------------------------------------------------------*/
+
+
+
+/* Details Visual Page-Standard layout. Begin---------------------------------------------------------------*/
+
+
+
+/* List Visual Gallery Page-Standard layout. Begin---------------------------------------------------------------*/
+
+
+
+/* Landing Page Standard Layout. Begin--------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* Landing Page (Visual) Layout. Begin--------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* Begin List Page Std Layout  *******************************/
+
+
+
+/* End List Page Std Layout  **********************************/
+
+
+
+/* `Push Space >> 12 Columns ( use if you need to push a div)*/
+
+
+
+/* `Pull Space >> 12 Columns ( use if you need to pull a div)
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* `Clear Floated Elements
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* http://sonspring.com/journal/clearing-floats */
+
+
+
+.clear {
+
+  clear: both;
+
+  display: block;
+
+  overflow: hidden;
+
+  visibility: hidden;
+
+  width: 0;
+
+  height: 0;
+
+}
+
+
+
+/* http://www.yuiblog.com/blog/2010/09/27/clearfix-reloaded-overflowhidden-demystified */
+
+
+
+.desktopHeaderWrapper:before,
+
+.desktopHeaderWrapper:after {
+
+  content: '.';
+
+  display: block;
+
+  overflow: hidden;
+
+  visibility: hidden;
+
+  font-size: 0;
+
+  line-height: 0;
+
+  width: 0;
+
+  height: 0;
+
+}
+
+
+
+.desktopHeaderWrapper:after {
+
+  clear: both;
+
+}
+
+
+
+/*
+
+  The following zoom:1 rule is specifically for IE6 + IE7.
+
+  Move to separate stylesheet if invalid CSS is a problem.
+
+*/
+
+
+
+.desktopHeaderWrapper {
+
+  zoom: 1;
+
+}
+
+
+
+/* Basic jQuery Slider essential styles */
+
+
+
+/*
+
+ * Search.css
+
+ *
+
+ * Color Scheme:
+
+ *
+
+ *   Navy blue font color: 041C5D
+
+ *   Grey font color: 333333
+
+ *   Darker background: E7E7E7
+
+ *   Lighter background: F2F2F2
+
+ *   Button background: D7D7D7
+
+ *
+
+ */
+
+
+
+/***********************
+
+ * Search box in header 
+
+ ********************/
+
+
+
+#desktopHeader .searchbox label {
+
+  display: inline;
+
+  max-width: 10px;
+
+  margin-bottom: 0px;
+
+  font-weight: normal;
+
+}
+
+
+
+
+
+#desktopHeader .searchbox input {
+
+  background-image: url("//www.census.gov/main/responsive-header/images/search-bg.png");
+
+  background-repeat: no-repeat;
+
+  width: 290px;
+
+  height: 26px;
+
+  float: left;
+
+  color: #6d6d6d;
+
+  margin-left: 190px;
+
+  /* was 170px */
+
+  margin-top: 10px;
+
+  padding-left: 20px;
+
+  line-height: 26px;
+
+  height: 25px;
+
+  font-size: 12px;
+
+}
+
+
+
+
+
+
+
+#desktopHeader .searchbtn input {
+
+  background-image: url("//www.census.gov/main/responsive-header/images/search-btn.png");
+
+  background-repeat: no-repeat;
+
+  color: #a8a8ab;
+
+  margin-top: 10px;
+
+  width: 20px;
+
+  height: 25px;
+
+  border: 0;
+
+  float: right;
+
+  cursor: pointer;
+
+  line-height: 999px;
+
+  /*Set it higher than your image height */
+
+  overflow: hidden;
+
+  /*Hide the text */
+
+  font-size: 0;
+
+  /* FF2 doesnï¿½t like the above */
+
+}
+
+
+
+/***********************
+
+ * Search form 
+
+ ********************/
+
+
+
+/***********************
+
+ * Type Ahead drop down
+
+ ********************/
+
+
+
+/********************
+
+ * Search Results
+
+ ********************/
+
+
+
+/*************************
+
+ * NAICs
+
+ *************************/
+
+
+
+/*************************
+
+ * Infopanel
+
+ *************************/
+
+
+
+/*************************
+
+ * Dynamic Navigation
+
+ *************************/
+
+
+
+/*************************
+
+ * Quick Answers
+
+ *************************/
+
+
+
+/*************************
+
+ * Best Bets
+
+ *************************/
+
+
+
+/*************************
+
+ * Organic results
+
+ *************************/
+
+
+
+/*************************
+
+ * END Organic results
+
+ *************************/
+
+
+
+/*************************
+
+ * Image/Video results
+
+ *************************/
+
+
+
+/* new 12/14*/
+
+
+
+/* new 12/14*/
+
+
+
+/*************************
+
+ * Twitter
+
+ *************************/
+
+
+
+/*************************
+
+ * Disambig
+
+ *************************/
+
+
+
+/*************************
+
+ * Paging
+
+ *************************/
+
+
+
+/* MEDIA QUERIES */
+
+
+
+/* style.css */
+
+
+
+#desktopHeader {
+
+  font: normal 13px Arial, sans-serif;
+
+  color: #333;
+
+  font-size: 100%;
+
+  height: auto;
+
+/*  padding-bottom: 20px;*/
+
+}
+
+
+
+#desktopHeader img,
+
+#desktopHeader label,
+
+#desktopHeader p,
+
+#desktopHeader ul,
+
+#desktopHeader li,
+
+#desktopHeader form,
+
+#desktopHeader a,
+
+#desktopHeader fieldset,
+
+#desktopHeader input {
+
+  border: 0;
+
+  outline: none;
+
+  margin: 0;
+
+  padding: 0;
+
+}
+
+
+
+#desktopHeader a {
+
+  color: #1c6c96;
+
+  text-decoration: none;
+
+}
+
+
+
+#desktopHeader a:visited {
+
+  color: #010216;
+
+}
+
+
+
+#desktopHeader a:hover {
+
+  color: #0e4b91;
+
+  text-decoration: underline;
+
+  /* changed 11-15-12*/
+
+}
+
+
+
+#desktopHeader a:focus {
+
+  color: #0e4b91;
+
+  text-decoration: none;
+
+  /* changed 11-15-12*/
+
+}
+
+
+
+/* - Merged with rule line # 57 - 62 */
+
+
+
+/* - Merged with the CSS rule found just below*/
+
+
+
+/* - Bringing out the common things of h2 and h3...*/
+
+
+
+#desktopHeader p {
+
+  font: small Arial,Verdana,sans-serif;
+
+  overflow: hidden;
+
+  margin-bottom: 8px;
+
+  padding-right: 0;
+
+  text-align: left;
+
+}
+
+
+
+/* Details Visual Page STYLES. Begin------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* ie7 hack */
+
+
+
+/* Details Visual Page-standard STYLES. Begin EDITED 1-8-13------------------------------------------------------------------------------------------------------------*/
+
+
+
+/*Begin EDITED 1-8-13------------------------------------------------------------------------------------------------------------*/
+
+
+
+/*END EDITED 1-8-13------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* List Visual Gallery Page-Standard layout. Begin--------------------------------------------------------------------------------------*/
+
+
+
+/* List Visual Gallery Page-Standard layout. END-------------------------------------------------------------------------------------*/
+
+
+
+@-moz-document url-prefix()  {
+
+  .desktopHeaderWrapper .grid_subData li {
+
+    text-indent: -1.2em;
+
+  }
+
+}
+
+
+
+/* For Bulleted list items */
+
+
+
+/* clear fix */
+
+
+
+/* Tab Buttons for landing page end */
+
+
+
+/* LIST STUFF */
+
+
+
+/* End extra tab styles for Survey List */
+
+
+
+/* Landing page- VIsual Page Begin--------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* Begin List Page Std Styles *********************************************************************/
+
+
+
+@-moz-document url-prefix()  {
+
+  .attachmentAnchor {
+
+    margin-left: -.6em;
+
+  }
+
+}
+
+
+
+/* End List Page Std Styles  **********************************************************************/
+
+
+
+/*PDF STYLES. Begin--------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* NEW */
+
+
+
+/* END NEW */
+
+
+
+/* Skip Nav option. 508 compliance*/
+
+
+
+.offscreen {
+
+  position: absolute;
+
+  left: -999px;
+
+  z-index: 50000;
+
+  overflow: hidden;
+
+}
+
+
+
+/* List Page pagination widget*/
+
+
+
+/**************UPDATED HEADING STYLES ******************************/
+
+
+
+/** Shared Styles for Data Tables **/
+
+
+
+/** Styles for Data Tables **/
+
+
+
+/** Styles for Wide Data Tables **/
+
+
+
+/*******************************************BEGIN DOUBLE/TRIPLE BANKING STYLES *****************************/
+
+
+
+/* double banking styles */
+
+
+
+/* style needed to force the text and heading to a separate line */
+
+
+
+/* style needed to force the bulleted link list into two columns */
+
+
+
+/* triple banking styles */
+
+
+
+@charset "utf-8";
+
+
+
+/*#container{margin: 0 auto; width: 960px;}*/
+
+
+
+#desktopHeader img {
+
+  border: 0;
+
+}
+
+
+
+/*--WHEN JAVASCRIPT IS DISABLED--*/
+
+
+
+/*--GLOBAL STYLES FOR USE WHEN JAVASCRIPT IS BOTH ENABLED AND DISABLED--*/
+
+
+
+/*--STYLE ELEMENTS OF THE DROPDOWN MENUS--*/
+
+
+
+#desktopHeader ul li {
+
+  width: auto;
+
+  list-style: none;
+
+  margin: 0;
+
+  list-style-position: inside;
+
+}
+
+
+
+/* Added 9/17 */
+
+
+
+/* ADD additional rollover images here **************************/
+
+
+
+/* new subnavigation CSS added 10-26-12 */
+
+
+
+/*Use leftsubpic when nav is flipped and your image display is on the left and content on the right*/
+
+
+
+/*
+
+  960 Grid System ~ Text CSS.
+
+  Learn more ~ http://960.gs/
+
+
+
+  Licensed under GPL and MIT.
+
+*/
+
+
+
+/* `Basic HTML
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+#desktopHeader {
+
+  font: 13px/1.5  Arial, Verdana, sans-serif;
+
+}
+
+
+
+/* `Headings
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+/* `Spacing
+
+----------------------------------------------------------------------------------------------------*/
+
+
+
+#desktopHeader ul {
+
+  list-style: square;
+
+  color: rgb(51,51,51);
+
+  margin: 0;
+
+  margin-bottom: 0;
+
+  padding: 0 0 0 0;
+
+  list-style-position: inside;
+
+}
+
+
+
+#desktopHeader li {
+
+  margin-left: 0px;
+
+}
+
+
+
+#desktopHeader p,
+
+#desktopHeader ul,
+
+#desktopHeader fieldset {
+
+  margin-bottom: 0px;
+
+  /*changed from 20px to 0 on 9-28-12*/
+
+}
+
+
+
+/* Styles for content TOP elements such as section, page titles, author, pub dates, social links */
+
+
+
+/* Social Links STYLES. ------------------------------------------------------------------------------------------------------------*/
+
+
+
+/* check visualTitles */
+
+
+

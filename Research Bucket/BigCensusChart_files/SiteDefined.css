@@ -1,0 +1,342 @@
+﻿@import "/main/css/format.css";
+/************************************************************
+ * EXTERNAL STYLESHEETS */
+/* CSS Document Created for: www.census.gov web sites */
+/* Original styles author: carollynn hammersmith, WSC/SSD*/
+/* creation: 1 Oct. 2008*/
+/* Updated: 31 March 2009 */
+
+/* CSS FORMAT: CSS is laid out as html appears in the page, top to bottom, left to right */
+
+/*Page Layout Styles --------------------------------------------------------------*/
+
+/* top Nav - regular and dropdown - NOTE - THESE COLORS ARE THE STANDARD ECON COLORS AND CAN BE CHANGED TO SUIT YOUR SITES NEEDS */
+#dropdown {
+        margin: 0 auto;
+        background-color: #eee; /*changed from #5a6775 or your custom color per usability test March 2009*/
+        font-family: Arial, Helvetica, sans-serif;
+        border-bottom: 4px solid #bea043; /*This is the default color of the bottom border*/
+        padding: 5px 0 1px 1em;
+}
+
+/* top level Nav category that is selected is "grayed" out and unclickable, indicating what category the visitor is in. */
+#dropdown li.selected {
+        background-color: #bea043;       /*This is the color of the bottom border */
+        padding: 2px 10px;  
+        color: #000;  /*color of text in the top nav when the selection is unclickable */
+        border: 1px solid #fff;         
+        border-bottom: 2px solid #bea043;
+        text-decoration: none;
+} 
+
+ul.rMenu li a
+{color: #fff;   /* color of text in top nav */
+        border-top: 1px solid #7B8999;  /*several shades lighter than the background */
+        border-right: 1px solid #7B8999; /*several shades lighter than the background */
+        border-bottom: 1px solid #345638; /*same color as menu background */
+        border-left: 1px solid #7B8999; /*several shades lighter than the background */
+
+}
+ul.rMenu-ver {  border-top: solid 1px #E5980F;  }
+
+ul.rMenu li a
+{
+        padding: 2px 10px 3px;  /* Do not change this! */
+}
+ul.rMenu li a:link,
+ul.rMenu li a:hover,
+ul.rMenu li a:focus,
+ul.rMenu li a:visited,
+ul.rMenu li a:active {
+        color: #fff;
+        text-decoration: none;
+}
+ul.rMenu li.sfhover a:active,
+ul.rMenu li:hover a:active,
+ul.rMenu li:focus a:active {
+        color: #fff;
+        background-color: #436a34; /* active hover color - is different than the selected link, grayed out color */
+}
+ul.rMenu li {
+        background-color: #578644;      /* default background color of menu items */
+}
+ul.rMenu li:hover,
+ul.rMenu li:focus,
+ul.rMenu li.sfhover {
+        background-color: #436a34;      /* background color for parent menu items. */
+}
+
+ul.rMenu li a:hover,
+ul.rMenu li a:focus {
+        background-color: #436a34; /* background color or top nav tab on hover */
+        color: #fff;  /*color of font on hover */
+        border-bottom: 1px solid #436a34; /*this needs to be the same as the hover background color */
+}
+
+/* Left -Column Styles-----------------------------------  */
+
+.navcontainer ul
+{
+list-style-type: none;
+padding: 0;
+margin: 0;
+width: 175px;
+border: 1px solid #ccc;
+border-width: 0 1px 1px 1px;
+}
+
+.navcontainer li
+{
+        padding: 3px 5px 2px 1.5em;
+        border-top: 1px solid #ccc;
+        background: url(/geo/img/dot_green.gif) no-repeat 0.5em 0.5em;
+        font-size: 90%;
+        line-height: 1.4;
+}
+
+.navcontainer ul li a {
+        display: block;
+        text-decoration: none;
+        color: #00F;
+}
+
+.navcontainer ul li span.display_inline,
+.navcontainer ul li span.display_inline a {
+        display: inline;
+}
+
+.navcontainer ul li.selected,
+.navcontainer ul li:hover.selected  /*This style grays out the selected link in the left nav */
+{
+        text-decoration: none;
+        color: #333;
+        background-color: #CBDFB5;
+}
+
+.navcontainer ul li a:visited
+{
+        color: #909;
+        text-decoration: underline;
+}
+
+.navcontainer ul li:hover, .navcontainer ul li a:hover,
+.navcontainer ul li:focus, .navcontainer ul li a:focus {
+        color: #900;
+        text-decoration: underline;
+}
+
+
+/* Left-column and right-column styles --------------------------------------------*/
+        
+#left-column .hi-lite, #right-column .hi-lite{
+        border:1px solid #ccc;
+        padding:1em;
+        margin: 10px 5px;
+        line-height:130%;
+        font-size:85%;
+}
+
+.hi-lite form, .hi-lite p        {margin-top:0;}
+/* Middle column Content ------------------------------------------------------*/
+
+#middle-column li {
+        padding: 0 0 5px 0;
+        margin: 0 0 5px 0;
+}
+
+/* Decorative Boxes */
+
+.hi-lite {
+        border:1px solid #903;
+        padding:5px;
+        margin:5px;
+        line-height:130%;
+}
+
+/* Decorative Boxes */
+h3.hi-litehead {
+        display:inline;
+         position:relative;
+                top:-14px;
+        background-color:#fff;
+        padding: 0 4px;
+        margin: 5px;
+        font-weight:bold;
+        text-align: center;
+        color: #903;
+                font-size: 150%;
+
+}
+
+/* right column styles --------------------------------------------------------*/
+
+#left-column .inside h3, #right-column .inside h3 { 
+/************IMPORTANT***********/
+/*DON'T change ANY of this style's values, Affects how IE 6 displays content.*/
+padding: 0 ; 
+margin: .5em 0 ; 
+}
+
+/* Custom CSS styles */
+/* This is where site owners can add new css for their sites */
+.redtext {
+    color: #c00;
+    font-weight: bold; 
+}
+
+form h3 {
+        background: #ccc;
+        padding: .5em;
+}
+
+#twocol {
+        width: 90%;
+}
+
+#twocol #leftcol {
+        width: 50%;
+        vertical-align: top;
+        float: left;
+}
+
+#twocol #rightcol {
+        width: 50%;
+        vertical-align: top;
+        float: left;
+}
+
+form h4 {
+        clear: both;
+        border-top: 1px solid #000;
+        padding-top: .5em;
+}
+
+/* Styles for the Accordion */
+.accordion h3 {
+        background:url(/geo/img/plus.png) #ddeecd left no-repeat;
+        border-bottom:solid #FFF 3px;
+        margin: 0;
+        padding: 2px 2px 2px 20px;
+        cursor: pointer;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+}
+
+.accordion h3.ui-state-active {
+        background:url(/geo/img/minus.png) #bfd6a9 left no-repeat;
+}
+
+h3.ui-state-hover a:hover {
+        background-color: #bfd6a9;
+}
+
+.accordion div {
+        overflow: auto;
+        margin: 0;
+        padding: 10px;
+}
+
+.accordion h4 {
+        background:url(/geo/img/plus.png) #ddeecd left no-repeat;
+        border-bottom:solid #FFF 3px;
+        margin: 0;
+		padding: 2px 2px 2px 20px;
+        cursor: pointer;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+}
+
+.accordion h4.ui-state-active {
+        background:url(/geo/img/minus.png) #bfd6a9 left no-repeat;
+}
+
+h4.ui-state-hover a:hover {
+        background-color: #bfd6a9;
+}
+
+
+/* JH Inserted starting here #middle-column img.floatLeft and img.floatRight to try and fix second level pages */
+
+img.floatLeft {
+    float: left;
+    margin: 10px;
+}
+
+img.floatRight {
+    float: right;
+    margin: 10px;
+}
+
+.row1image img {
+        max-width:100%;
+        display:block;
+}
+
+#middleleft {
+        float:left;
+        width: 48%;
+}
+
+#middleright {
+        float:right;
+        width: 48%;
+} 
+
+.note p{font-size:10px}
+
+/* JH inserted ending here */
+
+/* Insert to style trivia on the main page */
+#trivia
+{
+	/*width:169px;*/
+	background:url(/geo/img/trivia-bg.png) no-repeat;
+	color:#333333;
+	text-wrap:!important;
+	margin: 10px 5px;
+	padding: 60px 20px 20px 20px;
+	line-height:130%;
+	font-size:85%;
+}
+
+#triviaanswer
+{
+	width:500px; 
+	padding-left:50px;
+}
+
+#triviaanswer ol
+{
+	
+	list-style-type:lower-alpha;
+}
+
+/*Layout for 2010 Block Map Pages*/
+
+#rightstate
+{
+	float:right; 
+	width:225px;
+	/*background-color:#99CCCC;*/
+	padding:0px 10px 10px 10px;
+	margin:10px 0px 0px 10px;
+	
+}
+
+#rightstateblank
+{
+	float:right; 
+	width:195px;
+	padding:0px 10px 10px 10px;
+	margin:10px 0px 0px 10px;
+	
+}
+
+#leftstate
+{
+	float:left; 
+	width:65%;
+	margin-right:10px;
+	
+}
+/*End Block Map layout*/
