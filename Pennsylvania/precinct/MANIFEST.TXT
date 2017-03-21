@@ -1,0 +1,9 @@
+pa_final.dbf (application/octet-stream) 25635050 bytes.
+pa_final.prj (text/plain; charset=US-ASCII) 145 bytes.
+pa_final.sbn (application/octet-stream) 96340 bytes.
+pa_final.sbx (application/octet-stream) 5996 bytes.
+pa_final.shp (application/octet-stream) 32748804 bytes.
+pa_final.shx (application/octet-stream) 74148 bytes.
+pa_final.tab (text/tab-separated-values) 8651754 bytes.
+PA_Notes.rtf (text/plain; charset=US-ASCII) 71716 bytes.
+PA_Shapefile.zip (application/zip) 23165927 bytes.
