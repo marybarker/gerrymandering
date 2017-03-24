@@ -45,8 +45,32 @@ for walker in range(numwalkers):
 
     for step in range(numplots):
         runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-        plot_stuff.color_these_states(g, [runningState], foldername, step+1)
+        color_these_states(g, [runningState], foldername, step+1)
         pd.DataFrame(runningState[0]).to_csv(foldername+"state%d.csv"%(step+1))
+
+
+def semigoodness(state):
+    #Haves
+        #contiguousness
+        #evenness of population
+        #efficiency
+        #bizarreness
+    #Needs
+        #Compactness
+    
+    stpops  = [population(state, i) for i in range(ndistricts)]
+    stbiz   = [bizarreness(state, i) for i in range(ndistricts)]
+    
+    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in stpops])/(2*(1-float(1)/ndistricts))
+    
+    return -100*modTotalVar - 10*np.nansum(stbiz)
+
+
+for step in range(numplots):
+    runningState = MH(runningState[0], numsteps, neighbor, semigoodness, switchDistrict)
+    color_these_states(g, [runningState], foldername, step+1)
+    pd.DataFrame(runningState[0]).to_csv(foldername+"state%d.csv"%(step+1))
+
 
 
 
