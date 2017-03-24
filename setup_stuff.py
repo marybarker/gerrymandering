@@ -6,7 +6,7 @@ import math
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-
+import colorsys
 
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """   make a  list of all voting tabulation districts   """
@@ -42,13 +42,13 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name = f1['GEOID10']
+        name = str(f1['GEOID10']) + f1['NAME10']
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append(f2['GEOID10'])
+                l2.append(str(f2['GEOID10']) + f2['NAME10'])
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
     newthing.columns=['lo','hi']
     return newthing
@@ -73,7 +73,7 @@ def boundaries(mylistoffeatures):
                         point = ring.GetPoint(j)
                         x.append(point[0])
                         y.append(point[1])
-            boundaries[feat['GEOID10']] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
         elif gtype == 3: # polygon
             x = []
             y = []
@@ -82,10 +82,10 @@ def boundaries(mylistoffeatures):
                     point = ring.GetPoint(i)
                     x.append(point[0])
                     y.append(point[1])
-            boundaries[feat['GEOID10']] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
         else:
             b = geom.GetBoundary()
-            boundaries[feat['GEOID10']] = b.GetPoints()
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
     return boundaries
 
 
@@ -123,7 +123,7 @@ def package_vtds(filetouse):
     paths = []
 
     for vtd in lyr:
-        names.append(vtd['VTDST10_1'])
+        names.append(str(vtd['GEOID10']) + vtd['NAME10'])
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -168,8 +168,11 @@ def package_vtds(filetouse):
     this_geom['names'] = names
     return this_geom
 
+def colorDict(n):
+    return {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
 
 def color_these_states(geom_to_plot, list_of_states, foldername, number):
+    colors = colorDict(ndistricts)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlim(geom_to_plot['xlim'])
@@ -178,9 +181,9 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
     paths = geom_to_plot['paths']
     names = geom_to_plot['names']
 
-    for i in len(list_of_states):#state in list_of_states:
-        state = list_of_states[i]
-        redistricting = state[0]
+    for i in range(len(list_of_states)):#state in list_of_states:
+        this_state = list_of_states[i]
+        redistricting = this_state[0]
         for p in range(len(paths)):
             path = paths[p]
             facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
@@ -221,7 +224,7 @@ vtd_connectivities = adjancentEdgeLengths(vtd_connectivities, vtd_boundaries)
 vtd_connectivities.to_csv('PRECINCTconnections.csv')
 
 
-names = [v['GEOID10'] for v in vtds]
+names = [str(v['GEOID10'])+v['NAME10'] for v in vtds]
 aland = [v['ALAND10'] for v in vtds]
 awater = [v['AWATER10'] for v in vtds]
 perim = [ToFeet(vtd_boundaries[name]) for name in names]
@@ -299,5 +302,7 @@ f2 = faulty_feats[1]
 g1 = f1.geometry()
 g2 = f2.geometry()
 """
+
+
 
 

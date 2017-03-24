@@ -164,21 +164,23 @@ def goodness(state):
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
 
-def contiguousStart(blockstats):
-    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd-1)])
+def contiguousStart():
+    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
     state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
 
     missingdist = set(range(ndistricts))
     while len(list(missingdist)) > 0:
         state.value[random.randint(0,nvtd-1)] = list(missingdist)[0]
         missingdist = set.difference(set(range(ndistricts)), set(state['value']))
+    #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
     
     while ndistricts in set(state['value']):
-        
+         
         subframe = state.loc[state.value!=ndistricts]
         detDists = set(subframe.key)
         tbdDists = set.difference(set(state.key), detDists)
-        relevantAdjacencies = adjacencyFrame.loc[(adjacencyFrame.low.isin(detDists)) != (adjacencyFrame.high.isin(detDists))]
+        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
         #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
         
         #choose entry in relevantAdjacencies and switch the value of the other node.
@@ -218,3 +220,7 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
+
+
+
