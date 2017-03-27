@@ -54,28 +54,37 @@ def neighbor(state):
     #If we've blobbed out some districts, we wants to behave differently
     
     if len(missingdist) == 0:
-        switchedge = random.randint(1, adjacencyFrame.shape[0]-1)
+        switchedge = np.random.choice(adjacencyFrame.index[~adjacencyFrame.isSame])
+
         lownode  = adjacencyFrame['low'][switchedge]
         highnode = adjacencyFrame['high'][switchedge]
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
-    
-        while newstate.value[newstate.key == lownode].item() == newstate.value[newstate.key == highnode].item():
-            #If the two nodes have the same district, choose a different edge.  Keep trying.
-            switchedge = random.randint(1, adjacencyFrame.shape[0]-1)
-            lownode  = adjacencyFrame['low'][switchedge]
-            highnode = adjacencyFrame['high'][switchedge]
-        
+
         if random.random() < 0.5:
             newstate.value[newstate.key ==  lownode] = (newstate[newstate.key == highnode].value).item()
+            checks = adjacencyFrame.index[((adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)) & \
+                                          (~adjacencyFrame.isSame)]
+            adjacencyFrame.isSame[((adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)) & \
+                                  adjacencyFrame.isSame] = False
+            adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == adjacencyFrame.low[j]].item() == \
+                                               newstate.value[newstate.key == adjacencyFrame.high[j]].item() ) for j in checks]
         else:
             newstate.value[newstate.key == highnode] = (newstate[newstate.key ==  lownode].value).item()
+            checks = adjacencyFrame.index[((adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)) & \
+                                          (~adjacencyFrame.isSame)]
+            adjacencyFrame.isSame[((adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)) & \
+                                  adjacencyFrame.isSame] = False
+            adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == adjacencyFrame.low[j]].item() == \
+                                               newstate.value[newstate.key == adjacencyFrame.high[j]].item() ) for j in checks]
         #We want to assign both nodes the same value, and there's a 50% chance for each value being chosen.
-        
     else:
         #If there are some districts missing, 
-        newstate.loc[np.random.randint(newstate.shape[0])].value = list(missingdist)[0]
+        changenode = newstate.key.sample(1)
+        newstate.value[newstate.key == changenode] = list(missingdist)[0]
         #We want to select one randomly, and make it one of the missing districts
-     
+        adjacencyFrame.isSame[(adjacencyFrame.low == changenode) | \
+                              (adjacencyFrame.high == changenode)] = False
+        # And none of its adjacencies match anymore.
     return newstate
 
 def contiguousness(state, district):
@@ -115,7 +124,7 @@ def interiorPerimeter(state, district):
                                for i in range(adjacencyFrame.shape[0])]]['length'])
 
 def population(state, district):
-    return sum(blockstats.population[blockstats.VTD.isin(list(state.key[state.value == district]))])
+    return sum(blockstats.POP100[blockstats.VTD.isin(list(state.key[state.value == district]))])
 
 def efficiency(state, district):
     #returns difference in percentage of votes wasted.  Negative values benefit R.
@@ -159,7 +168,7 @@ def goodness(state):
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in stpops])/(2*(1-float(1)/ndistricts))
     
     #return -3000*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*abs(sum(steffic)) -10*np.nansum(stbiz)
-    return -3000*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*np.nansum(stbiz)
+    return -300*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*np.nansum(stbiz)
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
@@ -220,6 +229,17 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -42,13 +42,19 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name = str(f1['GEOID10']) + f1['NAME10']
+        if stateSHORT == 'PA':
+            name = str(f1['GEOID10']) + f1['NAME10']
+        elif stateSHORT == 'NH':
+            name = str(f1['GEOID10'])
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append(str(f2['GEOID10']) + f2['NAME10'])
+                if stateSHORT == 'PA':
+                    l2.append(str(f2['GEOID10']) + f2['NAME10'])
+                elif stateSHORT == 'NH':
+                    l2.append(str(f2['GEOID10']))
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
     newthing.columns=['lo','hi']
     return newthing
@@ -73,7 +79,10 @@ def boundaries(mylistoffeatures):
                         point = ring.GetPoint(j)
                         x.append(point[0])
                         y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            if stateSHORT == 'PA':
+                boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            elif stateSHORT == 'NH':
+                boundaries[str(feat['GEOID10'])] = zip(x, y)
         elif gtype == 3: # polygon
             x = []
             y = []
@@ -82,10 +91,16 @@ def boundaries(mylistoffeatures):
                     point = ring.GetPoint(i)
                     x.append(point[0])
                     y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            if stateSHORT == 'PA':
+                boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            elif stateSHORT == 'NH':
+                boundaries[str(feat['GEOID10'])] = zip(x, y)
         else:
             b = geom.GetBoundary()
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
+            if stateSHORT == 'PA':
+                boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
+            elif stateSHORT == 'NH':
+                boundaries[str(feat['GEOID10'])] = b.GetPoints()
     return boundaries
 
 
@@ -123,7 +138,8 @@ def package_vtds(filetouse):
     paths = []
 
     for vtd in lyr:
-        names.append(str(vtd['GEOID10']) + vtd['NAME10'])
+        #names.append(str(vtd['GEOID10']) + vtd['NAME10'])
+        names.append(str(vtd['GEOID10']))
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -186,7 +202,7 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         redistricting = this_state[0]
         for p in range(len(paths)):
             path = paths[p]
-            facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
+            facecolor = redistricting.value[np.array(redistricting.key) == names[p][5:]].item()
             patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
             ax.add_patch(patch)
         ax.set_aspect(1.0)
@@ -302,6 +318,10 @@ f2 = faulty_feats[1]
 g1 = f1.geometry()
 g2 = f2.geometry()
 """
+
+
+
+
 
 
 
