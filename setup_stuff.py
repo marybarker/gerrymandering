@@ -138,8 +138,10 @@ def package_vtds(filetouse):
     paths = []
 
     for vtd in lyr:
-        #names.append(str(vtd['GEOID10']) + vtd['NAME10'])
-        names.append(str(vtd['GEOID10']))
+        if stateSHORT == 'PA':
+            name = str(vtd['GEOID10']) + vtd['NAME10']
+        elif stateSHORT == 'NH':
+            name = str(vtd['GEOID10'])
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -188,11 +190,14 @@ def colorDict(n):
     return {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
 
 def color_these_states(geom_to_plot, list_of_states, foldername, number):
-    colors = colorDict(ndistricts)
+    #colors = colorDict(ndistricts)
+    colors = {0:'yellow',1:'green'}
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlim(geom_to_plot['xlim'])
     ax.set_ylim(geom_to_plot['ylim'])
+    #ax.set_xlim([-71.8, -71.2])
+    #ax.set_ylim([42.6, 43.2])
 
     paths = geom_to_plot['paths']
     names = geom_to_plot['names']
@@ -202,11 +207,12 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         redistricting = this_state[0]
         for p in range(len(paths)):
             path = paths[p]
-            facecolor = redistricting.value[np.array(redistricting.key) == names[p][5:]].item()
+            
+            facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
             patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
             ax.add_patch(patch)
         ax.set_aspect(1.0)
-        plt.savefig(foldername+'/output%04d.png'%(number+i))
+        plt.savefig(foldername+'output%04d.png'%(number+i))
         #plt.show()
 
 """ NOW USE ALL OF THE FUNCTIONS:"""
@@ -216,7 +222,7 @@ blockfile = 'block/block.shp'
 blocktotabdistrict = pd.read_csv('pa_block_to_vtd.txt')
 state='NewHampshire/'
 state='Pennsylvania/'
-blockfile = 'NewHampshireBlockShapefiles/tl_2016_33_tabblock10.shp'
+blockfile = '../NewHampshireBlockShapefiles/tl_2016_33_tabblock10.shp'
 vtdfile = ("HarvardData/nh_final.shp")
 
 # current working directory
@@ -237,8 +243,21 @@ vtds = features(lyr)
 vtd_boundaries = boundaries(vtds)
 vtd_connectivities = adjacencies(vtds)
 vtd_connectivities = adjancentEdgeLengths(vtd_connectivities, vtd_boundaries)
-vtd_connectivities.to_csv('PRECINCTconnections.csv')
+vtd_connectivities.to_csv('NEWVTDconnections.csv')
 
+names = g['names']
+count = 0
+for connection in names:
+    count = count + 1
+    lo_connected = vtd_connectivities.hi[vtd_connectivities.lo == connection]
+    hi_connected = vtd_connectivities.lo[vtd_connectivities.hi == connection]
+    colors = [0 for x in range(len(names))]
+    l1 = [x for x in range(len(names)) if names[x] in set(lo_connected)]
+    l2 = [x for x in range(len(names)) if names[x] in set(hi_connected)]
+    for x in l1+l2:
+        colors[x] = 1
+    newframe = pd.DataFrame({'key':names, 'value':colors})
+    color_these_states(g, [(newframe, 0)], foldername, count)
 
 names = [str(v['GEOID10'])+v['NAME10'] for v in vtds]
 aland = [v['ALAND10'] for v in vtds]
@@ -318,6 +337,14 @@ f2 = faulty_feats[1]
 g1 = f1.geometry()
 g2 = f2.geometry()
 """
+
+
+
+
+
+
+
+
 
 
 
