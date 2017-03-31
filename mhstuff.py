@@ -201,6 +201,41 @@ def contiguousStart():
             
     return state
 
+def contiguousStart2():
+    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
+    state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+    
+    missingdist = set(range(ndistricts))
+    while len(list(missingdist)) > 0:
+        state.value[random.randint(0,nvtd-1)] = list(missingdist)[0]
+        missingdist = set.difference(set(range(ndistricts)), set(state['value']))
+    #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
+    
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while ndistricts in set(state['value']):
+        
+        targdistr = pops.index(min(pops))
+        
+        subframe = state.loc[state.value!=ndistricts]
+        detDists = set(subframe.key)
+        tbdDists = set.difference(set(state.key), detDists)
+        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
+        #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
+        curRegion = set(state.key[state.value == targdistr])
+        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(curRegion)) != (subAdj.high.isin(curRegion))]
+        #Adjacencies where either low or high are in the region, but not both.
+        
+        #choose entry in relevantAdjacencies and switch the value of the other node.
+        temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
+        if temp.high in tbdDists:
+            state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+        else:
+            state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+            
+    return state
+
 ###############################
 
 """
@@ -229,6 +264,7 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
 
 
 
