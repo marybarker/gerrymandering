@@ -223,16 +223,21 @@ def contiguousStart2():
         tbdDists = set.difference(set(state.key), detDists)
         relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
         #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
-        curRegion = set(state.key[state.value == targdistr])
-        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(curRegion)) != (subAdj.high.isin(curRegion))]
-        #Adjacencies where either low or high are in the region, but not both.
+        curRegion = state.key[state.value == targdistr]
+        relevantAdjacencies = subAdj.loc[((subAdj.low.isin(curRegion)) & (subAdj.high.isin(tbdDists))) |
+                                         ((subAdj.high.isin(curRegion)) & (subAdj.low.isin(tbdDists)))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
         
-        #choose entry in relevantAdjacencies and switch the value of the other node.
-        temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
-        if temp.high in tbdDists:
-            state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
-        else:
-            state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
+            if temp.high in tbdDists:
+                state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+                pops[targdistr] = pops[targdistr] + blockstats.POP100[temp.high]
+            else:
+                state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
             
     return state
 

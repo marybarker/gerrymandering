@@ -1,17 +1,18 @@
 import os
 os.getcwd()
 os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/')
+
 from setup_stuff import * 
 from mhstuff import *
 
 
-#State and precincts 
-stateSHORT='NH'
-os.chdir('NewHampshire')
-g = package_vtds("VTD/VTD.shp")
+#State and precincts
+stateSHORT='PA'
+os.chdir('Pennsylvania')
+g = package_vtds("precinct/precinct.shp")
 
 # VTD stats
-blockstats = pd.read_csv("NHVTDstats.csv")
+blockstats = pd.read_csv("vtdstats.csv")
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
 blockstats.rename(columns={'population':'POP100'}, inplace=True)
@@ -24,11 +25,11 @@ colors = colorDict(ndistricts)
 
 
 #Read adjacency frame
-adjacencyFrame = pd.read_csv('VTDconnections.csv')
+adjacencyFrame = pd.read_csv('PRECINCTconnections.csv')
 adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
-adjacencyFrame.low  = [x[5:] for x in adjacencyFrame.low]
-adjacencyFrame.high = [x[5:] for x in adjacencyFrame.high]
+#adjacencyFrame.low  = [x[5:] for x in adjacencyFrame.low]
+#adjacencyFrame.high = [x[5:] for x in adjacencyFrame.high]
 
 isSame = [0 for x in range(len(adjacencyFrame.low))]
 
@@ -42,7 +43,7 @@ walker=1
 numsteps = 1
 numplots = 10
 for walker in range(numwalkers): 
-    starting_state = contiguousStart()
+    starting_state = contiguousStart2()
     starting_state.columns = ['key', 'value']
     isSame = [(starting_state.value[starting_state.key == adjacencyFrame.low[j]].item() \
            == starting_state.value[starting_state.key == adjacencyFrame.high[j]].item()) for j in range(len(isSame))] 

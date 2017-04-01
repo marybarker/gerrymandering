@@ -181,6 +181,7 @@ def package_vtds(filetouse):
         A = np.column_stack((x, y))
         path = mpath.Path(vertices=A, codes=np.asarray(codes[:len(x)]))
         paths.append(path)
+        names.append(name)
 
     this_geom['paths'] = paths
     this_geom['names'] = names
@@ -190,8 +191,8 @@ def colorDict(n):
     return {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
 
 def color_these_states(geom_to_plot, list_of_states, foldername, number):
-    #colors = colorDict(ndistricts)
-    colors = {0:'yellow',1:'green'}
+    colors = colorDict(ndistricts)
+    #colors = {0:'yellow',1:'green'}
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlim(geom_to_plot['xlim'])
