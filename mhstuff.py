@@ -87,7 +87,7 @@ def neighbor(state):
         # And none of its adjacencies match anymore.
     return newstate
 
-def contiguousness(state, district):
+def contiguousness_old(state, district):
     
     regions = 0
     regionlist = list(state.key[state.value == district])
@@ -113,15 +113,52 @@ def contiguousness(state, district):
         regionlist = [x for x in regionlist if x not in currentregion]
     return regions
 
-def perimeter(state, district):
+
+def contiguousness(state, district):
+    
+    regions = 0
+    regionlist = list(state.key[state.value == district])
+    if len(regionlist) == 0:
+        return 1
+    
+    subframe = adjacencyFrame.loc[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)]
+    subedges = subframe[subframe.length != 0][['low','high']]
+    
+    while len(regionlist) > 0:
+        regions += 1
+        currentregion = set()
+        addons = {regionlist[0]}
+        while len(addons) > 0:
+            currentregion = currentregion.union(addons)
+            subsubedges = subedges.loc[subedges.low.isin(currentregion) | subedges.high.isin(currentregion)]
+            if(not subsubedges.empty):
+                addons = set(subsubedges['low']).union(set(subsubedges['high'])) - currentregion
+            else:
+                addons = set()
+        regionlist = [x for x in regionlist if x not in currentregion]
+    return regions
+
+def perimeter_old(state, district):
     regionlist = list(state.key[state.value == district])
     return sum(adjacencyFrame[[(adjacencyFrame['low'][i] in regionlist) != (adjacencyFrame['high'][i] in regionlist) \
                                for i in range(adjacencyFrame.shape[0])]]['length'])
 
+def perimeter(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) != adjacencyFrame.high.isin(regionlist)])
+
 def interiorPerimeter(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)])
+
+def interiorPerimeter_old(state, district):
     regionlist = list(state.key[state.value == district])
     return sum(adjacencyFrame[[(adjacencyFrame['low'][i] in regionlist) and (adjacencyFrame['high'][i] in regionlist) \
                                for i in range(adjacencyFrame.shape[0])]]['length'])
+
+def distArea(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(blockstats.ALAND[blockstats.VTD.isin(regionlist)])
 
 def population(state, district):
     return sum(blockstats.POP100[blockstats.VTD.isin(list(state.key[state.value == district]))])
@@ -141,12 +178,17 @@ def efficiency(state, district):
     
     return wastedR-wastedD 
 
-def bizarreness(state, district):
+def bizarreness_old(state, district):
     outer = perimeter(state, district)
     inner = interiorPerimeter(state, district)
     if inner + outer == 0:
         return np.nan
     return outer/(inner + outer)
+
+def bizarreness(state, district):
+    outer = perimeter(state, district)     #Perimeter of district
+    area = distArea(state, district)       #Area of district
+    return outer/(2*np.sqrt(np.pi*area))   #Ratio of perimeter to circumference of circle with same area       
 
 def compactness1(state):
     return sum([perimeter(state, district) for district in range(ndistricts)])/2
@@ -269,6 +311,8 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
+
 
 
 
