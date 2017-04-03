@@ -215,7 +215,7 @@ def goodness(state):
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
 
-def contiguousStart():
+def contiguousStart_old():
     state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
     state.columns = ['key', 'value']
     subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
@@ -243,7 +243,7 @@ def contiguousStart():
             
     return state
 
-def contiguousStart2():
+def contiguousStart2_old():
     state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
     state.columns = ['key', 'value']
     subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
@@ -281,6 +281,48 @@ def contiguousStart2():
             else:
                 state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
             
+    return state
+
+
+
+def contiguousStart():
+    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
+    state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+    
+    missingdist = range(ndistricts)
+    assignments = np.random.choice(state.key, ndistricts)
+    state.value[state.key.isin(assignments)] = missingdist
+    #Assign a single precinct to each CD.
+    
+    tbdDists = set(state,key)
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while ndistricts in set(state['value']):
+        
+        targdistr = pops.index(min(pops))
+        
+        subframe = state.loc[state.value!=ndistricts]
+        
+    #    relevantAdjacencies = subAdj.loc[(subAdj.low.isin(tbdDists)) != (subAdj.high.isin(tbdDists))]
+        #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
+        
+        relevantAdjacencies = subAdj.loc[((subAdj.low.isin(state.key[state.value == targdistr])) & (subAdj.high.isin(tbdDists))) |
+                                         ((subAdj.high.isin(state.key[state.value == targdistr])) & (subAdj.low.isin(tbdDists)))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
+        
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            temp = relevantAdjacencies.loc[np.random.choice(relevantAdjacencies.index)]
+            if temp.high in tbdDists:
+                state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+                pops[targdistr] = pops[targdistr] + blockstats.POP100[temp.high]
+            else:
+                state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+                pops[targdistr] = pops[targdistr] + blockstats.POP100[temp.low]
+    
     return state
 
 ###############################
