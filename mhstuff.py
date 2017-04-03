@@ -54,16 +54,16 @@ def neighbor(state):
     #If we've blobbed out some districts, we wants to behave differently
     
     if len(missingdist) == 0:
-        switchedge = np.random.choice(adjacencyFrame.index[~adjacencyFrame.isSame])
+        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
 
-        lownode  = adjacencyFrame['low'][switchedge]
-        highnode = adjacencyFrame['high'][switchedge]
+        lownode  = adjacencyFrame.low[switchedge]
+        highnode = adjacencyFrame.high[switchedge]
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
 
         if random.random() < 0.5:
             newstate.value[newstate.key ==  lownode] = (newstate[newstate.key == highnode].value).item()
             checks = adjacencyFrame.index[((adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)) & \
-                                          (~adjacencyFrame.isSame)]
+                                          (-(adjacencyFrame.isSame == 1))]
             adjacencyFrame.isSame[((adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)) & \
                                   adjacencyFrame.isSame] = False
             adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == adjacencyFrame.low[j]].item() == \
@@ -71,7 +71,7 @@ def neighbor(state):
         else:
             newstate.value[newstate.key == highnode] = (newstate[newstate.key ==  lownode].value).item()
             checks = adjacencyFrame.index[((adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)) & \
-                                          (~adjacencyFrame.isSame)]
+                                          (-(adjacencyFrame.isSame == 1))]
             adjacencyFrame.isSame[((adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)) & \
                                   adjacencyFrame.isSame] = False
             adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == adjacencyFrame.low[j]].item() == \
@@ -311,6 +311,13 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
+
+
+
+
+
+
 
 
 

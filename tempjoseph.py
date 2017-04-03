@@ -13,9 +13,16 @@ plt.bar(range(1, len(dump) + 1), dump)
 outliers = [node for node in dangus if node[1] > 15]
 sum(x[1] for x in dangus)
 
-starttime = time.clock()
+runtimes = np.array([float(0)]*10)
 
-goodness(starting_state)
+for i in range(10):
+    starttime = time.clock()
+    
+    color_these_states(g, [runningState], foldername, step+1)
+    
+    end = time.clock()
+    runtimes[i] = end - starttime
+    print(runtimes[i])
 
-end = time.clock()
-runtime = end - starttime
+
+

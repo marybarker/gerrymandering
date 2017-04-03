@@ -7,7 +7,7 @@ import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import colorsys
-
+plt.rcParams['agg.path.chunksize'] = 1000
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """   make a  list of all voting tabulation districts   """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
@@ -193,10 +193,6 @@ def colorDict(n):
 def color_these_states(geom_to_plot, list_of_states, foldername, number):
     colors = colorDict(ndistricts)
     #colors = {0:'yellow',1:'green'}
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_xlim(geom_to_plot['xlim'])
-    ax.set_ylim(geom_to_plot['ylim'])
     #ax.set_xlim([-71.8, -71.2])
     #ax.set_ylim([42.6, 43.2])
 
@@ -204,6 +200,12 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
     names = geom_to_plot['names']
 
     for i in range(len(list_of_states)):#state in list_of_states:
+    
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_xlim(geom_to_plot['xlim'])
+        ax.set_ylim(geom_to_plot['ylim'])
+        
         this_state = list_of_states[i]
         redistricting = this_state[0]
         for p in range(len(paths)):
@@ -214,7 +216,10 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
             ax.add_patch(patch)
         ax.set_aspect(1.0)
         plt.savefig(foldername+'output%04d.png'%(number+i))
+        plt.clf()
+        del fig
         #plt.show()
+    
 
 """ NOW USE ALL OF THE FUNCTIONS:"""
 
@@ -338,6 +343,13 @@ f2 = faulty_feats[1]
 g1 = f1.geometry()
 g2 = f2.geometry()
 """
+
+
+
+
+
+
+
 
 
 
