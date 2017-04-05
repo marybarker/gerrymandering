@@ -25,7 +25,7 @@ def MH(start, steps, neighbor, goodness, moveprob):
         possible_goodness = goodness(possible)
         if best_goodness < possible_goodness:
             best_state = possible.copy()
-            best_-goodness = possible_goodness
+            best_goodness = possible_goodness
         if random.random() < moveprob(current_goodness, possible_goodness):
             if current_goodness < possible_goodness :
                 better_hops += 1
@@ -285,55 +285,37 @@ def contiguousStart2():
 
 ###############################
 
-"""
 
-#Lookup number of congressional districts state gets
-cdtable = pd.read_csv('../../cdbystate1.txt', '\t')
-ndistricts = int(cdtable[cdtable['STATE']=='NH'].CD)
+Class State():
 
-#Lookup number of VTDs state has
-ds = ogr.Open("./nh_final.shp")
-nlay = ds.GetLayerCount()
-lyr = ds.GetLayer(0)
-nvtd = len(lyr)
+    def contiguousStart():
+        
 
-#Read adjacency frame
-adjacencyFrame = pd.read_csv('../HarvardData/VTDconnections.csv')
-adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
-adjacencyFrame.columns = ['low', 'high', 'length']
-adjacencyFrame.low  = [x[5:] for x in adjacencyFrame.low]
-adjacencyFrame.high = [x[5:] for x in adjacencyFrame.high]
+    def __init__(self, demographics_file, connectivities_file, stateName, ndistricts, startingState = 'None')
 
-#Read blockstats
-blockstats = pd.read_csv("../HarvardData/NHVTDstats.csv")
-blockstats = blockstats.drop('Unnamed: 0', 1)
-blockstats.set_index(blockstats.VTD)
+        blockstats = pd.read_csv(demographics_file)
+        blockstats = blockstats.drop('Unnamed: 0', 1)
+        blockstats = blockstats.set_index(blockstats.VTD)
 
-totalpopulation = sum(blockstats.population)
-"""
+        self.precinctInfo = blockstats
+        self.totalpopulation = sum(blockstats.population)
+        self.nprecincts = len(blockstats.VTD)
+        self.ndistricts = ndistricts
 
+        remove(blockstats)
+        
+        if startingState == 'None':
+            self.runningState = self.contiguousStart()
+        else:
+            self.runningState = startingState
 
+        temp = dict(zip(self.runningState.key, self.runningState.value))
 
+        self.adjacencyFrame = pd.read_csv(connectivities_file)
+        self.adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
+        self.adjacencyFrame.columns = ['low', 'high', 'length']
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.adjacencyFrame['lowdist']  = adjacencyFrame.low.replace(temp)
+        self.adjacencyFrame['highdist'] = adjacencyFrame.high.replace(temp)
 
 
