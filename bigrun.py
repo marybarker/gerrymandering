@@ -59,8 +59,9 @@ walker=1
 numsteps = 10
 numplots = 100
 
-starting_state = pd.read_csv('./startingPoints/start23.csv')
-starting_state = starting_state.drop('Unnamed: 0', 1)
+starting_state = pd.read_csv('./farster3/state0.csv')
+starting_state = pd.read_csv('./farster3/state5100.csv')
+#starting_state = starting_state.drop('Unnamed: 0', 1)
 #starting_state = contiguousStart2()
 #starting_state.columns = ['key', 'value']
 
@@ -71,7 +72,7 @@ isSame = lowdists==highdists
 adjacencyFrame['isSame'] = isSame
 
 runningState = (starting_state.copy(), 1)
-color_these_states(g, [runningState], foldername, 0)
+color_these_states(g, [runningState], foldername, 5100)
 pd.DataFrame(runningState[0]).to_csv(foldername+"state0.csv", index = False)
 
 
