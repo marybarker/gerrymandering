@@ -215,107 +215,100 @@ def goodness(state):
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
 
-def contiguousStart():
-    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
-    state.columns = ['key', 'value']
-    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
-
-    missingdist = set(range(ndistricts))
-    while len(list(missingdist)) > 0:
-        state.value[random.randint(0,nvtd-1)] = list(missingdist)[0]
-        missingdist = set.difference(set(range(ndistricts)), set(state['value']))
-    #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
-    
-    while ndistricts in set(state['value']):
-         
-        subframe = state.loc[state.value!=ndistricts]
-        detDists = set(subframe.key)
-        tbdDists = set.difference(set(state.key), detDists)
-        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
-        #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
-        
-        #choose entry in relevantAdjacencies and switch the value of the other node.
-        temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
-        if temp.high in tbdDists:
-            state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
-        else:
-            state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
-            
-    return state
-
-def contiguousStart2():
-    state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
-    state.columns = ['key', 'value']
-    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
-    
-    missingdist = set(range(ndistricts))
-    while len(list(missingdist)) > 0:
-        state.value[random.randint(0,nvtd-1)] = list(missingdist)[0]
-        missingdist = set.difference(set(range(ndistricts)), set(state['value']))
-    #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
-    
-    pops = [population(state,x) for x in range(ndistricts)]
-    
-    while ndistricts in set(state['value']):
-        
-        targdistr = pops.index(min(pops))
-        
-        subframe = state.loc[state.value!=ndistricts]
-        detDists = set(subframe.key)
-        tbdDists = set.difference(set(state.key), detDists)
-        relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
-        #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
-        curRegion = state.key[state.value == targdistr]
-        relevantAdjacencies = subAdj.loc[((subAdj.low.isin(curRegion)) & (subAdj.high.isin(tbdDists))) |
-                                         ((subAdj.high.isin(curRegion)) & (subAdj.low.isin(tbdDists)))]
-        #Adjacencies where either low or high are in the region, but the other is unassigned
-        
-        if relevantAdjacencies.shape[0] == 0 :
-            pops[targdistr] = float('inf')
-        else :
-            #choose entry in relevantAdjacencies and switch the value of the other node.
-            temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
-            if temp.high in tbdDists:
-                state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
-                pops[targdistr] = pops[targdistr] + blockstats.POP100[temp.high]
-            else:
-                state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
-            
-    return state
-
 ###############################
 
+class Configuration():
 
-Class State():
+    # globals--for all class instances.
+    precinctInfo = pd.DataFrame()
+    adjacencyFrame = pd.DataFrame()
+    nDistricts = 0
+    nPrecincts = 0
+    stepsTaken = 0
 
-    def contiguousStart():
-        
 
-    def __init__(self, demographics_file, connectivities_file, stateName, ndistricts, startingState = 'None')
-
+    def __init__(self, demographics_file, connectivities_file, stateName, ndistricts, startingState = 0):
+        global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
         blockstats = pd.read_csv(demographics_file)
         blockstats = blockstats.drop('Unnamed: 0', 1)
         blockstats = blockstats.set_index(blockstats.VTD)
+        blockstats.rename(columns={'POP100':'population'}, inplace=True)
+        precinctInfo = blockstats.copy()
 
-        self.precinctInfo = blockstats
-        self.totalpopulation = sum(blockstats.population)
-        self.nprecincts = len(blockstats.VTD)
-        self.ndistricts = ndistricts
+        self.totalpopulation = sum(precinctInfo.population)
+        nPrecincts = len(precinctInfo.VTD)
+        nDistricts = ndistricts
+        del blockstats
 
-        remove(blockstats)
+        adjacencyFrame = pd.read_csv(connectivities_file)
+        adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
+        adjacencyFrame.columns = ['low', 'high', 'length']
+
+        self.runningState = 0
+
+    def contiguousStart(self):
+        global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
+
+        state = pd.DataFrame([[precinctInfo.VTD[i], nDistricts] for i in range(nPrecincts)])
+        state.columns = ['key', 'value']
+        subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
         
-        if startingState == 'None':
-            self.runningState = self.contiguousStart()
+        missingdist = set(range(nDistricts))
+        while len(list(missingdist)) > 0:
+            state.value[random.randint(0,nPrecincts-1)] = list(missingdist)[0]
+            missingdist = set.difference(set(range(nDistricts)), set(state['value']))
+        #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
+        
+        pops = [population(state,x) for x in range(nDistricts)]
+        
+        while nDistricts in set(state['value']):
+            
+            targdistr = pops.index(min(pops))
+            
+            subframe = state.loc[state.value!=nDistricts]
+            detDists = set(subframe.key)
+            tbdDists = set.difference(set(state.key), detDists)
+            relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
+            #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
+            curRegion = state.key[state.value == targdistr]
+            relevantAdjacencies = subAdj.loc[((subAdj.low.isin(curRegion)) & (subAdj.high.isin(tbdDists))) |
+                                             ((subAdj.high.isin(curRegion)) & (subAdj.low.isin(tbdDists)))]
+            #Adjacencies where either low or high are in the region, but the other is unassigned
+            
+            if relevantAdjacencies.shape[0] == 0 :
+                pops[targdistr] = float('inf')
+            else :
+                #choose entry in relevantAdjacencies and switch the value of the other node.
+                temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
+                if temp.high in tbdDists:
+                    state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+                    pops[targdistr] = pops[targdistr] + precinctInfo.population[temp.high]
+                else:
+                    state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+        self.runningState = state
+
+        #return state
+
+    def starting_state(self, startingState = 0):
+        global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
+
+        if startingState != 0:
+            self.runningState = pd.read_csv(startingState)
         else:
-            self.runningState = startingState
+            self.runningState = self.contiguousStart()
+
 
         temp = dict(zip(self.runningState.key, self.runningState.value))
 
-        self.adjacencyFrame = pd.read_csv(connectivities_file)
-        self.adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
-        self.adjacencyFrame.columns = ['low', 'high', 'length']
+        adjacencyFrame['lowdist']  = adjacencyFrame.low.replace(temp)
+        adjacencyFrame['highdist'] = adjacencyFrame.high.replace(temp)
 
-        self.adjacencyFrame['lowdist']  = adjacencyFrame.low.replace(temp)
-        self.adjacencyFrame['highdist'] = adjacencyFrame.high.replace(temp)
+
+
+    # initialize state space contiguously
+
+thing = Configuration('/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv', '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv', 'PA', 18)
+
+thing.starting_state()
 
 
