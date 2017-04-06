@@ -9,14 +9,6 @@ import os
 
 class Configuration():
 
-    # globals--for all class instances.
-    precinctInfo = pd.DataFrame()
-    adjacencyFrame = pd.DataFrame()
-    nDistricts = 0
-    nPrecincts = 0
-    stepsTaken = 0
-
-,
     def __init__(self, demographics_file, connectivities_file, stateName, ndistricts, startingState = 0):
         global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
         blockstats = pd.read_csv(demographics_file)
@@ -26,19 +18,24 @@ class Configuration():
         precinctInfo = blockstats.copy()
 
         self.totalPopulation = sum(precinctInfo.population)
-        nPrecincts = len(precinctInfo.VTD)
-        nDistricts = ndistricts
+        self.nPrecincts = len(precinctInfo.VTD)
+        self.nDistricts = ndistricts
         del blockstats
 
-        adjacencyFrame = pd.read_csv(connectivities_file)
-        adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
-        adjacencyFrame.columns = ['low', 'high', 'length']
+        self.adjacencyFrame = pd.read_csv(connectivities_file)
+        self.adjacencyFrame = self.adjacencyFrame.drop('Unnamed: 0', 1)
+        #self.adjacencyFrame.rename(columns={'lo':'low'},inplace=True)
+        self.adjacencyFrame.columns = ['low', 'high', 'length']
 
         self.runningState = 0
         self.exploration = 1000.0
         self.stateConts = []
         self.stateComps = []
         self.statePops = []
+
+        self.precinctInfo = pd.read_csv(demographics_file)
+        self.stepsTaken = 0
+
 
     def MH(self, steps):
         #Takes a number of steps from the current state.
@@ -143,14 +140,14 @@ class Configuration():
     
     def distArea(self, state, district):
         regionlist = list(state.key[state.value == district])
-        return sum(precinctInfo.ALAND[precinctInfo.VTD.isin(regionlist)])
+        return sum(self.precinctInfo.ALAND[self.precinctInfo.VTD.isin(regionlist)])
     
     def population(self, state, district):
-        return sum(precinctInfo.population[precinctInfo.VTD.isin(list(state.key[state.value == district]))])
+        return sum(self.precinctInfo.population[self.precinctInfo.VTD.isin(list(state.key[state.value == district]))])
     
     def efficiency(self, state, district):
         #returns difference in percentage of votes wasted.  Negative values benefit R.
-        subframe = precinctInfo.loc[precinctInfo.VTD.isin(list(state.key[state.value == district]))]
+        subframe = self.precinctInfo.loc[self.precinctInfo.VTD.isin(list(state.key[state.value == district]))]
         rvotes = sum(subframe['repvotes'])
         dvotes = sum(subframe['demvotes'])
         
@@ -190,25 +187,24 @@ class Configuration():
 
 
     def contiguousStart(self):
-        global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
 
-        state = pd.DataFrame([[precinctInfo.VTD[i], nDistricts] for i in range(nPrecincts)])
+        state = pd.DataFrame([[self.precinctInfo.VTD[i], self.nDistricts] for i in range(self.nPrecincts)])
         state.columns = ['key', 'value']
-        subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+        subAdj = self.adjacencyFrame.loc[self.adjacencyFrame.length != 0]
         
-        missingdist = set(range(nDistricts))
+        missingdist = set(range(self.nDistricts))
         while len(list(missingdist)) > 0:
-            state.value[random.randint(0,nPrecincts-1)] = list(missingdist)[0]
-            missingdist = set.difference(set(range(nDistricts)), set(state['value']))
+            state.value[random.randint(0,self.nPrecincts-1)] = list(missingdist)[0]
+            missingdist = set.difference(set(range(self.nDistricts)), set(state['value']))
         #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
         
-        pops = [self.population(state,x) for x in range(nDistricts)]
+        pops = [self.population(state,x) for x in range(self.nDistricts)]
         
-        while nDistricts in set(state['value']):
+        while self.nDistricts in set(state['value']):
             
             targdistr = pops.index(min(pops))
             
-            subframe = state.loc[state.value!=nDistricts]
+            subframe = state.loc[state.value!=self.nDistricts]
             detDists = set(subframe.key)
             tbdDists = set.difference(set(state.key), detDists)
             relevantAdjacencies = subAdj.loc[(subAdj.low.isin(detDists)) != (subAdj.high.isin(detDists))]
@@ -225,30 +221,27 @@ class Configuration():
                 temp = relevantAdjacencies.loc[relevantAdjacencies.index[random.randint(0,relevantAdjacencies.shape[0]-1)]]
                 if temp.high in tbdDists:
                     state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
-                    pops[targdistr] = pops[targdistr] + precinctInfo.population[temp.high]
+                    pops[targdistr] = pops[targdistr] + self.precinctInfo.population[temp.high]
                 else:
                     state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
         #self.runningState = state
         return state
 
     def startingState(self, starting_state = 0):
-        global nPrecincts, nDistricts, precinctInfo, adjacencyFrame
-
         if starting_state != 0:
-            self.runningState = pd.read_csv(startingState)
+            self.runningState = pd.read_csv(starting_state)
         else:
             self.runningState = self.contiguousStart()
 
-
         temp = dict(zip(self.runningState.key, self.runningState.value))
 
-        adjacencyFrame['lowdist']  = adjacencyFrame.low.replace(temp)
-        adjacencyFrame['highdist'] = adjacencyFrame.high.replace(temp)
-        adjacencyFrame['isSame'] = (adjacencyFrame.lowdist == adjacencyFrame.highdist)
+        self.adjacencyFrame['lowdist']  = self.adjacencyFrame.low.replace(temp)
+        self.adjacencyFrame['highdist'] = self.adjacencyFrame.high.replace(temp)
+        self.adjacencyFrame['isSame'] = (self.adjacencyFrame.lowdist == self.adjacencyFrame.highdist)
 
-        self.stateConts = [contiguousness(self.runningState, i) for i in range(ndistricts)]
-        self.statePops  = [population(self.runningState, i) for i in range(ndistricts)]
-        self.stateComps   = [compactness2(self.runningState, i) for i in range(ndistricts)]
+        self.stateConts = [self.contiguousness(self.runningState, i) for i in range(self.nDistricts)]
+        self.statePops  = [self.population(self.runningState, i) for i in range(self.nDistricts)]
+        self.stateComps   = [self.compactness2(self.runningState, i) for i in range(self.nDistricts)]
 
 
 
@@ -257,7 +250,9 @@ class Configuration():
     # initialize state space contiguously
 
 #thing = Configuration('/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv', '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv', 'PA', 18)
-thing = Configuration('/home/thisisme/Documents/NewHampshire/HarvardData/NHVTDstats.csv', '/home/thisisme/Documents/NewHampshire/HarvardData/VTDconnections.csv', 'NH', 18 )
+file1 = '/home/thisisme/Documents/NewHampshire/HarvardData/NHVTDstats.csv'
+file2 = '/home/thisisme/Documents/NewHampshire/HarvardData/VTDconnections.csv'
+thing = Configuration(file1, file2, 'NH', 18 )
 thing.startingState()
 
 thing.runningState
