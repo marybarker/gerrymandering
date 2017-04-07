@@ -29,6 +29,13 @@ class Configuration():
             self.adjacencyFrame.columns = ['low', 'high', 'length']
     
             self.runningState = starting_state
+            if not isinstance(starting_state, int):
+                temp = dict(zip(self.runningState.key, self.runningState.value))
+        
+                self.adjacencyFrame['lowdist']  = self.adjacencyFrame.low.replace(temp)
+                self.adjacencyFrame['highdist'] = self.adjacencyFrame.high.replace(temp)
+                self.adjacencyFrame['isSame'] = (self.adjacencyFrame.lowdist == self.adjacencyFrame.highdist)
+                
             self.exploration = 1000.0
             self.stateConts = []
             self.stateComps = []
@@ -72,45 +79,43 @@ class Configuration():
     def neighbor(self, state):
 
         newstate = state.copy()
-        newself = self.copy()
         missingdist = set.difference(set(range(self.nDistricts)), set(state.value))
         #If we've blobbed out some districts, we wants to behave differently
         
         if len(missingdist) == 0:
-            switchedge = np.random.choice(newself.adjacencyFrame.index[-(newself.adjacencyFrame.isSame == 1)])
+            switchedge = np.random.choice(self.adjacencyFrame.index[-(self.adjacencyFrame.isSame == 1)])
             
-            lownode  = newself.adjacencyFrame.low[switchedge]
-            highnode = newself.adjacencyFrame.high[switchedge]
+            lownode  = self.adjacencyFrame.low[switchedge]
+            highnode = self.adjacencyFrame.high[switchedge]
             #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
 
             if random.random() < 0.5:
                 newstate.value[newstate.key ==  lownode] = (newstate[newstate.key == highnode].value).item()
-                checks = newself.adjacencyFrame.index[((newself.adjacencyFrame.low == lownode) | (newself.adjacencyFrame.high == lownode)) & \
-                                                   (-(newself.adjacencyFrame.isSame == 1))]
-                newself.adjacencyFrame.isSame[((newself.adjacencyFrame.low == lownode) | (newself.adjacencyFrame.high == lownode)) & \
-                                           newstate.adjacencyFrame.isSame] = False
-                newself.adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == newself.adjacencyFrame.low[j]].item() == \
-                                                        newstate.value[newstate.key == newself.adjacencyFrame.high[j]].item() ) for j in checks]
+                #checks = newself.adjacencyFrame.index[((newself.adjacencyFrame.low == lownode) | (newself.adjacencyFrame.high == lownode)) & \
+                #                                   (-(newself.adjacencyFrame.isSame == 1))]
+                #newself.adjacencyFrame.isSame[((newself.adjacencyFrame.low == lownode) | (newself.adjacencyFrame.high == lownode)) & \
+                #                           newstate.adjacencyFrame.isSame] = False
+                #newself.adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == newself.adjacencyFrame.low[j]].item() == \
+                #                                        newstate.value[newstate.key == newself.adjacencyFrame.high[j]].item() ) for j in checks]
             else:
                 newstate.value[newstate.key == highnode] = (newstate[newstate.key ==  lownode].value).item()
-                checks = newself.adjacencyFrame.index[((newself.adjacencyFrame.low == highnode) | (newself.adjacencyFrame.high == highnode)) & \
-                                                   (-(newself.adjacencyFrame.isSame == 1))]
-                newself.adjacencyFrame.isSame[((newself.adjacencyFrame.low == highnode) | (newself.adjacencyFrame.high == highnode)) & \
-                                           newself.adjacencyFrame.isSame] = False
-                newself.adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == newself.adjacencyFrame.low[j]].item() == \
-                                                        newstate.value[newstate.key == newself.adjacencyFrame.high[j]].item() ) for j in checks]
+                #checks = newself.adjacencyFrame.index[((newself.adjacencyFrame.low == highnode) | (newself.adjacencyFrame.high == highnode)) & \
+                #                                   (-(newself.adjacencyFrame.isSame == 1))]
+                #newself.adjacencyFrame.isSame[((newself.adjacencyFrame.low == highnode) | (newself.adjacencyFrame.high == highnode)) & \
+                #                           newself.adjacencyFrame.isSame] = False
+                #newself.adjacencyFrame.isSame[checks] = [( newstate.value[newstate.key == newself.adjacencyFrame.low[j]].item() == \
+                #                                        newstate.value[newstate.key == newself.adjacencyFrame.high[j]].item() ) for j in checks]
             #We want to assign both nodes the same value, and there's a 50% chance for each value being chosen.
         else:
             #If there are some districts missing, 
             changenode = newstate.key.sample(1)
             newstate.value[newstate.key == changenode] = list(missingdist)[0]
             #We want to select one randomly, and make it one of the missing districts
-            newself.adjacencyFrame.isSame[(newself.adjacencyFrame.low == changenode) | \
-                                       (newstate.adjacencyFrame.high == changenode)] = False
+            #newself.adjacencyFrame.isSame[(newself.adjacencyFrame.low == changenode) | \
+            #                           (newstate.adjacencyFrame.high == changenode)] = False
             # And none of its adjacencies match anymore.
-        newself.runningState = newstate
-
-        return newself
+        #newself.runningState = newstate
+        return newstate
     
     def contiguousness(self, state, district):
     
@@ -247,6 +252,16 @@ class Configuration():
         self.statePops  = [self.population(self.runningState, i) for i in range(self.nDistricts)]
         self.stateComps   = [self.compactness2(self.runningState) for i in range(self.nDistricts)]
 
+    def updateFromState(self):
+        temp = dict(zip(self.runningState.key, self.runningState.value))
+
+        self.adjacencyFrame['lowdist']  = self.adjacencyFrame.low.replace(temp)
+        self.adjacencyFrame['highdist'] = self.adjacencyFrame.high.replace(temp)
+        self.adjacencyFrame['isSame'] = (self.adjacencyFrame.lowdist == self.adjacencyFrame.highdist)
+
+        self.stateConts = [self.contiguousness(self.runningState, i) for i in range(self.nDistricts)]
+        self.statePops  = [self.population(self.runningState, i) for i in range(self.nDistricts)]
+        self.stateComps   = [self.compactness2(self.runningState) for i in range(self.nDistricts)]
 
     def MH(self, steps):
         #Takes a number of steps from the current state.
@@ -273,6 +288,7 @@ class Configuration():
             #    self.stays += 1
             self.stepsTaken += 1
         self.runningState = best_state.copy()
+        self.updateFromState()
         return 
     
     #######################################################################
@@ -285,11 +301,16 @@ class Configuration():
 #file1 = '/home/thisisme/Documents/gerrymandering/Pennsylvania/vtdstats.csv'
 #file2 = '/home/thisisme/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv'
 #file3 = pd.read_csv('/home/thisisme/Documents/walks_on_starts/starter_0_steps_0.csv')
-#file1 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv' #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/NHVTDstats.csv'
-#file2 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv'   #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/VTDconnections.csv'
+file1 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv' #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/NHVTDstats.csv'
+file2 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv'   #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/VTDconnections.csv'
+file3 = pd.read_csv('/home/tsugrad/Documents/gerrymandering/Pennsylvania/walks_on_starts/walked1000_on1.csv')
 thing = Configuration(file1, file2, 18, file3)
-thing.MH(1)
 
+starttime = time.clock()
+for i in range(20):
+    thing.MH(10)
+endtime = time.clock()
+print 'took ', endtime - starttime, 'clock things'
 
 
 
