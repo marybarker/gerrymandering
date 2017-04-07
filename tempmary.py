@@ -15,7 +15,8 @@ class Configuration():
         blockstats = blockstats.drop('Unnamed: 0', 1)
         blockstats = blockstats.set_index(blockstats.VTD)
         blockstats.rename(columns={'POP100':'population'}, inplace=True)
-        precinctInfo = blockstats.copy()
+
+        self.precinctInfo = blockstats.copy()
 
         self.totalPopulation = sum(precinctInfo.population)
         self.nPrecincts = len(precinctInfo.VTD)
@@ -33,7 +34,6 @@ class Configuration():
         self.stateComps = []
         self.statePops = []
 
-        self.precinctInfo = pd.read_csv(demographics_file)
         self.stepsTaken = 0
 
 
@@ -199,9 +199,9 @@ class Configuration():
         #Above loop gives each district exactly one VTD.  The rest will be equal to ndistricts
         
         pops = [self.population(state,x) for x in range(self.nDistricts)]
-        
+
         while self.nDistricts in set(state['value']):
-            
+
             targdistr = pops.index(min(pops))
             
             subframe = state.loc[state.value!=self.nDistricts]
@@ -224,7 +224,7 @@ class Configuration():
                     pops[targdistr] = pops[targdistr] + self.precinctInfo.population[temp.high]
                 else:
                     state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
-        #self.runningState = state
+        
         return state
 
     def startingState(self, starting_state = 0):
@@ -241,7 +241,7 @@ class Configuration():
 
         self.stateConts = [self.contiguousness(self.runningState, i) for i in range(self.nDistricts)]
         self.statePops  = [self.population(self.runningState, i) for i in range(self.nDistricts)]
-        self.stateComps   = [self.compactness2(self.runningState, i) for i in range(self.nDistricts)]
+        self.stateComps   = [self.compactness2(self.runningState) for i in range(self.nDistricts)]
 
 
 
@@ -252,7 +252,9 @@ class Configuration():
 #thing = Configuration('/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv', '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv', 'PA', 18)
 file1 = '/home/thisisme/Documents/NewHampshire/HarvardData/NHVTDstats.csv'
 file2 = '/home/thisisme/Documents/NewHampshire/HarvardData/VTDconnections.csv'
-thing = Configuration(file1, file2, 'NH', 18 )
+file1 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/vtdstats.csv' #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/NHVTDstats.csv'
+file2 = '/home/tsugrad/Documents/gerrymandering/Pennsylvania/PRECINCTconnections.csv'   #'/home/tsugrad/Documents/gerrymandering/NewHampshire/HarvardData/VTDconnections.csv'
+thing = Configuration(file1, file2, 'PA', 18 )
 thing.startingState()
 
 thing.runningState
