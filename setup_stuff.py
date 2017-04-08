@@ -42,19 +42,13 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        if stateSHORT == 'PA':
-            name = str(f1['GEOID10']) + f1['NAME10']
-        elif stateSHORT == 'NH':
-            name = str(f1['GEOID10'])
+        name = str(f1['GEOID10']) + f1['NAME10']
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                if stateSHORT == 'PA':
-                    l2.append(str(f2['GEOID10']) + f2['NAME10'])
-                elif stateSHORT == 'NH':
-                    l2.append(str(f2['GEOID10']))
+                l2.append(str(f2['GEOID10']) + f2['NAME10'])
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
     newthing.columns=['lo','hi']
     return newthing
@@ -79,10 +73,7 @@ def boundaries(mylistoffeatures):
                         point = ring.GetPoint(j)
                         x.append(point[0])
                         y.append(point[1])
-            if stateSHORT == 'PA':
-                boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
-            elif stateSHORT == 'NH':
-                boundaries[str(feat['GEOID10'])] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
         elif gtype == 3: # polygon
             x = []
             y = []
@@ -91,16 +82,10 @@ def boundaries(mylistoffeatures):
                     point = ring.GetPoint(i)
                     x.append(point[0])
                     y.append(point[1])
-            if stateSHORT == 'PA':
-                boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
-            elif stateSHORT == 'NH':
-                boundaries[str(feat['GEOID10'])] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
         else:
             b = geom.GetBoundary()
-            if stateSHORT == 'PA':
-                boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
-            elif stateSHORT == 'NH':
-                boundaries[str(feat['GEOID10'])] = b.GetPoints()
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
     return boundaries
 
 
@@ -138,10 +123,7 @@ def package_vtds(filetouse):
     paths = []
 
     for vtd in lyr:
-        if stateSHORT == 'PA':
-            name = str(vtd['GEOID10']) + vtd['NAME10']
-        elif stateSHORT == 'NH':
-            name = str(vtd['GEOID10'])
+        name = str(vtd['GEOID10']) + vtd['NAME10']
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -208,6 +190,8 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         
         this_state = list_of_states[i]
         redistricting = this_state[0]
+        redistricting = redistricting.drop('Unnamed: 0', 1)
+        redistricting.columns = ['key', 'value']
         for p in range(len(paths)):
             path = paths[p]
             
@@ -215,31 +199,34 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
             patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
             ax.add_patch(patch)
         ax.set_aspect(1.0)
-        plt.savefig(foldername+'output%04d.png'%(number+i))
-        plt.clf()
-        del fig
-        #plt.show()
+        plt.show()
+        #plt.savefig(foldername+'output%04d.png'%(number+i))
+        #plt.clf()
+        #del fig
     
+
+precinctBoundaryFile =  'precinct/precinct.shp'
+precinctStatsFile = 'vtdstats.csv'
+precinctConnectionsFile = 'PRECINCTconnections.csv'
+
+ds = ogr.Open(precinctBoundaryFile)
+lyr = ds.GetLayer(0)
+precincts = features(lyr)
+precinctBoundaries = boundaries(precincts)
+precinctStats = pd.read_csv(precinctStatsFile)
+precinctConns = pd.read_csv(precinctConnectionsFile)
+
+# need: 
+#  - contiguous start w r t shapefiles (globbed out as before, or using an overlaid shape? )
+#  - way of associating precinct stats wtih the features of the shapefile
+
+
+
+
 
 """ NOW USE ALL OF THE FUNCTIONS:"""
 
 """
-blockfile = 'block/block.shp'
-blocktotabdistrict = pd.read_csv('pa_block_to_vtd.txt')
-state='NewHampshire/'
-state='Pennsylvania/'
-blockfile = '../NewHampshireBlockShapefiles/tl_2016_33_tabblock10.shp'
-vtdfile = ("HarvardData/nh_final.shp")
-
-# current working directory
-os.chdir("/Users/marybarker/Dropbox/Tarleton/forfun/gerrymandering/"+state)
-
-# census block file
-ds = ogr.Open(blockfile)
-lyr = ds.GetLayer(0)
-censusblocks = features(lyr)
-#block_connectivities = create_adjacencies(censusblocks)
-
 # voting tabulation district 
 vtdfile = 'precinct/precinct.shp'
 ds = ogr.Open(vtdfile)
@@ -251,6 +238,12 @@ vtd_connectivities = adjacencies(vtds)
 vtd_connectivities = adjancentEdgeLengths(vtd_connectivities, vtd_boundaries)
 vtd_connectivities.to_csv('NEWVTDconnections.csv')
 
+
+
+
+
+
+# plot neighbors of each VTD
 names = g['names']
 count = 0
 for connection in names:
@@ -265,105 +258,4 @@ for connection in names:
     newframe = pd.DataFrame({'key':names, 'value':colors})
     color_these_states(g, [(newframe, 0)], foldername, count)
 
-names = [str(v['GEOID10'])+v['NAME10'] for v in vtds]
-aland = [v['ALAND10'] for v in vtds]
-awater = [v['AWATER10'] for v in vtds]
-perim = [ToFeet(vtd_boundaries[name]) for name in names]
-population = [v['POP100'] for v in vtds]
-pres_repvotes = [v['USPRV2000'] for v in vtds]
-pres_demvotes = [v['USPDV2000'] for v in vtds]
-
-cong_repvotes = [v['USCRV2000'] for v in vtds]
-cong_demvotes = [v['USCDV2000'] for v in vtds]
-
-sen_repvotes = [v['USSRV2000'] for v in vtds]
-sen_demvotes = [v['USSDV2000'] for v in vtds]
-
-#Office Code Table
-#------------------------------------------------------------
-# 1 USP President of the United States
-# 2 USS United States Senator
-# 3 GOV Governor
-# 4 LTG Lieutenant Governor
-# 5 ATT Attorney General
-# 6 AUD Auditor General
-# 7 TRE State Treasurer
-# 8 SPM Justice of the Supreme Court
-# 9 SPR Judge of the Superior Court
-#10 CCJ Judge of the Commonwealth Court
-#11 USC Representative in Congress
-#12 STS Senator in the General Assembly
-#13 STH Representative in the General Assembly
-
-VTDcsv = pd.DataFrame({
-    'VTD':names, 
-    'ALAND':aland, 
-    'AWATER':awater, 
-    'PERIM':perim, 
-    'POP100':population, 
-    'REP_C':cong_repvotes,
-    'DEM_C':cong_demvotes,
-    'REP_S':sen_repvotes,
-    'DEM_S':sen_demvotes,
-    'REP_P':pres_repvotes,
-    'DEM_P':pres_demvotes
-})
-VTDcsv.to_csv('vtdstats.csv')
-v.keys()
-v['USPDV2000']
-g = package_vtds(vtdfile)
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.set_xlim(g['xlim'])
-ax.set_ylim(g['ylim'])
-paths = g['paths']
-
-for p in range(len(paths)):
-    path = paths[p]
-    patch = mpatches.PathPatch(path,facecolor="green",edgecolor='black')
-    ax.add_patch(patch)
-ax.set_aspect(1.0)
-plt.show()
-
-lyr.ResetReading()
-vtds = features(lyr)
-
-# figuring out which ones are neither polygons nor point files
-for b, val in vtd_boundaries.iteritems():
-    if isinstance(val, list):
-        pass
-    else: 
-        print val, b
-
-faulty_names = ['33015ZZZZZZ', '33017SOME03']
-faulty_feats = [f for f in vtds if f['GEOID10'] in faulty_names]
-f1 = faulty_feats[0]
-f2 = faulty_feats[1]
-g1 = f1.geometry()
-g2 = f2.geometry()
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
