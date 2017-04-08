@@ -304,9 +304,111 @@ Class Configuration():
 
 
 
+#########
 
 
 
+def contiguousStart():
+    
+    #Begin with [ndistricts] different vtds to be the congressional districts.
+    #Keep running list of series which are adjacent to the districts.
+    #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
+    
+    precinctList = list(precinctStats.VTD)
+    state = pd.DataFrame([[precinctList[i], nDistricts] for i in range(0,nPrecincts)])
+    state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+    subAdj['lowdist'] = [nDistricts]*subAdj.shape[0]
+    subAdj['highdist'] = [nDistricts]*subAdj.shape[0]
+    
+    missingdist = range(nDistricts)
+    assignments = np.random.choice(precinctList, nDistricts, replace = False)
+    state.value[state.key.isin(assignments)] = missingdist
+    for i in range(nDistricts):
+        subAdj.lowdist[subAdj.low   == assignments[i]] = i
+        subAdj.highdist[subAdj.high == assignments[i]] = i
+    #Assign a single precinct to each CD.
+    
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while ndistricts in state.value:
+        
+        targdistr = pops.index(min(pops))
+        
+        relevantAdjacencies = subAdj.loc[((subAdj.lowdist == targdistr) & (subAdj.highdist == nDistricts)) |
+                                         ((subAdj.highdist == targdistr) & (subAdj.lowdist == nDistricts))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
+        
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            temp = relevantAdjacencies.loc[np.random.choice(relevantAdjacencies.index)]
+            if temp.highdist == nDistricts:
+                state.value[state.key == temp.high] = targdistr
+                pops[targdistr] = pops[targdistr] + blockstats.population[temp.high]
+                subAdj.lowdist[subAdj.low   == temp.high] = targdistr
+                subAdj.highdist[subAdj.high == temp.high] = targdistr
+            else:
+                state.value[state.key == temp.low] = targdistr
+                pops[targdistr] = pops[targdistr] + blockstats.population[temp.low]
+                subAdj.lowdist[subAdj.low   == temp.low] = targdistr
+                subAdj.highdist[subAdj.high == temp.low] = targdistr
+        print("%d districts left to assign."%(sum(state.value==nDistricts)))
+    return state
+
+dangle = contiguousStart()
+
+#########
+
+def contiguousStart():
+    
+    #Begin with [ndistricts] different vtds to be the congressional districts.
+    #Keep running list of series which are adjacent to the districts.
+    #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
+    
+    precinctList = list(precinctStats.VTD)
+    state = pd.DataFrame([[precinctList[i], nDistricts] for i in range(0,nPrecincts)])
+    state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+    subAdj['lowdist'] = [nDistricts]*subAdj.shape[0]
+    subAdj['highdist'] = [nDistricts]*subAdj.shape[0]
+    
+    missingdist = range(nDistricts)
+    assignments = np.random.choice(precinctList, nDistricts, replace = False)
+    state.value[state.key.isin(assignments)] = missingdist
+    for i in range(nDistricts):
+        subAdj.lowdist[subAdj.low   == assignments[i]] = i
+        subAdj.highdist[subAdj.high == assignments[i]] = i
+    #Assign a single precinct to each CD.
+    
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while nDistricts in set(state.value):
+        
+        targdistr = pops.index(min(pops))
+        
+        relevantAdjacencies = subAdj.loc[((subAdj.lowdist == targdistr) & (subAdj.highdist == nDistricts)) |
+                                         ((subAdj.highdist == targdistr) & (subAdj.lowdist == nDistricts))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
+        
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            changes = set(relevantAdjacencies.low).union(\
+                      set(relevantAdjacencies.high))
+            state.value[state.key.isin(changes)] = targdistr
+            pops[targdistr] = pops[targdistr] + sum(blockstats.population[changes])
+            subAdj.lowdist[subAdj.low.isin(changes)] = targdistr
+            subAdj.highdist[subAdj.high.isin(changes)] = targdistr
+                
+        print("%d districts left to assign."%(sum(state.value==nDistricts)))
+    return state
+
+color_these_states(g, [(state,0)], 'dangus', 72)
+
+###################################
 
 
 

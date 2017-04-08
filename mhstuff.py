@@ -25,7 +25,7 @@ def MH(start, steps, neighbor, goodness, moveprob):
         possible_goodness = goodness(possible)
         if best_goodness < possible_goodness:
             best_state = possible.copy()
-            best_-goodness = possible_goodness
+            best_goodness = possible_goodness
         if random.random() < moveprob(current_goodness, possible_goodness):
             if current_goodness < possible_goodness :
                 better_hops += 1
@@ -161,7 +161,7 @@ def distArea(state, district):
     return sum(blockstats.ALAND[blockstats.VTD.isin(regionlist)])
 
 def population(state, district):
-    return sum(blockstats.POP100[blockstats.VTD.isin(list(state.key[state.value == district]))])
+    return sum(blockstats.population[blockstats.VTD.isin(list(state.key[state.value == district]))])
 
 def efficiency(state, district):
     #returns difference in percentage of votes wasted.  Negative values benefit R.
@@ -285,7 +285,7 @@ def contiguousStart2_old():
 
 
 
-def contiguousStart():
+def contiguousStart3_old():
     state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
     state.columns = ['key', 'value']
     subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
@@ -325,6 +325,52 @@ def contiguousStart():
     
     return state
 
+def contiguousStart():
+    
+    #Begin with [ndistricts] different vtds to be the congressional districts.
+    #Keep running list of series which are adjacent to the districts.
+    #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
+    
+    precinctList = list(precinctStats.VTD)
+    state = pd.DataFrame([[precinctList[i], nDistricts] for i in range(0,nPrecincts)])
+    state.columns = ['key', 'value']
+    subAdj = adjacencyFrame.loc[adjacencyFrame.length != 0]
+    subAdj['lowdist'] = [nDistricts]*subAdj.shape[0]
+    subAdj['highdist'] = [nDistricts]*subAdj.shape[0]
+    
+    missingdist = range(nDistricts)
+    assignments = np.random.choice(precinctList, nDistricts, replace = False)
+    state.value[state.key.isin(assignments)] = missingdist
+    for i in range(nDistricts):
+        subAdj.lowdist[subAdj.low   == assignments[i]] = i
+        subAdj.highdist[subAdj.high == assignments[i]] = i
+    #Assign a single precinct to each CD.
+    
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while nDistricts in set(state.value):
+        
+        targdistr = pops.index(min(pops))
+        
+        relevantAdjacencies = subAdj.loc[((subAdj.lowdist == targdistr) & (subAdj.highdist == nDistricts)) |
+                                         ((subAdj.highdist == targdistr) & (subAdj.lowdist == nDistricts))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
+        
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            changes = set(relevantAdjacencies.low).union(\
+                      set(relevantAdjacencies.high))
+            state.value[state.key.isin(changes)] = targdistr
+            pops[targdistr] = pops[targdistr] + sum(blockstats.population[changes])
+            subAdj.lowdist[subAdj.low.isin(changes)] = targdistr
+            subAdj.highdist[subAdj.high.isin(changes)] = targdistr
+                
+        print("%d districts left to assign."%(sum(state.value==nDistricts)))
+    return state
+
+
 ###############################
 
 """
@@ -353,6 +399,8 @@ blockstats.set_index(blockstats.VTD)
 
 totalpopulation = sum(blockstats.population)
 """
+
+
 
 
 
