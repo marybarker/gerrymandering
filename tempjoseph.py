@@ -255,6 +255,48 @@ Class Configuration():
 
 
 
+    def contiguousStart():
+        state = pd.DataFrame([[precinctInfo.VTD[i], nDistricts] for i in range(0,self.nPrecincts)])
+        state.columns = ['key', 'value']
+        subAdj = self.adjacencyFrame.loc[self.adjacencyFrame.length != 0]
+        
+        missingdist = range(nDistricts)
+        assignments = np.random.choice(state.key, nDistricts)
+        state.value[state.key.isin(assignments)] = missingdist
+        #Assign a single precinct to each CD.
+        
+        tbdDists = set(state.key)
+        pops = [population(state,x) for x in range(nDistricts)]
+        
+        while nDistricts in set(state['value']):
+            
+            targdistr = pops.index(min(pops))
+            
+            subframe = state.loc[state.value!=nDistricts]
+            
+        #    relevantAdjacencies = subAdj.loc[(subAdj.low.isin(tbdDists)) != (subAdj.high.isin(tbdDists))]
+            #adjacencies where either low or high have a value that still has value of ndistricts, but the other doesn't
+            
+            relevantAdjacencies = subAdj.loc[((subAdj.low.isin(state.key[state.value == targdistr])) & (subAdj.high.isin(tbdDists))) |
+                                             ((subAdj.high.isin(state.key[state.value == targdistr])) & (subAdj.low.isin(tbdDists)))]
+            #Adjacencies where either low or high are in the region, but the other is unassigned
+            
+            if relevantAdjacencies.shape[0] == 0 :
+                pops[targdistr] = float('inf')
+            else :
+                #choose entry in relevantAdjacencies and switch the value of the other node.
+                temp = relevantAdjacencies.loc[np.random.choice(relevantAdjacencies.index)]
+                if temp.high in tbdDists:
+                    state.value[state.key == temp.high] = state.value[state.key == temp.low].item()
+                    pops[targdistr] = pops[targdistr] + precinctInfo.POP100[temp.high]
+                    tbdDists.remove(temp.high)
+                else:
+                    state.value[state.key == temp.low] = state.value[state.key == temp.high].item()
+                    pops[targdistr] = pops[targdistr] + precinctInfo.POP100[temp.low]
+                    tbdDists.remove(temp.low)
+        
+        return state
+
 
 
 
@@ -309,3 +351,31 @@ for startingpoint in range(numstates):
     
     color_these_states(g, [runningState], 'farsterplot/', 2500)
 
+
+
+
+def bizarreness(state, district, numlines = 1000):
+    
+    #uses shape file [precinctShapes]
+    
+    vtds = precinctInfo.VTD
+    pvector = np.array([vtds.population], dtype=float)[0,:]/totalPopulation
+    #randomly selects [numlines] pairs of precints based on the discrete distribution
+    # induced by populations.
+    
+    districtShape = reduce(lambda x, y : x.Union(y), [f.geometry() for f in precinctShapes \
+                           if f.GEOID10 + f.NAME10 in set(state.key[state.value == district])])
+    distBounds = districtShape.Boundary()
+    
+    exits = 0
+    
+    for i in range(numlines):
+        pair = np.random.choice(precinctShapes, 2, p = pvector)
+        line = ogr.Geometry(ogr.wkbLineString)
+        line.AddPoint(*pair[0].geometry().Centroid().GetPoint())
+        line.AddPoint(*pair[1].geometry().Centroid().GetPoint())
+        
+        if line.Crosses(distBounds):
+            exits++
+    
+    return float(exits)/numlines
