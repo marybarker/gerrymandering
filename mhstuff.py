@@ -6,7 +6,7 @@ from osgeo import ogr
 import os
 
 ###################################################
-def MH(start, steps, neighbor, goodness, moveprob):
+def MH_old(start, steps, neighbor, goodness, moveprob):
     #  object starting state   |         |
     #         integer steps to be taken for M-H algorithm.
     #                function returning a neighbor of current state
@@ -37,6 +37,43 @@ def MH(start, steps, neighbor, goodness, moveprob):
             stays += 1
     return((best_state, best_goodness, better_hops, worse_hops, stays))
 
+
+############################
+
+def MH(start, steps, neighbor, goodness, moveprob):
+    #  object starting state   |         |
+    #         integer steps to be taken for M-H algorithm.
+    #                function returning a neighbor of current state
+    #                          function for determining goodness.
+    #                                    function which takes goodnesses and returns probabilities.
+    
+    current = start.copy()
+    best_state = start.copy()
+    current_goodness = goodness(current)
+    best_goodness = current_goodness
+    better_hops = 0
+    worse_hops = 0
+    stays = 0
+    for i in range(steps):
+        possible = neighbor(current)
+        possible_goodness = goodness(possible[0])
+        if best_goodness < possible_goodness:
+            best_state = possible[0].copy()
+            best_goodness = possible_goodness
+        if random.random() < moveprob(current_goodness, possible_goodness):
+            if current_goodness < possible_goodness :
+                better_hops += 1
+            else:
+                worse_hops += 1
+            current = possible[0].copy()
+            current_goodness = possible_goodness
+            adjacencyFrame.update(possible[1])
+        else:
+            stays += 1
+    return((best_state, best_goodness, better_hops, worse_hops, stays))
+
+
+
 #######################################################################
 
 def MH_swarm(starts, steps, neighbor, goodness, moveprob):
@@ -47,7 +84,7 @@ def MH_swarm(starts, steps, neighbor, goodness, moveprob):
 
 #######################################################################
 
-def neighbor(state):
+def neighbor_old(state):
     
     newstate = state.copy()
     missingdist = set.difference(set(range(ndistricts)), set(state['value']))
@@ -86,6 +123,58 @@ def neighbor(state):
                               (adjacencyFrame.high == changenode)] = False
         # And none of its adjacencies match anymore.
     return newstate
+
+
+def neighbor(state):
+    
+    newstate = state.copy()
+    missingdist = set.difference(set(range(ndistricts)), set(state['value']))
+    #If we've blobbed out some districts, we wants to behave differently
+    
+    if len(missingdist) == 0:
+        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
+
+        lownode  = adjacencyFrame.low[switchedge]
+        highnode = adjacencyFrame.high[switchedge]
+        #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
+
+        if random.random() < 0.5:
+            
+            switchTo = (newstate[newstate.key == highnode].value).item()
+            
+            proposedChanges = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
+            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
+            
+            newstate.value[newstate.key == lownode] = switchTo
+            proposedChanges.lowdist[proposedChanges.low == lownode] = switchTo
+            proposedChanges.highdist[proposedChanges.high == lownode] = switchTo
+            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
+            #change values in the state as well as the proposedChanges
+            
+        else:
+            
+            switchTo = (newstate[newstate.key == lownode].value).item()
+            
+            proposedChanges = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
+            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
+            
+            newstate.value[newstate.key == highnode] = switchTo
+            proposedChanges.lowdist[proposedChanges.low == highnode] = switchTo
+            proposedChanges.highdist[proposedChanges.high == highnode] = switchTo
+            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
+            #change values in the state as well as the proposedChanges
+            
+    else:
+        #If there are some districts missing, 
+        changenode = newstate.key.sample(1)
+        newstate.value[newstate.key == changenode] = list(missingdist)[0]
+        #We want to select one randomly, and make it one of the missing districts
+        proposedChanges = adjacencyFrame.loc[(adjacencyFrame.low == changenode) | \
+                              (adjacencyFrame.high == changenode)]
+        proposedChanges.isSame = False
+        # And none of its adjacencies match anymore.
+    return (newstate, proposedChanges)
+
 
 def contiguousness_old(state, district):
     
