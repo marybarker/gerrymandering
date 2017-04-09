@@ -453,31 +453,3 @@ for startingpoint in range(numstates):
     
     color_these_states(g, [runningState], 'farsterplot/', 2500)
 
-
-
-
-def bizarreness(state, district, numlines = 1000):
-    
-    #uses shape file [precinctShapes]
-    
-    vtds = precinctInfo.VTD
-    pvector = np.array([vtds.population], dtype=float)[0,:]/totalPopulation
-    #randomly selects [numlines] pairs of precints based on the discrete distribution
-    # induced by populations.
-    
-    districtShape = reduce(lambda x, y : x.Union(y), [f.geometry() for f in precinctShapes \
-                           if f.GEOID10 + f.NAME10 in set(state.key[state.value == district])])
-    distBounds = districtShape.Boundary()
-    
-    exits = 0
-    
-    for i in range(numlines):
-        pair = np.random.choice(precinctShapes, 2, p = pvector)
-        line = ogr.Geometry(ogr.wkbLineString)
-        line.AddPoint(*pair[0].geometry().Centroid().GetPoint())
-        line.AddPoint(*pair[1].geometry().Centroid().GetPoint())
-        
-        if line.Crosses(distBounds):
-            exits++
-    
-    return float(exits)/numlines

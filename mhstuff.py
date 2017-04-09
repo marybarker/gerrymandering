@@ -39,8 +39,7 @@ def MH_old(start, steps, neighbor, goodness, moveprob):
 
 
 ############################
-
-def MH(start, steps, neighbor, goodness, moveprob):
+def MH2_old(start, steps, neighbor, goodness, moveprob):
     #  object starting state   |         |
     #         integer steps to be taken for M-H algorithm.
     #                function returning a neighbor of current state
@@ -72,6 +71,41 @@ def MH(start, steps, neighbor, goodness, moveprob):
             stays += 1
     return((best_state, best_goodness, better_hops, worse_hops, stays))
 
+
+############################
+def MH(start, steps, neighbor, goodness, moveprob):
+    #  object starting state   |         |
+    #         integer steps to be taken for M-H algorithm.
+    #                function returning a neighbor of current state
+    #                          function for determining goodness.
+    #                                    function which takes goodnesses and returns probabilities.
+    
+    current = start.copy()
+    best_state = start.copy()
+    current_goodness = goodness(metrics)
+    best_goodness = current_goodness
+    better_hops = 0
+    worse_hops = 0
+    stays = 0
+    for i in range(steps):
+        possible = neighbor(current)
+        possible_goodness = goodness(possible[2])
+        if best_goodness < possible_goodness:
+            best_state = possible[0].copy()
+            best_goodness = possible_goodness
+            best_metrics = possible[2].copy()
+        if random.random() < moveprob(current_goodness, possible_goodness):
+            if current_goodness < possible_goodness :
+                better_hops += 1
+            else:
+                worse_hops += 1
+            current = possible[0].copy()
+            current_goodness = possible_goodness
+            adjacencyFrame.update(possible[1])
+            metrics = possible[2].copy()
+        else:
+            stays += 1
+    return((best_state, best_goodness, better_hops, worse_hops, stays))
 
 
 #######################################################################
@@ -125,10 +159,11 @@ def neighbor_old(state):
     return newstate
 
 
-def neighbor(state):
+def neighbor2_old(state):
     
     newstate = state.copy()
-    missingdist = set.difference(set(range(ndistricts)), set(state['value']))
+
+    missingdist = set.difference(set(range(ndistricts)), set(newstate['value']))
     #If we've blobbed out some districts, we wants to behave differently
     
     if len(missingdist) == 0:
@@ -139,6 +174,8 @@ def neighbor(state):
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
 
         if random.random() < 0.5:
+            
+            #switch low node stuff to high node's district
             
             switchTo = (newstate[newstate.key == highnode].value).item()
             
@@ -153,7 +190,10 @@ def neighbor(state):
             
         else:
             
+            #switch high node stuff to low node's district
+            
             switchTo = (newstate[newstate.key == lownode].value).item()
+            #switch to low node
             
             proposedChanges = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
@@ -174,6 +214,141 @@ def neighbor(state):
         proposedChanges.isSame = False
         # And none of its adjacencies match anymore.
     return (newstate, proposedChanges)
+
+def neighbor(state):
+    
+    #stConts = [contiguousness(runningState[0], i) for i in range(nDistricts)]
+    #stPops  = [    population(runningState[0], i) for i in range(nDistricts)]
+    #stBiz   = [   bizarreness(runningState[0], i) for i in range(nDistricts)]
+    #stPerim = [     perimeter(runningState[0], i) for i in range(nDistricts)]
+    #stArea  = [      distArea(runningState[0], i) for i in range(nDistricts)]
+    newstate = state.copy()
+    newmetrics = metrics.copy()
+
+    missingdist = set.difference(set(range(ndistricts)), set(newstate['value']))
+    #If we've blobbed out some districts, we wants to behave differently
+    
+    if len(missingdist) == 0:
+        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
+
+        lownode      = adjacencyFrame.low[switchedge]
+        highnode     = adjacencyFrame.high[switchedge]
+        templowdist  = adjacencyFrame.lowdist[switchedge]
+        temphighdist = adjacencyFrame.highdist[switchedge]
+        #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
+
+        if random.random() < 0.5:
+            
+            #switch low node stuff to high node's district
+            
+            switchTo = (newstate[newstate.key == highnode].value).item()
+            
+            proposedChanges = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
+            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
+            
+            newstate.value[newstate.key == lownode] = switchTo
+            proposedChanges.lowdist[proposedChanges.low == lownode] = switchTo
+            proposedChanges.highdist[proposedChanges.high == lownode] = switchTo
+            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
+            #change values in the state as well as the proposedChanges
+            
+            #update contiguousness
+            newmetrics['contiguousness'][templowdist]  = contiguoussness(newstate, templowdist)
+            newmetrics['contiguousness'][temphighdist] = contiguoussness(newstate, temphighdist)
+            
+            #change population
+            popchange = blockstats.population[lownode]
+            newmetrics['population'][templowdist]  -= popchange
+            newmetrics['population'][temphighdist] += popchange
+            
+            #change bizarreness
+            newmetrics['perimeter'][templowdist]  = perimeter(newstate, templowdist)
+            newmetrics['perimeter'][temphighdist] = perimeter(newstate, temphighdist)
+            
+            areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
+            newmetrics['area'][templowdist] -= areachange
+            newmetrics['area'][temphighdist] += areachange
+            
+            newmeterics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
+                                                                  newmetrics['perimeter'][templowdist])
+            newmeterics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
+                                                                   newmetrics['perimeter'][temphighdist])
+            
+        else:
+            
+            #switch high node stuff to low node's district
+            
+            switchTo = (newstate[newstate.key == lownode].value).item()
+            #switch to low node
+            
+            proposedChanges = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
+            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
+            
+            newstate.value[newstate.key == highnode] = switchTo
+            proposedChanges.lowdist[proposedChanges.low == highnode] = switchTo
+            proposedChanges.highdist[proposedChanges.high == highnode] = switchTo
+            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
+            #change values in the state as well as the proposedChanges
+            
+            #update contiguousness
+            newmetrics['contiguousness'][temphighdist]  = contiguoussness(newstate, temphighdist)
+            newmetrics['contiguousness'][templowdist] = contiguoussness(newstate, templowdist)
+            
+            #change population
+            popchange = blockstats.population[highnode]
+            newmetrics['population'][temphighdist]  -= popchange
+            newmetrics['population'][templowdist] += popchange
+            
+            #change bizarreness
+            newmetrics['perimeter'][temphighdist]  = perimeter(newstate, temphighdist)
+            newmetrics['perimeter'][templowdist] = perimeter(newstate, templowdist)
+            
+            areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
+            newmetrics['area'][temphighdist] -= areachange
+            newmetrics['area'][templowdist] += areachange
+            
+            newmeterics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
+                                                                  newmetrics['perimeter'][temphighdist])
+            newmeterics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
+                                                                   newmetrics['perimeter'][templowdist])
+    else:
+        #If there are some districts missing, 
+        changenode = newstate.key.sample(1)
+        olddist = newstate.value[changenode]
+        newdist = list(missingdist)[0]
+        newstate.value[newstate.key == changenode] = newdist
+        #We want to select one randomly, and make it one of the missing districts
+        proposedChanges = adjacencyFrame.loc[(adjacencyFrame.low == changenode) | \
+                              (adjacencyFrame.high == changenode)]
+        proposedChanges.lowdist[proposedChanges.low == changenode] = newdist
+        proposedChanges.highdist[proposedChanges.high == changenode] = newdist
+        proposedChanges.isSame = False
+        # And none of its adjacencies match anymore.
+        
+        #change contiguousness
+        newmetrics['contiguousness'][olddist] = contiguousness(newstate, olddist)
+        
+        #change population
+        popchange = blockstats.population[changenode]
+        newmetrics['population'][olddist] -= popchange
+        newmetrics['population'][newdist] += popchange
+        
+        #change bizarreness
+        newmetrics['perimeter'][olddist] = perimeter(newstate, olddist)
+        newmetrics['perimeter'][newdist] = perimeter(newstate, newdist)
+        
+        areachange = blockstats.ALAND[changenode] + blockstats.AWATER[changenode]
+        newmetrics['area'][olddist] -= areachange
+        newmetrics['area'][newdist] += areachange
+        
+        newmeterics['bizarreness'][olddist] = bizarreness(newmetrics['area'][olddist], \
+                                                              newmetrics['perimeter'][olddist])
+        newmeterics['bizarreness'][newdist] = bizarreness(newmetrics['area'][newdist], \
+                                                              newmetrics['perimeter'][newdist])
+    
+    
+    return (newstate, proposedChanges, newmetrics)
+
 
 
 def contiguousness_old(state, district):
@@ -236,18 +411,19 @@ def perimeter(state, district):
     regionlist = list(state.key[state.value == district])
     return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) != adjacencyFrame.high.isin(regionlist)])
 
-def interiorPerimeter(state, district):
-    regionlist = list(state.key[state.value == district])
-    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)])
-
 def interiorPerimeter_old(state, district):
     regionlist = list(state.key[state.value == district])
     return sum(adjacencyFrame[[(adjacencyFrame['low'][i] in regionlist) and (adjacencyFrame['high'][i] in regionlist) \
                                for i in range(adjacencyFrame.shape[0])]]['length'])
 
+def interiorPerimeter(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)])
+
 def distArea(state, district):
     regionlist = list(state.key[state.value == district])
-    return sum(blockstats.ALAND[blockstats.VTD.isin(regionlist)])
+    return sum(blockstats.ALAND[blockstats.VTD.isin(regionlist)]) + \
+           sum(blockstats.AWATER[blockstats.VTD.isin(regionlist)])
 
 def population(state, district):
     return sum(blockstats.population[blockstats.VTD.isin(list(state.key[state.value == district]))])
@@ -274,22 +450,25 @@ def bizarreness_old(state, district):
         return np.nan
     return outer/(inner + outer)
 
-def bizarreness(state, district):
+def bizarreness2_old(state, district):
     outer = perimeter(state, district)     #Perimeter of district
     area = distArea(state, district)       #Area of district
     return outer/(2*np.sqrt(np.pi*area))   #Ratio of perimeter to circumference of circle with same area       
 
+def bizarreness(A, p):
+    return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
+
 def compactness1(state):
     return sum([perimeter(state, district) for district in range(ndistricts)])/2
 
-def goodness(state):
+def goodness_old(state):
     #Haves
         #contiguousness
         #evenness of population
         #efficiency
-        #bizarreness
+        #compactness
     #Needs
-        #Compactness
+        #Bizarreness
     
     stconts = [contiguousness(state, i) for i in range(ndistricts)]
     stpops  = [population(state, i) for i in range(ndistricts)]
@@ -301,8 +480,47 @@ def goodness(state):
     #return -3000*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*abs(sum(steffic)) -10*np.nansum(stbiz)
     return -300*abs(sum(stconts) - ndistricts) - 100*modTotalVar - 10*np.nansum(stbiz)
 
+def updateGlobals(state):
+    
+    temp = dict(zip(state.key, state.value))
+    lowdists  = adjacencyFrame.low.replace(temp)
+    highdists = adjacencyFrame.high.replace(temp)
+    isSame = lowdists==highdists
+    adjacencyFrame['isSame'] = isSame
+    adjacencyFrame['lowdist'] = lowdists
+    adjacencyFrame['highdist'] = highdists
+    
+    stConts = [contiguousness(state, i) for i in range(nDistricts)]
+    stPops  = [    population(state, i) for i in range(nDistricts)]
+    stBiz   = [   bizarreness(state, i) for i in range(nDistricts)]
+    stPerim = [     perimeter(state, i) for i in range(nDistricts)]
+    stArea  = [      distArea(state, i) for i in range(nDistricts)]
+    
+    metrics = {'contiguousness': stConts,
+               'population'    : stPops,
+               'bizarreness'   : stBiz,
+               'perimeter'     : stPerim,
+               'area'          : stArea}
+
+
+def goodness(metrics):
+    
+    #stConts = [contiguousness(runningState[0], i) for i in range(nDistricts)]
+    #stPops  = [    population(runningState[0], i) for i in range(nDistricts)]
+    #stBiz   = [   bizarreness(runningState[0], i) for i in range(nDistricts)]
+    #stPerim = [     perimeter(runningState[0], i) for i in range(nDistricts)]
+    #stArea  = [      distArea(runningState[0], i) for i in range(nDistricts)]
+    
+    tempStConts = metrics['contiguousness']
+    tempStPops  = metrics['population']
+    tempStBiz   = metrics['bizarreness']
+    
+    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/nDistricts) for x in tempStPops])/(2*(1-float(1)/nDistricts))
+    
+    return -300*abs(sum(tempStConts) - nDistricts) - 100*modTotalVar - 10*np.nansum(tempStBiz)
+
 def switchDistrict(current_goodness, possible_goodness): # fix
-    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/1000.0))
+    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/100.0))
 
 def contiguousStart_old():
     state = pd.DataFrame([[blockstats.VTD[i], ndistricts] for i in range(0,nvtd)])
@@ -459,6 +677,40 @@ def contiguousStart():
         print("%d districts left to assign."%(sum(state.value==nDistricts)))
     return state
 
+
+def bizarreness(state, district, numlines = 1000):
+    
+    #uses shape file [precinctShapes]
+    
+    vtds = precinctInfo.VTD
+    pvector = np.array([vtds.population], dtype=float)[0,:]/totalPopulation
+    #randomly selects [numlines] pairs of precints based on the discrete distribution
+    # induced by populations.
+    
+    districtShape = reduce(lambda x, y : x.Union(y), [f.geometry() for f in precinctShapes \
+                           if f.GEOID10 + f.NAME10 in set(state.key[state.value == district])])
+    distBounds = districtShape.Boundary()
+    
+    exits = 0
+    
+    for i in range(numlines):
+        pair = np.random.choice(precinctShapes, 2, p = pvector)
+        line = ogr.Geometry(ogr.wkbLineString)
+        line.AddPoint(*pair[0].geometry().Centroid().GetPoint())
+        line.AddPoint(*pair[1].geometry().Centroid().GetPoint())
+        
+        if line.Crosses(distBounds):
+            exits++
+    
+    return float(exits)/numlines
+
+def dataFrameEquiv(df1, df2):
+    if df1.shape[0] != df2.shape[0]:
+        return False
+    if not all(df1.columns == df2.columns):
+        return False
+    
+    return all([all(df1[col] == df2[col]) for col in df1.columns])
 
 ###############################
 

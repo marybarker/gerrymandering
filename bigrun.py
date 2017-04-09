@@ -16,8 +16,10 @@ g = package_vtds("precinct/precinct.shp")
 blockstats = pd.read_csv("vtdstats.csv")
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
-blockstats.rename(columns={'population':'POP100'}, inplace=True)
+blockstats.rename(columns = {"POP100":"population"}, inplace = True)
+#blockstats.rename(columns={'population':'POP100'}, inplace=True)
 totalpopulation = sum(blockstats.POP100)
+
 
 # number of districts and VTDS
 cdtable = pd.read_csv('../cdbystate1.txt', '\t')
@@ -52,47 +54,40 @@ def semigoodness(state):
     return -100*modTotalVar - 10*np.nansum(stbiz)
 
 
-foldername = "farster3/"
+foldername = "slambp1/"
 os.mkdir(foldername)
+
 numwalkers = 5
 walker=1
-numsteps = 10
-numplots = 100
-
-starting_state = pd.read_csv('./farster3/state0.csv')
-starting_state = pd.read_csv('./farster3/state5100.csv')
-#starting_state = starting_state.drop('Unnamed: 0', 1)
-#starting_state = contiguousStart2()
-#starting_state.columns = ['key', 'value']
-
-temp = dict(zip(starting_state.key, starting_state.value))
-lowdists  = adjacencyFrame.low.replace(temp)
-highdists = adjacencyFrame.high.replace(temp)
-isSame = lowdists==highdists
-adjacencyFrame['isSame'] = isSame
-
-runningState = (starting_state.copy(), 1)
-color_these_states(g, [runningState], foldername, 5100)
-pd.DataFrame(runningState[0]).to_csv(foldername+"state0.csv", index = False)
-
-
+numsteps = 100
+numsaves = 100
 numplots = 1000
 
-runtimes = np.array([float(0)]*numplots)
+starting_state = pd.read_csv('./startingPoints/start0.csv')
+del starting_state['Unnamed: 0']
 
-for step in range(20, numplots):
+runningState = (starting_state.copy(), 1)
+
+runtimes = np.array([float(0)]*numsaves)
+for i in range(1, numsaves):
     
     starttime = time.clock()
+    updateGlobals(runningState[0])
+    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+    runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingPoint, i + 1), index = False)
+    end = time.clock()
+    
+    runtimes[i] = end - starttime
+    
+    print("Written state %d of %d.  Runtime: %f"%(i, numsaves, runtimes[i]))
+
+for step in range(numplots):
+    
     
     runningState = MH(runningState[0], numsteps, ambitiousNeighbor, goodness, switchDistrict)
     #color_these_states(g, [runningState], foldername, step+1)
     pd.DataFrame(runningState[0]).to_csv(foldername+"state%d.csv"%(step+1), index = False)
     
-    end = time.clock()
-    
-    runtimes[step] = end - starttime
-    
-    print("Written state %d of %d.  Runtime: %f"%(step, numplots, runtimes[step]))
 
 
 
@@ -101,7 +96,6 @@ for i in range(100):
     tempStart = contiguousStart2()
     tempStart.to_csv("./startingPoints/start%d.csv"%i, index = False)
     print("Finished writing %d.\n"%i)
-
 
 
 
