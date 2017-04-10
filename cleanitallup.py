@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
+#os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
 blockstats = pd.read_csv("vtdstats.csv")
@@ -22,36 +23,40 @@ adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = {}
 
-foldername = "slambp1/"
+foldername = "slambp2/"
 #os.mkdir(foldername)
 
 numwalkers = 5
 walker=1
-numsteps = 10
-numsaves = 10
+numsteps = 100
+numsaves = 1000
 numplots = 10
 startingPoint=0
 
-#starting_state = pd.read_csv('./startingPoints/start0.csv')
-starting_state = pd.read_csv('/Users/marybarker/Downloads/starting_states/start0.csv')
+starting_state = pd.read_csv('./startingPoints/start0.csv')
+#starting_state = pd.read_csv('/Users/marybarker/Downloads/starting_states/start0.csv')
 del starting_state['Unnamed: 0']
 
 runningState = (starting_state.copy(), 1)
 
 runtimes = np.array([float(0)]*numsaves)
-for i in range(numsaves):
+
+for i in range(100, numsaves):
     
-    starttime = time.clock()
+    #    starttime = time.clock()
     updateGlobals(runningState[0])
     runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
     runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingPoint, i + 1), index = False)
-    end = time.clock()
+    #    end = time.clock()
     
-    runtimes[i] = end - starttime
+    #    runtimes[i] = end - starttime
     
-    print("Written state %d of %d.  Runtime: %f"%(i, numsaves, runtimes[i]))
+    print("Written state %d of %d."%(i+1, numsaves))
 
-
+for i in range(100, numsaves):
+    tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
+    color_these_states(g, [(tempstate, 0)], foldername + "figures/", i+1)
+    print("Colored %d of these states!"%(i+1))
 
 
 ##################################################################################
@@ -323,10 +328,11 @@ def goodness(metrics):
     
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -300*abs(sum(tempStConts) - ndistricts) - 100*modTotalVar - 10*np.nansum(tempStBiz)
+    return -300*abs(sum(tempStConts) - ndistricts) - 300*modTotalVar - 100*np.nanmean(tempStBiz)
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/100.0))
+
 
 
 

@@ -190,8 +190,8 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         
         this_state = list_of_states[i]
         redistricting = this_state[0]
-        redistricting = redistricting.drop('Unnamed: 0', 1)
-        redistricting.columns = ['key', 'value']
+        #redistricting = redistricting.drop('Unnamed: 0', 1)
+        #redistricting.columns = ['key', 'value']
         for p in range(len(paths)):
             path = paths[p]
             
@@ -199,15 +199,16 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
             patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
             ax.add_patch(patch)
         ax.set_aspect(1.0)
-        plt.show()
-        #plt.savefig(foldername+'output%04d.png'%(number+i))
-        #plt.clf()
-        #del fig
+        #plt.show()
+        plt.savefig(foldername+'output%04d.png'%(number+i))
+        plt.clf()
+        del fig
     
 
 precinctBoundaryFile =  'precinct/precinct.shp'
 precinctStatsFile = 'vtdstats.csv'
 precinctConnectionsFile = 'PRECINCTconnections.csv'
+g = package_vtds("precinct/precinct.shp")
 
 ds = ogr.Open(precinctBoundaryFile)
 lyr = ds.GetLayer(0)
@@ -259,4 +260,5 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
 

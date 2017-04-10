@@ -217,14 +217,25 @@ def neighbor2_old(state):
 
 def neighbor(state):
     
-    #stConts = [contiguousness(runningState[0], i) for i in range(nDistricts)]
-    #stPops  = [    population(runningState[0], i) for i in range(nDistricts)]
-    #stBiz   = [   bizarreness(runningState[0], i) for i in range(nDistricts)]
-    #stPerim = [     perimeter(runningState[0], i) for i in range(nDistricts)]
-    #stArea  = [      distArea(runningState[0], i) for i in range(nDistricts)]
+    #[state] is a dataframe that pairs precincts with congressional districts.
+    #We'll be altering it, here, so we need a copy.
     newstate = state.copy()
+    
+    #[metrics] is a global dictionary which is constructed as:
+    #    stConts = [contiguousness(state, i) for i in range(nDistricts)]
+    #    stPops  = [    population(state, i) for i in range(nDistricts)]
+    #    stBiz   = [   bizarreness(state, i) for i in range(nDistricts)]
+    #    stPerim = [     perimeter(state, i) for i in range(nDistricts)]
+    #    stArea  = [      distArea(state, i) for i in range(nDistricts)]
+    #    
+    #    metrics = {'contiguousness': stConts,
+    #               'population'    : stPops,
+    #               'bizarreness'   : stBiz,
+    #               'perimeter'     : stPerim,
+    #               'area'          : stArea}
+    #We're going to be changing this as well, so we need a copy.
     newmetrics = metrics.copy()
-
+    
     missingdist = set.difference(set(range(ndistricts)), set(newstate['value']))
     #If we've blobbed out some districts, we wants to behave differently
     
