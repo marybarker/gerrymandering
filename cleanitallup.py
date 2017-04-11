@@ -3,6 +3,7 @@ import time
 import random
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
@@ -26,8 +27,7 @@ metrics = {}
 foldername = "slambp2/"
 #os.mkdir(foldername)
 
-numwalkers = 5
-walker=1
+numstates= 10
 numsteps = 100
 numsaves = 1000
 numplots = 10
@@ -41,63 +41,14 @@ del starting_state['Unnamed: 0']
 runningState = (starting_state.copy(), 1)
 updateGlobals(runningState[0])
 
-for i in range(1000, numsaves):
-    
-    #    starttime = time.clock()
-    updateGlobalsFromOld(runningState[0])
-    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-    runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingPoint, i + 1), index = False)
-    #    end = time.clock()
-    
-    #    runtimes[i] = end - starttime
-    
-    print("Written state %d of %d."%(i+1, numsaves))
 
 for i in range(100, numsaves):
     tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
     color_these_states(g, [(tempstate, 0)], foldername + "figures/", i+1)
     print("Colored %d of these states!"%(i+1))
 
-def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
-    global metrics, adjacencyFrame
-    
-    adjacencyFrame = oldAdjacencyFrame
-    
-    substate1 = state1.loc[state1.value != state2.value]
-    substate2 = state2.loc[state1.value != state2.value]
-    subadjacency1 = oldAdjacencyFrame.loc[oldAdjacencyFrame.low.isin(substate2.key) | oldAdjacencyFrame.high.isin(substate2.key)]
-    subadjacency2 = subadjacency1.copy()
-    temp = dict(zip(state2.key, state2.value))
-    lowdists  = subadjacency2.low.replace(temp)
-    highdists = subadjacency2.high.replace(temp)
-    isSame = lowdists==highdists
-    subadjacency2['isSame']   = isSame
-    subadjacency2['lowdist']  = lowdists
-    subadjacency2['highdist'] = highdists
-    
-    popdiff   = [population(substate2, i) - population(substate1, i) for i in range(ndistricts)]
-    areadiff  = [  distArea(substate2, i) -   distArea(substate1, i) for i in range(ndistricts)]
-    perimdiff = [sum(subadjacency2.length[~(subadjacency2.isSame==1)])-\
-                 sum(subadjacency1.length[~(subadjacency1.isSame==1)]) for i in range(ndistricts)]
-    
-    stPops  = [metrics['population'][i] + popdiff[i]   for i in range(ndistricts)]
-    stPerim = [metrics['perimeter'][i]  + perimdiff[i] for i in range(ndistricts)]
-    stArea  = [metrics['area'][i]       + areadiff[i]  for i in range(ndistricts)]
-    
-    
-    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
-    
-    metrics = {#'contiguousness': stConts,
-               'population'    : stPops,
-               'bizarreness'   : stBiz,
-               'perimeter'     : stPerim,
-               'area'          : stArea}
-    
-    adjacencyFrame.update(subadjacency2)
-    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
-    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
-
 tempstate = pd.read_csv('./startingPoints/start0.csv')
+del tempstate['Unnamed: 0']
 updateGlobals(tempstate)
 
 for i in range(numsaves):
@@ -108,6 +59,25 @@ for i in range(numsaves):
     
     print("Stored metrics for state %d"%(i+1))
 
+for startingpoint in range(1, numstates):
+    
+    starting_state = pd.read_csv('./startingPoints/start%d.csv'%startingpoint)
+    updateGlobals(starting_state)
+    runningState = (starting_state.copy(), 1)
+    
+    for i in range(numsaves):
+        
+        oldState = runningState[0].copy()
+        oldAdjacencyFrame = adjacencyFrame.copy()
+        oldMetrics = metrics.copy()
+        
+        runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+        runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
+        
+        updateGlobalsFromOld(oldState, runningState[0], oldAdjacencyFrame, oldMetrics)
+        pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
+        
+        print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
 
 
 ##################################################################################
@@ -176,7 +146,8 @@ def neighbor(state):
             
             switchTo = (newstate[newstate.key == highnode].value).item()
             
-            proposedChanges = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
+            previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
+            proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
             
             newstate.value[newstate.key == lownode] = switchTo
@@ -195,8 +166,12 @@ def neighbor(state):
             newmetrics['population'][temphighdist] += popchange
             
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  = perimeter(newstate, templowdist)
-            newmetrics['perimeter'][temphighdist] = perimeter(newstate, temphighdist)
+            newmetrics['perimeter'][templowdist]  -= \
+                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist)  | (proposedChanges.highdist == templowdist))])-\
+                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist)  | (previousVersion.highdist == templowdist))])
+            newmetrics['perimeter'][temphighdist] += \
+                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))])-\
+                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))])
             
             areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
             newmetrics['area'][templowdist] -= areachange
@@ -214,7 +189,8 @@ def neighbor(state):
             switchTo = (newstate[newstate.key == lownode].value).item()
             #switch to low node
             
-            proposedChanges = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
+            previousVersion = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
+            proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
             
             newstate.value[newstate.key == highnode] = switchTo
@@ -233,8 +209,12 @@ def neighbor(state):
             newmetrics['population'][templowdist] += popchange
             
             #change bizarreness
-            newmetrics['perimeter'][temphighdist]  = perimeter(newstate, temphighdist)
-            newmetrics['perimeter'][templowdist] = perimeter(newstate, templowdist)
+            newmetrics['perimeter'][templowdist]  += \
+                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist)  | (proposedChanges.highdist == templowdist))])-\
+                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist)  | (previousVersion.highdist == templowdist))])
+            newmetrics['perimeter'][temphighdist] -= \
+                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))])-\
+                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))])
             
             areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
             newmetrics['area'][temphighdist] -= areachange
@@ -381,6 +361,54 @@ def goodness(metrics):
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/100.0))
+
+
+def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
+    global metrics, adjacencyFrame
+    
+    adjacencyFrame = oldAdjacencyFrame
+    
+    substate1 = state1.loc[state1.value != state2.value]
+    if substate1.shape[0] == 0:
+        return
+    
+    substate2 = state2.loc[state1.value != state2.value]
+    subadjacency1 = oldAdjacencyFrame.loc[oldAdjacencyFrame.low.isin(substate2.key) | oldAdjacencyFrame.high.isin(substate2.key)]
+    subadjacency2 = subadjacency1.copy()
+    temp = dict(zip(state2.key, state2.value))
+    
+    lowdists  = subadjacency2.low.replace(temp)
+    highdists = subadjacency2.high.replace(temp)
+    isSame = lowdists==highdists
+    subadjacency2['isSame']   = isSame
+    subadjacency2['lowdist']  = lowdists
+    subadjacency2['highdist'] = highdists
+    
+    popdiff   = [population(substate2, i) - population(substate1, i) for i in range(ndistricts)]
+    areadiff  = [  distArea(substate2, i) -   distArea(substate1, i) for i in range(ndistricts)]
+    perimdiff = [sum(subadjacency2.length[~(subadjacency2.isSame==1) & ((subadjacency2.lowdist == i) | (subadjacency2.highdist == i))])-\
+                 sum(subadjacency1.length[~(subadjacency1.isSame==1) & ((subadjacency1.lowdist == i) | (subadjacency1.highdist == i))]) for i in range(ndistricts)]
+    
+    stPops  = [metrics['population'][i] + popdiff[i]   for i in range(ndistricts)]
+    stPerim = [metrics['perimeter'][i]  + perimdiff[i] for i in range(ndistricts)]
+    stArea  = [metrics['area'][i]       + areadiff[i]  for i in range(ndistricts)]
+    
+    
+    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    
+    metrics = {'contiguousness': metrics['contiguousness'],
+               'population'    : stPops,
+               'bizarreness'   : stBiz,
+               'perimeter'     : stPerim,
+               'area'          : stArea}
+    
+    adjacencyFrame.update(subadjacency2)
+    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
+    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
+
+
+
+
 
 
 
