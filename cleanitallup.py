@@ -33,18 +33,18 @@ numsaves = 1000
 numplots = 10
 startingPoint=0
 
-starting_state = pd.read_csv('./startingPoints/start0.csv')
+#starting_state = pd.read_csv('./startingPoints/start0.csv')
+starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
 #starting_state = pd.read_csv('/Users/marybarker/Downloads/starting_states/start0.csv')
 del starting_state['Unnamed: 0']
 
 runningState = (starting_state.copy(), 1)
+updateGlobals(runningState[0])
 
-runtimes = np.array([float(0)]*numsaves)
-
-for i in range(100, numsaves):
+for i in range(1000, numsaves):
     
     #    starttime = time.clock()
-    updateGlobals(runningState[0])
+    updateGlobalsFromOld(runningState[0])
     runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
     runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingPoint, i + 1), index = False)
     #    end = time.clock()
@@ -57,6 +57,57 @@ for i in range(100, numsaves):
     tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
     color_these_states(g, [(tempstate, 0)], foldername + "figures/", i+1)
     print("Colored %d of these states!"%(i+1))
+
+def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
+    global metrics, adjacencyFrame
+    
+    adjacencyFrame = oldAdjacencyFrame
+    
+    substate1 = state1.loc[state1.value != state2.value]
+    substate2 = state2.loc[state1.value != state2.value]
+    subadjacency1 = oldAdjacencyFrame.loc[oldAdjacencyFrame.low.isin(substate2.key) | oldAdjacencyFrame.high.isin(substate2.key)]
+    subadjacency2 = subadjacency1.copy()
+    temp = dict(zip(state2.key, state2.value))
+    lowdists  = subadjacency2.low.replace(temp)
+    highdists = subadjacency2.high.replace(temp)
+    isSame = lowdists==highdists
+    subadjacency2['isSame']   = isSame
+    subadjacency2['lowdist']  = lowdists
+    subadjacency2['highdist'] = highdists
+    
+    popdiff   = [population(substate2, i) - population(substate1, i) for i in range(ndistricts)]
+    areadiff  = [  distArea(substate2, i) -   distArea(substate1, i) for i in range(ndistricts)]
+    perimdiff = [sum(subadjacency2.length[~(subadjacency2.isSame==1)])-\
+                 sum(subadjacency1.length[~(subadjacency1.isSame==1)]) for i in range(ndistricts)]
+    
+    stPops  = [metrics['population'][i] + popdiff[i]   for i in range(ndistricts)]
+    stPerim = [metrics['perimeter'][i]  + perimdiff[i] for i in range(ndistricts)]
+    stArea  = [metrics['area'][i]       + areadiff[i]  for i in range(ndistricts)]
+    
+    
+    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    
+    metrics = {#'contiguousness': stConts,
+               'population'    : stPops,
+               'bizarreness'   : stBiz,
+               'perimeter'     : stPerim,
+               'area'          : stArea}
+    
+    adjacencyFrame.update(subadjacency2)
+    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
+    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
+
+tempstate = pd.read_csv('./startingPoints/start0.csv')
+updateGlobals(tempstate)
+
+for i in range(numsaves):
+    oldstate = tempstate.copy()
+    tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
+    updateGlobalsFromOld(oldstate, tempstate, adjacencyFrame, metrics)
+    pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingPoint, i+1), index = False)
+    
+    print("Stored metrics for state %d"%(i+1))
+
 
 
 ##################################################################################
@@ -257,12 +308,10 @@ def contiguousness(state, district):
     return regions
 
 def perimeter(state, district):
-    regionlist = list(state.key[state.value == district])
-    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) != adjacencyFrame.high.isin(regionlist)])
+    return sum(adjacencyFrame.length[(adjacencyFrame.lowdist == district) != (adjacencyFrame.highdist == district)])
 
 def interiorPerimeter(state, district):
-    regionlist = list(state.key[state.value == district])
-    return sum(adjacencyFrame.length[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)])
+    return sum(adjacencyFrame.length[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)])
 
 def distArea(state, district):
     regionlist = list(state.key[state.value == district])
@@ -332,6 +381,8 @@ def goodness(metrics):
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/100.0))
+
+
 
 
 
