@@ -22,14 +22,14 @@ nvtd = len(blockstats.VTD)
 adjacencyFrame = pd.read_csv('PRECINCTconnections.csv')
 adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
-metrics = {}
+metrics = pd.DataFrame()
 
 foldername = "slambp2/"
 #os.mkdir(foldername)
 
-numstates= 10
+numstates= 2
 numsteps = 100
-numsaves = 1000
+numsaves = 200
 numplots = 10
 startingPoint=0
 
@@ -67,17 +67,72 @@ for startingpoint in range(1, numstates):
     
     for i in range(numsaves):
         
-        oldState = runningState[0].copy()
-        oldAdjacencyFrame = adjacencyFrame.copy()
-        oldMetrics = metrics.copy()
+        #oldState = runningState[0].copy()
+        #oldAdjacencyFrame = adjacencyFrame.copy()
+        #oldMetrics = metrics.copy()
         
+        #def MH(start, steps, neighbor, goodness, moveprob):
         runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
         runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
         
-        updateGlobalsFromOld(oldState, runningState[0], oldAdjacencyFrame, oldMetrics)
+        #updateGlobalsFromOld(oldState, runningState[0], oldAdjacencyFrame, oldMetrics)
         pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
+
+maxBizArray = []
+meanBizArray = []
+totalVarArray = []
+maxContArray = []
+maxPopArray = []
+
+for i in range(numsaves):
+    #metrics = {}
+    #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, i + 50))
+    #updateGlobals(tempstate)
+    #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
+    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(1, i+1))
+
+    meanBizArray.append(np.mean(thismetrics['bizarreness']))
+    maxBizArray.append(np.max(thismetrics['bizarreness']))
+    maxContArray.append(np.max(thismetrics['contiguousness']))
+    totalVarArray.append(np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in thismetrics['population']])/(2*(1-float(1)/ndistricts)))
+    
+    #metrics = {'contiguousness': metrics['contiguousness'],
+    #           'population'    : stPops,
+    #           'bizarreness'   : stBiz,
+    #           'perimeter'     : stPerim,
+    #           'area'          : stArea}
+
+    print("Stored metrics for state %d"%(i+1))
+
+num = len(meanBizArray)
+
+plt.plot(meanBizArray)
+plt.title('mean Biz')
+plt.show()
+plt.clf()
+plt.plot(maxBizArray)
+plt.title('max Biz')
+plt.show()
+plt.clf()
+plt.plot(maxContArray)
+plt.title('max contig')
+plt.show()
+plt.clf()
+plt.plot(maxPopArray)
+plt.title('max pop')
+plt.show()
+plt.clf()
+plt.plot(totalVarArray)
+plt.title('mean Pop')
+plt.show()
+plt.clf()
+
+
+color_these_states(g, [(tempstate, 0)], foldername+'theverylast_', 0)
+tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, 1))
+color_these_states(g, [(tempstate, 0)], foldername+'theveryfirst_', 0)
 
 
 ##################################################################################
@@ -92,6 +147,9 @@ def MH(start, steps, neighbor, goodness, moveprob):
     best_state = start.copy()
     current_goodness = goodness(metrics)
     best_goodness = current_goodness
+    best_adjacency = adjacencyFrame.copy()
+    best_metrics = metrics.copy()
+    
     better_hops = 0
     worse_hops = 0
     stays = 0
@@ -102,6 +160,11 @@ def MH(start, steps, neighbor, goodness, moveprob):
             best_state = possible[0].copy()
             best_goodness = possible_goodness
             best_metrics = possible[2].copy()
+            best_adjacency = adjacencyFrame.copy()
+            best_adjacency.update(possible[1])
+            best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
+            best_adjacency.highdist = best_adjacency.highdist.astype(int)
+            
         if random.random() < moveprob(current_goodness, possible_goodness):
             if current_goodness < possible_goodness :
                 better_hops += 1
@@ -115,6 +178,16 @@ def MH(start, steps, neighbor, goodness, moveprob):
             metrics = possible[2].copy()
         else:
             stays += 1
+    
+    adjacencyFrame.update(best_adjacency)
+    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
+    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
+    #Update adjacencyframe to the best that we ever had.
+    
+    metrics = best_metrics.copy()
+    
+    # " for metrics
+    
     return((best_state, best_goodness, better_hops, worse_hops, stays))
 
 
@@ -125,6 +198,7 @@ def neighbor(state):
     #stBiz   = [   bizarreness(runningState[0], i) for i in range(ndistricts)]
     #stPerim = [     perimeter(runningState[0], i) for i in range(ndistricts)]
     #stArea  = [      distArea(runningState[0], i) for i in range(ndistricts)]
+    global adjacencyFrame, metrics
     newstate = state.copy()
     newmetrics = metrics.copy()
 
@@ -144,7 +218,7 @@ def neighbor(state):
             
             #switch low node stuff to high node's district
             
-            switchTo = (newstate[newstate.key == highnode].value).item()
+            switchTo = temphighdist
             
             previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
             proposedChanges = previousVersion.copy()
@@ -166,15 +240,15 @@ def neighbor(state):
             newmetrics['population'][temphighdist] += popchange
             
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  -= \
-                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist)  | (proposedChanges.highdist == templowdist))])-\
-                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist)  | (previousVersion.highdist == templowdist))])
+            newmetrics['perimeter'][templowdist]  += \
+                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]) -\
+                 sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]))
             newmetrics['perimeter'][temphighdist] += \
-                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))])-\
-                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))])
+                (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]) -\
+                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]))
             
             areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
-            newmetrics['area'][templowdist] -= areachange
+            newmetrics['area'][templowdist]  -= areachange
             newmetrics['area'][temphighdist] += areachange
             
             newmetrics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
@@ -186,7 +260,7 @@ def neighbor(state):
             
             #switch high node stuff to low node's district
             
-            switchTo = (newstate[newstate.key == lownode].value).item()
+            switchTo = templowdist
             #switch to low node
             
             previousVersion = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
@@ -200,25 +274,25 @@ def neighbor(state):
             #change values in the state as well as the proposedChanges
             
             #update contiguousness
-            newmetrics['contiguousness'][temphighdist]  = contiguousness(newstate, temphighdist)
-            newmetrics['contiguousness'][templowdist] = contiguousness(newstate, templowdist)
+            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
+            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
             
             #change population
             popchange = blockstats.population[highnode]
-            newmetrics['population'][temphighdist]  -= popchange
-            newmetrics['population'][templowdist] += popchange
+            newmetrics['population'][temphighdist] -= popchange
+            newmetrics['population'][templowdist]  += popchange
             
             #change bizarreness
             newmetrics['perimeter'][templowdist]  += \
-                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist)  | (proposedChanges.highdist == templowdist))])-\
-                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist)  | (previousVersion.highdist == templowdist))])
-            newmetrics['perimeter'][temphighdist] -= \
-                sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))])-\
-                sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))])
+                (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]) -\
+                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]))
+            newmetrics['perimeter'][temphighdist] += \
+                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]) -\
+                 sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]))
             
             areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
             newmetrics['area'][temphighdist] -= areachange
-            newmetrics['area'][templowdist] += areachange
+            newmetrics['area'][templowdist]  += areachange
             
             newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
                                                                   newmetrics['perimeter'][temphighdist])
@@ -337,11 +411,12 @@ def updateGlobals(state):
     
     stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
     
-    metrics = {'contiguousness': stConts,
-               'population'    : stPops,
-               'bizarreness'   : stBiz,
-               'perimeter'     : stPerim,
-               'area'          : stArea}
+    metrics = pd.DataFrame({'contiguousness': stConts,
+                            'population'    : stPops,
+                            'bizarreness'   : stBiz,
+                            'perimeter'     : stPerim,
+                            'area'          : stArea}
+                          )
 
 
 def goodness(metrics):
@@ -357,11 +432,10 @@ def goodness(metrics):
     
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -300*abs(sum(tempStConts) - ndistricts) - 300*modTotalVar - 100*np.nanmean(tempStBiz)
+    return -3*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz)
 
 def switchDistrict(current_goodness, possible_goodness): # fix
-    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/100.0))
-
+    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
 
 def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     global metrics, adjacencyFrame
@@ -392,7 +466,6 @@ def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     stPops  = [metrics['population'][i] + popdiff[i]   for i in range(ndistricts)]
     stPerim = [metrics['perimeter'][i]  + perimdiff[i] for i in range(ndistricts)]
     stArea  = [metrics['area'][i]       + areadiff[i]  for i in range(ndistricts)]
-    
     
     stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
     
