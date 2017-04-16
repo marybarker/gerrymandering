@@ -4,6 +4,7 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import time
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
@@ -59,7 +60,8 @@ for i in range(numsaves):
     
     print("Stored metrics for state %d"%(i+1))
 
-for startingpoint in range(1, numstates):
+start = time.clock()
+for startingpoint in range(4, 5):#range(1, numstates):
     
     starting_state = pd.read_csv('./startingPoints/start%d.csv'%startingpoint)
     updateGlobals(starting_state)
@@ -79,25 +81,32 @@ for startingpoint in range(1, numstates):
         pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
+stop = time.clock()
+print 'took a total time of ', stop - start, ' to run ', i
 
 maxBizArray = []
 meanBizArray = []
 totalVarArray = []
 maxContArray = []
 maxPopArray = []
+popDiffArray = []
+
+overallGoodnessArray = []
 
 for i in range(numsaves):
     #metrics = {}
     #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, i + 50))
     #updateGlobals(tempstate)
     #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
-    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(1, i+1))
+    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(3, i+1))
 
     meanBizArray.append(np.mean(thismetrics['bizarreness']))
     maxBizArray.append(np.max(thismetrics['bizarreness']))
     maxContArray.append(np.max(thismetrics['contiguousness']))
+    maxPopArray.append(np.max(thismetrics['population']))
+    popDiffArray.append(np.max(thismetrics['population']) - np.min(thismetrics['population']))
     totalVarArray.append(np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in thismetrics['population']])/(2*(1-float(1)/ndistricts)))
-    
+    overallGoodnessArray.append(-3*abs(sum(thismetrics.contiguousness) - ndistricts) - 3000*totalVarArray[i] - 1000*meanBizArray[i])
     #metrics = {'contiguousness': metrics['contiguousness'],
     #           'population'    : stPops,
     #           'bizarreness'   : stBiz,
@@ -124,10 +133,17 @@ plt.plot(maxPopArray)
 plt.title('max pop')
 plt.show()
 plt.clf()
+plt.plot(popDiffArray)
+plt.title('pop diff')
+plt.show()
+plt.clf()
 plt.plot(totalVarArray)
 plt.title('mean Pop')
 plt.show()
 plt.clf()
+plt.plot(overallGoodnessArray)
+plt.title('goodness')
+plt.show()
 
 
 color_these_states(g, [(tempstate, 0)], foldername+'theverylast_', 0)
@@ -162,8 +178,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
             best_metrics = possible[2].copy()
             best_adjacency = adjacencyFrame.copy()
             best_adjacency.update(possible[1])
-            best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
-            best_adjacency.highdist = best_adjacency.highdist.astype(int)
+            #best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
+            #best_adjacency.highdist = best_adjacency.highdist.astype(int)
             
         if random.random() < moveprob(current_goodness, possible_goodness):
             if current_goodness < possible_goodness :
@@ -433,6 +449,7 @@ def goodness(metrics):
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
     return -3*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz)
+    #Include something to prioritize population until we can get to a max popdiff of 25,000.1
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
