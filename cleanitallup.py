@@ -30,7 +30,7 @@ foldername = "slambp2/"
 
 numstates= 2
 numsteps = 100
-numsaves = 200
+numsaves = 20
 numplots = 10
 startingPoint=0
 
@@ -459,7 +459,7 @@ def goodness(metrics):
     
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -3*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz)
+    return -300*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz)
     #Include something to prioritize population until we can get to a max popdiff of 25,000.1
 
 def switchDistrict(current_goodness, possible_goodness): # fix
