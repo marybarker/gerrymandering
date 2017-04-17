@@ -100,6 +100,8 @@ def adjancentEdgeLengths(connectivitydf, boundaries):
         b1 = boundaries[low]
         b2 = boundaries[hi]
         pointsInCommon = [point for point in b1 if point in b2]
+        # Needs to make use of shape file to prevent the cutoff connection.
+        #  b1 intersect b2?  whatever shapefile thing we use.
         l = ToFeet(pointsInCommon)
         edgelengths.append(l)
     connectivitydf['length'] = edgelengths

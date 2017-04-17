@@ -10,7 +10,7 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv("vtdstats.csv")
+blockstats = pd.read_csv("alt_vtdstats.csv")
 blockstats.rename(columns = {"POP100":"population"}, inplace = True)
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
@@ -34,9 +34,10 @@ numsaves = 200
 numplots = 10
 startingPoint=0
 
-#starting_state = pd.read_csv('./startingPoints/start0.csv')
-starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
+starting_state = pd.read_csv('./startingPoints/start0.csv')
+#starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
 #starting_state = pd.read_csv('/Users/marybarker/Downloads/starting_states/start0.csv')
+
 del starting_state['Unnamed: 0']
 
 runningState = (starting_state.copy(), 1)
@@ -246,10 +247,6 @@ def neighbor(state):
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
             
-            #update contiguousness
-            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
-            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
-            
             #change population
             popchange = blockstats.population[lownode]
             newmetrics['population'][templowdist]  -= popchange
@@ -267,10 +264,10 @@ def neighbor(state):
             newmetrics['area'][templowdist]  -= areachange
             newmetrics['area'][temphighdist] += areachange
             
-            newmetrics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
+            newmetrics['bizarreness'][templowdist]  = bizarreness(newmetrics['area'][templowdist], \
                                                                   newmetrics['perimeter'][templowdist])
             newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
-                                                                   newmetrics['perimeter'][temphighdist])
+                                                                  newmetrics['perimeter'][temphighdist])
             
         else:
             
@@ -288,10 +285,6 @@ def neighbor(state):
             proposedChanges.highdist[proposedChanges.high == highnode] = switchTo
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
-            
-            #update contiguousness
-            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
-            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
             
             #change population
             popchange = blockstats.population[highnode]
@@ -314,6 +307,24 @@ def neighbor(state):
                                                                   newmetrics['perimeter'][temphighdist])
             newmetrics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
                                                                    newmetrics['perimeter'][templowdist])
+        
+        #update contiguousness
+        neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
+        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist)
+        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist)
+        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist)
+        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist)
+        
+        if (oldContNeighborhoodLow != newContNeighborhoodLow):
+            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
+        else:
+            pass
+        
+        if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
+            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
+        else:
+            pass
+        
     else:
         #If there are some districts missing, 
         changenode = newstate.key.sample(1)
