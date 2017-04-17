@@ -10,7 +10,7 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv("alt_vtdstats.csv")
+blockstats = pd.read_csv("vtdstats.csv")
 blockstats.rename(columns = {"POP100":"population"}, inplace = True)
 blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
@@ -25,7 +25,7 @@ adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
-foldername = "slambp2/"
+foldername = "slambp3/"
 #os.mkdir(foldername)
 
 numstates= 2
@@ -371,7 +371,7 @@ def contiguousness(state, district):
     if len(regionlist) == 0:
         return 1
     
-    subframe = adjacencyFrame.loc[adjacencyFrame.low.isin(regionlist) & adjacencyFrame.high.isin(regionlist)]
+    subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
     subedges = subframe[subframe.length != 0][['low','high']]
     
     while len(regionlist) > 0:
