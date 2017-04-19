@@ -62,7 +62,7 @@ for i in range(numsaves):
     print("Stored metrics for state %d"%(i+1))
 
 start = time.clock()
-for startingpoint in range(4, 5):#range(1, numstates):
+for startingpoint in range(1):#4, 5):#range(1, numstates):
     
     starting_state = pd.read_csv('./startingPoints/start%d.csv'%startingpoint)
     updateGlobals(starting_state)
@@ -99,7 +99,7 @@ for i in range(numsaves):
     #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, i + 50))
     #updateGlobals(tempstate)
     #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
-    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(3, i+1))
+    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(0, i+1))
 
     meanBizArray.append(np.mean(thismetrics['bizarreness']))
     maxBizArray.append(np.max(thismetrics['bizarreness']))
@@ -240,35 +240,35 @@ def neighbor(state):
             previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
             proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
-            
-            newstate.value[newstate.key == lownode] = switchTo
-            proposedChanges.lowdist[proposedChanges.low == lownode] = switchTo
-            proposedChanges.highdist[proposedChanges.high == lownode] = switchTo
+    
+            newstate.ix[newstate.key == lownode, 'value'] = switchTo
+            proposedChanges.ix[proposedChanges.low == lownode, 'lowdist'] = switchTo
+            proposedChanges.ix[proposedChanges.high == lownode, 'highdist'] = switchTo
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
             
             #change population
             popchange = blockstats.population[lownode]
-            newmetrics['population'][templowdist]  -= popchange
-            newmetrics['population'][temphighdist] += popchange
-            
+            newmetrics.ix[templowdist, 'population']  -= popchange
+            newmetrics.ix[temphighdist, 'population'] += popchange
+    
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  += \
+            newmetrics.ix[templowdist,'perimeter']  += \
                 (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]) -\
                  sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]))
-            newmetrics['perimeter'][temphighdist] += \
+            newmetrics.ix[temphighdist, 'perimeter'] += \
                 (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]) -\
                  sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]))
-            
+    
             areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
-            newmetrics['area'][templowdist]  -= areachange
-            newmetrics['area'][temphighdist] += areachange
+            newmetrics.ix[templowdist, 'area'] -= areachange
+            newmetrics.ix[temphighdist,'area'] += areachange
             
-            newmetrics['bizarreness'][templowdist]  = bizarreness(newmetrics['area'][templowdist], \
+            newmetrics.ix[templowdist, 'bizarreness']  = bizarreness(newmetrics['area'][templowdist], \
                                                                   newmetrics['perimeter'][templowdist])
-            newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
+            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
                                                                   newmetrics['perimeter'][temphighdist])
-            
+
         else:
             
             #switch high node stuff to low node's district
@@ -280,50 +280,57 @@ def neighbor(state):
             proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
             
-            newstate.value[newstate.key == highnode] = switchTo
-            proposedChanges.lowdist[proposedChanges.low == highnode] = switchTo
-            proposedChanges.highdist[proposedChanges.high == highnode] = switchTo
+            newstate.ix[newstate.key == highnode, 'value'] = switchTo
+            proposedChanges.ix[proposedChanges.low == highnode, 'lowdist'] = switchTo
+            proposedChanges.ix[proposedChanges.high == highnode, 'highdist'] = switchTo
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
             
             #change population
             popchange = blockstats.population[highnode]
-            newmetrics['population'][temphighdist] -= popchange
-            newmetrics['population'][templowdist]  += popchange
+            newmetrics.ix[temphighdist, 'population'] -= popchange
+            newmetrics.ix[templowdist, 'population']  += popchange
             
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  += \
+            newmetrics.ix[templowdist, 'perimeter']  += \
                 (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]) -\
                  sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]))
-            newmetrics['perimeter'][temphighdist] += \
+            newmetrics.ix[temphighdist, 'perimeter'] += \
                 (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]) -\
                  sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]))
             
             areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
-            newmetrics['area'][temphighdist] -= areachange
-            newmetrics['area'][templowdist]  += areachange
+            newmetrics.ix[temphighdist, 'area'] -= areachange
+            newmetrics.ix[templowdist, 'area']  += areachange
             
-            newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
-                                                                  newmetrics['perimeter'][temphighdist])
-            newmetrics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
-                                                                   newmetrics['perimeter'][templowdist])
+            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
+                                                                     newmetrics['perimeter'][temphighdist])
+            newmetrics.ix[templowdist, 'bizarreness'] = bizarreness(newmetrics['area'][templowdist], \
+                                                                    newmetrics['perimeter'][templowdist])
         
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
-        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist)
-        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist)
-        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist)
-        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist)
+        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist,  proposedChanges)
+        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist, proposedChanges)
+        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist,  proposedChanges)
+        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist, proposedChanges)
         
-        if (oldContNeighborhoodLow != newContNeighborhoodLow):
-            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
-        else:
-            pass
-        
-        if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
-            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
-        else:
-            pass
+        if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
+            
+            tempframe = adjacencyFrame.copy()
+            tempframe.update(proposedChanges)
+            tempframe.lowdist  = tempframe.lowdist.astype(int)
+            tempframe.highdist = tempframe.highdist.astype(int)
+            
+            if (oldContNeighborhoodLow != newContNeighborhoodLow):
+                newmetrics.ix[templowdist, 'contiguousness']  = contiguousness(newstate, templowdist, tempframe)
+            else:
+                pass
+            
+            if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
+                newmetrics.ix[temphighdist, 'contiguousness'] = contiguousness(newstate, temphighdist, tempframe)
+            else:
+                pass
         
     else:
         #If there are some districts missing, 
@@ -364,14 +371,15 @@ def neighbor(state):
     return (newstate, proposedChanges, newmetrics)
 
 
-def contiguousness(state, district):
+def contiguousness(state, district, subframe = "DEFAULT"):
     
     regions = 0
     regionlist = list(state.key[state.value == district])
     if len(regionlist) == 0:
         return 1
     
-    subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
+    if subframe == "DEFAULT":
+        subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
     subedges = subframe[subframe.length != 0][['low','high']]
     
     while len(regionlist) > 0:
