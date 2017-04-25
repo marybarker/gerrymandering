@@ -25,12 +25,12 @@ adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
-foldername = "slambp3/"
+foldername = "slambp3ALLOFTHESTATES/"
 #os.mkdir(foldername)
 
-numstates= 2
+numstates= 32
 numsteps = 100
-numsaves = 20
+numsaves = 1000
 numplots = 10
 startingPoint=0
 
@@ -61,8 +61,8 @@ for i in range(numsaves):
     
     print("Stored metrics for state %d"%(i+1))
 
-start = time.clock()
-for startingpoint in range(1):#4, 5):#range(1, numstates):
+starttime = time.time()
+for startingpoint in range(numstates):
     
     starting_state = pd.read_csv('./startingPoints/start%d.csv'%startingpoint)
     updateGlobals(starting_state)
@@ -82,6 +82,9 @@ for startingpoint in range(1):#4, 5):#range(1, numstates):
         pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
+    print("Runtime so far: %f"%(time.time() - starttime))
+
+
 stop = time.clock()
 print 'took a total time of ', stop - start, ' to run ', i
 
@@ -378,7 +381,7 @@ def contiguousness(state, district, subframe = "DEFAULT"):
     if len(regionlist) == 0:
         return 1
     
-    if subframe == "DEFAULT":
+    if type(subframe) == str:
         subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
     subedges = subframe[subframe.length != 0][['low','high']]
     
@@ -467,7 +470,8 @@ def goodness(metrics):
     
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -300*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz)
+    return -300*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz) - \
+            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000000
     #Include something to prioritize population until we can get to a max popdiff of 25,000.1
 
 def switchDistrict(current_goodness, possible_goodness): # fix
