@@ -13,9 +13,10 @@ def features(layer):
         features.append( feat )
     return features
 
-blockFile   = './tabblock2010_42_pophu/tabblock2010_42_pophu.shp'
+blockFile   = './tabblock2010_42_pophu/tabblock2010_42_pophu.shp' 
 vtdFile     = './precinct/precinct.shp'
-groupFile   = '/home/joseph/Dropbox/gerrymandering/PA_BlockGroupData.csv'
+#groupFile   = '/home/joseph/Dropbox/gerrymandering/PA_BlockGroupData.csv'
+groupFile   = './PA_BlockGroupData.csv'
 vtdInfoFile = './vtdstats.csv'
 
 ds = ogr.Open(blockFile)
@@ -46,14 +47,31 @@ vtdCentroids   = [  vtd.geometry().Centroid().GetPoint() for   vtd in   vtds]
 
 blockVTD = []
 for i in range(len(blocks)):
+    assignedVTD = False
     for j in range(len(vtds)):
         if blockCentroids[i].Intersects(vtds[j].geometry()):
-            blockVTD.append(vtds[j].GEOID10 + vtds[j].NAME10)
+            blockVTD.append((blocks[i].BLOCKID10, vtds[j].GEOID10 + vtds[j].NAME10, i))
+            assignedVTD = True
             break
+    if not assignedVTD:
+        blockVTD.append((blocks[i].BLOCKID10, 'NO VTD COVERS CENTROID', i))
     if i%1000 ==0:
         print("We've gone through %d blocks!"%i)
 
 blockFrame = pd.DataFrame([(block.BLOCKID10, block.BLOCKID10[:-3], block.POP10) for block in blocks], columns = ('BLOCKID', 'GROUPID', 'population'))
+blockFrame['VTDID'] = [x[1] for x in blockVTD]
+blockFrame.to_csv('./blockframe.csv', index=False)
+
+problems = blockFrame.loc[blockFrame.VTDID == "NO VTD COVERS CENTROID"].copy()
+closestVTD = [] #This currently looks at the nearest centroid.
+                #What we actually want is the VTD that most intersects the block
+                #Check all VTDs for whether they intersect.  Then, among those, 
+                # find the area of the intersection.  Assign accordingly.
+for ID in problems.BLOCKID:
+    blockShape = [block for block in blocks if block.BLOCKID10 == ID][0]
+    closest = vtds[closestkvtds(blockShape.geometry().Centroid().GetPoint(), 1)[0]]
+    closestVTD.append(closest.GEOID10 + closest.NAME10)
+
 
 precinctConnectionsFile = 'PRECINCTconnections.csv'
 g = package_vtds()
