@@ -519,9 +519,50 @@ def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
     adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
 
+def contiguousStart():
+    
+    #Begin with [ndistricts] different vtds to be the congressional districts.
+    #Keep running list of series which are adjacent to the districts.
+    #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
 
-
-
+    state = pd.DataFrame({"key":blockstats.VTD.copy(), "value":ndistricts })
+    subAdj = adjacencyFrame.ix[adjacencyFrame.length != 0, ['low','high']]
+    subAdj['lowdist']  = ndistricts
+    subAdj['highdist'] = ndistricts
+    
+    missingdist = range(ndistricts)
+    assignments = np.random.choice(blockstats.VTD, ndistricts, replace = False)
+    
+    state.ix[state.key.isin(assignments), 'value'] = missingdist
+    for i in range(ndistricts):
+        subAdj.ix[subAdj.low  == assignments[i], 'lowdist' ] = i
+        subAdj.ix[subAdj.high == assignments[i], 'highdist'] = i
+    #Assign a single precinct to each CD.
+    
+    pops = [population(state,x) for x in range(ndistricts)]
+    
+    while ndistricts in set(state.value):
+        
+        targdistr = pops.index(min(pops))
+        
+        relevantAdjacencies = subAdj.ix[((subAdj.lowdist  == targdistr) & (subAdj.highdist == ndistricts)) |
+                                        ((subAdj.highdist == targdistr) & (subAdj.lowdist  == ndistricts))]
+        #Adjacencies where either low or high are in the region, but the other is unassigned
+        
+        if relevantAdjacencies.shape[0] == 0 :
+            pops[targdistr] = float('inf')
+        else :
+            #choose entry in relevantAdjacencies and switch the value of the other node.
+            changes = set(relevantAdjacencies.low).union(\
+                      set(relevantAdjacencies.high))
+            #changes = set(relevantAdjacencies.low.append(relevantAdjacencies.high))
+            #changes = (relevantAdjacencies.low.append(relevantAdjacencies.high)).unique()
+            state.ix[state.key.isin(changes), 'value'] = targdistr
+            pops[targdistr] += sum(blockstats.population[changes])
+            subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
+            subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
+        #print("%d districts left to assign."%(sum(state.value==ndistricts)))
+    return state
 
 
 
