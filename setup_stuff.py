@@ -196,10 +196,10 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         #redistricting.columns = ['key', 'value']
         for p in range(len(paths)):
             path = paths[p]
-            
-            facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
-            patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')
-            ax.add_patch(patch)
+            if names[p] in redistricting.key.values:
+                facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
+                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor=colors[facecolor])#'black')
+                ax.add_patch(patch)
         ax.set_aspect(1.0)
         #plt.show()
         plt.savefig(foldername+'output%04d.png'%(number+i))
@@ -207,17 +207,17 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         del fig
     
 
-precinctBoundaryFile =  'precinct/precinct.shp'
-precinctStatsFile = 'vtdstats.csv'
-precinctConnectionsFile = 'PRECINCTconnections.csv'
+#precinctBoundaryFile =  'precinct/precinct.shp'
+#precinctStatsFile = 'vtdstats.csv'
+#precinctConnectionsFile = 'PRECINCTconnections.csv'
 g = package_vtds("precinct/precinct.shp")
 
-ds = ogr.Open(precinctBoundaryFile)
-lyr = ds.GetLayer(0)
-precincts = features(lyr)
-precinctBoundaries = boundaries(precincts)
-precinctStats = pd.read_csv(precinctStatsFile)
-precinctConns = pd.read_csv(precinctConnectionsFile)
+#ds = ogr.Open(precinctBoundaryFile)
+#lyr = ds.GetLayer(0)
+#precincts = features(lyr)
+#precinctBoundaries = boundaries(precincts)
+#precinctStats = pd.read_csv(precinctStatsFile)
+#precinctConns = pd.read_csv(precinctConnectionsFile)
 
 # need: 
 #  - contiguous start w r t shapefiles (globbed out as before, or using an overlaid shape? )
@@ -262,5 +262,6 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
 
 

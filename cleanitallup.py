@@ -10,9 +10,9 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv("vtdstats.csv")
-blockstats.rename(columns = {"POP100":"population"}, inplace = True)
-blockstats = blockstats.drop('Unnamed: 0', 1)
+blockstats = pd.read_csv("noIslandsVTDStats.csv")
+#blockstats.rename(columns = {"POP100":"population"}, inplace = True)
+#blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
 totalpopulation = sum(blockstats.population)
 
@@ -20,135 +20,278 @@ cdtable = pd.read_csv('../cdbystate1.txt', '\t')
 ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
 nvtd = len(blockstats.VTD)
 
-adjacencyFrame = pd.read_csv('PRECINCTconnections.csv')
+adjacencyFrame = pd.read_csv('noIslandsPrecinctConnections.csv')
 adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
-adjacencyFrame.columns = ['low', 'high', 'length']
+#adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
-foldername = "slambp3ALLOFTHESTATES/"
+foldername = "bluebrangus1/"
+foldername = "ffffffffffffffffffff1/"
+foldername = "compare_annealing_vs_not/"
+foldername = "million/"
+
 #os.mkdir(foldername)
 
-numstates= 32
-numsteps = 100
-numsaves = 1000
-numplots = 10
-startingPoint=0
+numstates= 1
+numsteps = 400
+numsaves = 2500
+numplots = 1
 
-starting_state = pd.read_csv('./startingPoints/start0.csv')
-#starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
-#starting_state = pd.read_csv('/Users/marybarker/Downloads/starting_states/start0.csv')
-
-del starting_state['Unnamed: 0']
-
-runningState = (starting_state.copy(), 1)
-updateGlobals(runningState[0])
-
-
-for i in range(100, numsaves):
-    tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
-    color_these_states(g, [(tempstate, 0)], foldername + "figures/", i+1)
-    print("Colored %d of these states!"%(i+1))
-
-tempstate = pd.read_csv('./startingPoints/start0.csv')
-del tempstate['Unnamed: 0']
-updateGlobals(tempstate)
-
-for i in range(numsaves):
-    oldstate = tempstate.copy()
-    tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(startingPoint, i + 1))
-    updateGlobalsFromOld(oldstate, tempstate, adjacencyFrame, metrics)
-    pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingPoint, i+1), index = False)
-    
-    print("Stored metrics for state %d"%(i+1))
-
-starttime = time.time()
 for startingpoint in range(numstates):
+    starting_state = pd.read_csv('./startingPoints2/start%d.csv'%startingpoint)
+    starting_state = pd.read_csv(foldername+'anneal0_2499.csv')
+    updateGlobals(starting_state)
+    runningState = (starting_state.copy() ,1)
+    #for i in range(numsaves):
+    for i in range(numsaves, 2*numsaves):
+        exploration = 1.0#10**(4*(1 - i*1.0/numsaves))
+        runningState = MH(runningState[0], numsteps, neighbor, goodness, anneal)
+        runningState[0].to_csv(foldername+'anneal%d_%d.csv'%(startingpoint, i))
+        metrics.to_csv(foldername+'metrics_anneal%d_%d.csv'%(startingpoint, i))
+        print 'finished with %d with annealing'%i
+
+    updateGlobals(starting_state)
+    runningState = (starting_state.copy() ,1)
+    for i in range(numsaves):
+        exploration = 10**(4*(1 - i*1.0/numsaves))
+        runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+        runningState[0].to_csv(foldername+'plain%d_%d.csv'%(startingpoint, i))
+        metrics.to_csv(foldername+'metrics_plain%d_%d.csv'%(startingpoint, i))
+        print 'finished with %d in no-annealing'%i
     
-    starting_state = pd.read_csv('./startingPoints/start%d.csv'%startingpoint)
+
+maxBizArray1 = np.zeros((numstates,numsaves))
+meanBizArray1 = np.zeros((numstates,numsaves))
+totalVarArray1 = np.zeros((numstates,numsaves))
+maxContArray1 = np.zeros((numstates,numsaves))
+maxPopArray1 = np.zeros((numstates,numsaves))
+popDiffArray1 = np.zeros((numstates,numsaves))
+
+overallGoodnessArray1 = np.zeros((numstates,numsaves))
+
+maxBizArray2 = np.zeros((numstates,numsaves))
+meanBizArray2 = np.zeros((numstates,numsaves))
+totalVarArray2 = np.zeros((numstates,numsaves))
+maxContArray2 = np.zeros((numstates,numsaves))
+maxPopArray2 = np.zeros((numstates,numsaves))
+popDiffArray2 = np.zeros((numstates,numsaves))
+
+overallGoodnessArray2 = np.zeros((numstates,numsaves))
+
+for startingpoint in range(numstates):
+    for j in range(numsaves):
+        metrics_anneal = pd.read_csv(foldername+'metrics_anneal%d_%d.csv'%(startingpoint, j))
+        #metrics_plain  = pd.read_csv(foldername+'metrics_plain%d_%d.csv'%(startingpoint, j))
+
+        meanBizArray1[startingpoint,j]         = np.mean(metrics_anneal['bizarreness'])
+        maxBizArray1[startingpoint,j]          = np.max(metrics_anneal['bizarreness'])
+        maxContArray1[startingpoint,j]         = np.max(metrics_anneal['contiguousness'])
+        maxPopArray1[startingpoint,j]          = np.max(metrics_anneal['population'])
+        popDiffArray1[startingpoint,j]         = np.max(metrics_anneal['population']) - np.min(metrics_anneal['population'])
+        totalVarArray1[startingpoint,j]        = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics_anneal['population']])/(2*(1-float(1)/ndistricts))
+        overallGoodnessArray1[startingpoint,j] = -300*abs(sum(metrics_anneal['contiguousness']) - ndistricts) - 3000*totalVarArray1[startingpoint,j] - 1000*meanBizArray1[startingpoint,j] - \
+            float(max(0, popDiffArray1[startingpoint,j] - 25000 )**2)/1000000
+
+        meanBizArray2[startingpoint,j]         = np.mean(metrics_plain['bizarreness'])
+        maxBizArray2[startingpoint,j]          = np.max(metrics_plain['bizarreness'])
+        maxContArray2[startingpoint,j]         = np.max(metrics_plain['contiguousness'])
+        maxPopArray2[startingpoint,j]          = np.max(metrics_plain['population'])
+        popDiffArray2[startingpoint,j]         = np.max(metrics_plain['population']) - np.min(metrics_plain['population'])
+        totalVarArray2[startingpoint,j]        = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics_plain['population']])/(2*(1-float(1)/ndistricts))
+        overallGoodnessArray2[startingpoint,j] = -300*abs(sum(metrics_plain['contiguousness']) - ndistricts) - 3000*totalVarArray2[startingpoint,j] - 1000*meanBizArray2[startingpoint,j] - \
+            float(max(0, popDiffArray2[startingpoint,j] - 25000 )**2)/1000000
+
+for i in range(numstates):
+    plt.title('max biz array')
+    plt.plot(maxBizArray1[i,:], label='annealing')
+    #plt.plot(maxBizArray2[i,:], label='no annealing')
+    plt.legend()
+    plt.show()
+    plt.clf()
+    
+for i in range(numstates):
+    plt.title('mean biz array')
+    plt.plot(meanBizArray1[i,:], label='annealing')
+    #plt.plot(meanBizArray2[i,:], label='no annealing')
+    plt.legend()
+    plt.show()
+    plt.clf()
+
+for i in range(numstates):
+    plt.title('max cont array')
+    plt.plot(maxContArray1[i,:], label='annealing')
+    #plt.plot(maxContArray2[i,:], label='no annealing')
+    plt.legend()
+plt.show()
+
+for i in range(numstates):
+    plt.title('max pop array')
+    plt.plot(maxPopArray1[i,:], label='annealing')
+    #plt.plot(maxPopArray2[i,:], label='no annealing')
+    plt.legend()
+    plt.show()
+    plt.clf()
+
+for i in range(numstates):
+    plt.title('mean pop array')
+    plt.plot(popDiffArray1[i,:], label='annealing')
+    #plt.plot(popDiffArray2[i,:], label='no annealing')
+    plt.legend()
+    plt.show()
+    plt.clf()
+
+for i in range(numstates):
+    plt.title('overall goodness array')
+    plt.plot(-overallGoodnessArray1[i,:], label='annealing')
+    #plt.plot(-overallGoodnessArray2[i,:], label='no annealing')
+    plt.gca().invert_yaxis()
+    plt.gca().set_yscale('log')
+    plt.tick_params(axis='y', which='minor')
+    plt.legend()
+    plt.show()
+    plt.clf()
+
+
+
+
+
+
+startingpoint = 14
+i = 999
+runningState = (pd.read_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1)),0)
+color_these_states(g, [runningState], 'two_million_', 0)
+
+foldername = 'bluebrangus2/'
+#os.mkdir(foldername)
+
+for startingpoint in range(75, 76):
+    
+    starting_state = pd.read_csv('./startingPoints2/start%d.csv'%startingpoint)
     updateGlobals(starting_state)
     runningState = (starting_state.copy(), 1)
-    
     for i in range(numsaves):
+        exploration = 10**(4 - i/250.0)
         
         #oldState = runningState[0].copy()
         #oldAdjacencyFrame = adjacencyFrame.copy()
         #oldMetrics = metrics.copy()
         
         #def MH(start, steps, neighbor, goodness, moveprob):
-        runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-        runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
+        runningState = MH(runningState[0], numsteps, neighbor, goodness, anneal)
+        #runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
         
         #updateGlobalsFromOld(oldState, runningState[0], oldAdjacencyFrame, oldMetrics)
-        pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
+        metrics.to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
-    print("Runtime so far: %f"%(time.time() - starttime))
+    runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
 
 
-stop = time.clock()
-print 'took a total time of ', stop - start, ' to run ', i
 
-maxBizArray = []
-meanBizArray = []
-totalVarArray = []
-maxContArray = []
-maxPopArray = []
-popDiffArray = []
+maxBizArray = np.zeros((numstates,numsaves))
+meanBizArray = np.zeros((numstates,numsaves))
+totalVarArray = np.zeros((numstates,numsaves))
+maxContArray = np.zeros((numstates,numsaves))
+maxPopArray = np.zeros((numstates,numsaves))
+popDiffArray = np.zeros((numstates,numsaves))
 
-overallGoodnessArray = []
+overallGoodnessArray = np.zeros((numstates,numsaves))
 
-for i in range(numsaves):
-    #metrics = {}
-    #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, i + 50))
-    #updateGlobals(tempstate)
-    #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
-    thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(0, i+1))
-
-    meanBizArray.append(np.mean(thismetrics['bizarreness']))
-    maxBizArray.append(np.max(thismetrics['bizarreness']))
-    maxContArray.append(np.max(thismetrics['contiguousness']))
-    maxPopArray.append(np.max(thismetrics['population']))
-    popDiffArray.append(np.max(thismetrics['population']) - np.min(thismetrics['population']))
-    totalVarArray.append(np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in thismetrics['population']])/(2*(1-float(1)/ndistricts)))
-    overallGoodnessArray.append(-3*abs(sum(thismetrics.contiguousness) - ndistricts) - 3000*totalVarArray[i] - 1000*meanBizArray[i])
-    #metrics = {'contiguousness': metrics['contiguousness'],
-    #           'population'    : stPops,
-    #           'bizarreness'   : stBiz,
-    #           'perimeter'     : stPerim,
-    #           'area'          : stArea}
-
-    print("Stored metrics for state %d"%(i+1))
+for startingpoint in range(75):
+    for j in range(numsaves):
+        #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1))
+        #updateGlobals(tempstate)
+        #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
+        thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(startingpoint, j+1))
+        
+        meanBizArray[startingpoint,j]         = np.mean(thismetrics['bizarreness'])
+        maxBizArray[startingpoint,j]          = np.max(thismetrics['bizarreness'])
+        maxContArray[startingpoint,j]         = np.max(thismetrics['contiguousness'])
+        maxPopArray[startingpoint,j]          = np.max(thismetrics['population'])
+        popDiffArray[startingpoint,j]         = np.max(thismetrics['population']) - np.min(thismetrics['population'])
+        totalVarArray[startingpoint,j]        = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in thismetrics['population']])/(2*(1-float(1)/ndistricts))
+        overallGoodnessArray[startingpoint,j] = -300*abs(sum(thismetrics['contiguousness']) - ndistricts) - 3000*totalVarArray[startingpoint,j] - 1000*meanBizArray[startingpoint,j] - \
+            float(max(0, popDiffArray[startingpoint,j] - 25000 )**2)/1000000
+        #metrics = {'contiguousness': metrics['contiguousness'],
+        #           'population'    : stPops,
+        #           'bizarreness'   : stBiz,
+        #           'perimeter'     : stPerim,
+        #           'area'          : stArea}
+    
+    print("Stored metrics for state %d"%(startingpoint))
 
 num = len(meanBizArray)
 
-plt.plot(meanBizArray)
+startingpoint = 13
+
+plt.plot(meanBizArray[startingpoint,:])
 plt.title('mean Biz')
 plt.show()
 plt.clf()
-plt.plot(maxBizArray)
+
+plt.plot(maxBizArray[startingpoint,:])
 plt.title('max Biz')
 plt.show()
 plt.clf()
-plt.plot(maxContArray)
+
+plt.plot(maxContArray[startingpoint,:])
 plt.title('max contig')
 plt.show()
 plt.clf()
-plt.plot(maxPopArray)
+
+plt.plot(maxPopArray[startingpoint,:])
 plt.title('max pop')
 plt.show()
 plt.clf()
-plt.plot(popDiffArray)
+
+plt.plot(popDiffArray[startingpoint,:])
 plt.title('pop diff')
 plt.show()
 plt.clf()
-plt.plot(totalVarArray)
+
+plt.plot(totalVarArray[startingpoint,:])
 plt.title('mean Pop')
 plt.show()
 plt.clf()
-plt.plot(overallGoodnessArray)
+
+plt.plot(overallGoodnessArray[startingpoint,:])
 plt.title('goodness')
 plt.show()
 
+for i in range(numstates):
+    plt.plot(meanBizArray[i,:])
+plt.title('mean Biz')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(maxBizArray[i,:])
+plt.title('max Biz')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(maxContArray[i,:])
+plt.title('max contig')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(maxPopArray[i,:])
+plt.title('max pop')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(popDiffArray[i,:])
+plt.title('pop diff')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(totalVarArray[i,:])
+plt.title('mean Pop')
+plt.show()
+plt.clf()
+for i in range(numstates):
+    plt.plot(overallGoodnessArray[i,:])
+plt.title('goodness')
+plt.show()
 
 color_these_states(g, [(tempstate, 0)], foldername+'theverylast_', 0)
 tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, 1))
@@ -470,12 +613,14 @@ def goodness(metrics):
     
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -300*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 1000*np.nanmean(tempStBiz) - \
+    return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
             float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000000
-    #Include something to prioritize population until we can get to a max popdiff of 25,000.1
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
+
+def anneal(current_goodness, possible_goodness): # fix
+    return 1/(1 + np.exp(float(current_goodness-possible_goodness)/exploration))
 
 def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     global metrics, adjacencyFrame

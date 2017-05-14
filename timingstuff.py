@@ -1,7 +1,11 @@
 
-time1 = time.clock()
-dangle = neighbor(state)
-time2 = time.clock()
+time1 = time.time()
+for i in range(100):
+    dangle = neighbor(state)
+time2 = time.time()
+dungus  = MH(state, 100, neighbor, goodness, switchDistrict)
+time3 = time.time()
+
 
 
 time6 - time5
@@ -9,6 +13,61 @@ time5 - time4
 time4 - time3
 time3 - time2
 time2 - time1
+
+##################################################################################
+def MH(start, steps, neighbor, goodness, moveprob):
+    #  object starting state   |         |
+    #         integer steps to be taken for M-H algorithm.
+    #                function returning a neighbor of current state
+    #                          function for determining goodness.
+    #                                    function which takes goodnesses and returns probabilities.
+    global adjacencyFrame, metrics
+    current = start.copy()
+    best_state = start.copy()
+    current_goodness = goodness(metrics)
+    best_goodness = current_goodness
+    best_adjacency = adjacencyFrame.copy()
+    best_metrics = metrics.copy()
+    
+    better_hops = 0
+    worse_hops = 0
+    stays = 0
+    for i in range(steps):
+        possible = neighbor(current)
+        possible_goodness = goodness(possible[2])
+        if best_goodness < possible_goodness:
+            best_state = possible[0].copy()
+            best_goodness = possible_goodness
+            best_metrics = possible[2].copy()
+            best_adjacency = adjacencyFrame.copy()
+            best_adjacency.update(possible[1])
+            #best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
+            #best_adjacency.highdist = best_adjacency.highdist.astype(int)
+            
+        if random.random() < moveprob(current_goodness, possible_goodness):
+            if current_goodness < possible_goodness :
+                better_hops += 1
+            else:
+                worse_hops += 1
+            current = possible[0].copy()
+            current_goodness = possible_goodness
+            adjacencyFrame.update(possible[1])
+            adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
+            adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
+            metrics = possible[2].copy()
+        else:
+            stays += 1
+    
+    adjacencyFrame.update(best_adjacency)
+    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
+    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
+    #Update adjacencyframe to the best that we ever had.
+    
+    metrics = best_metrics.copy()
+    
+    # " for metrics
+    
+    return((best_state, best_goodness, better_hops, worse_hops, stays))
 
 
 def neighbor(state):
@@ -18,16 +77,13 @@ def neighbor(state):
     #stBiz   = [   bizarreness(runningState[0], i) for i in range(ndistricts)]
     #stPerim = [     perimeter(runningState[0], i) for i in range(ndistricts)]
     #stArea  = [      distArea(runningState[0], i) for i in range(ndistricts)]
-    #global adjacencyFrame, metrics
-    
-    time1 = time.clock()
+    global adjacencyFrame, metrics
     newstate = state.copy()
     newmetrics = metrics.copy()
 
     missingdist = set.difference(set(range(ndistricts)), set(newstate['value']))
     #If we've blobbed out some districts, we wants to behave differently
     
-    time2  = time.clock()
     if len(missingdist) == 0:
         switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
 
@@ -36,7 +92,7 @@ def neighbor(state):
         templowdist  = adjacencyFrame.lowdist[switchedge]
         temphighdist = adjacencyFrame.highdist[switchedge]
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
-        time3  = time.clock()
+
         if random.random() < 0.5:
             
             #switch low node stuff to high node's district
@@ -46,35 +102,35 @@ def neighbor(state):
             previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
             proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
-            
-            newstate.value[newstate.key == lownode] = switchTo
-            proposedChanges.lowdist[proposedChanges.low == lownode] = switchTo
-            proposedChanges.highdist[proposedChanges.high == lownode] = switchTo
+    
+            newstate.ix[newstate.key == lownode, 'value'] = switchTo
+            proposedChanges.ix[proposedChanges.low == lownode, 'lowdist'] = switchTo
+            proposedChanges.ix[proposedChanges.high == lownode, 'highdist'] = switchTo
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
             
             #change population
             popchange = blockstats.population[lownode]
-            newmetrics['population'][templowdist]  -= popchange
-            newmetrics['population'][temphighdist] += popchange
-            
+            newmetrics.ix[templowdist, 'population']  -= popchange
+            newmetrics.ix[temphighdist, 'population'] += popchange
+    
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  += \
+            newmetrics.ix[templowdist,'perimeter']  += \
                 (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]) -\
                  sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]))
-            newmetrics['perimeter'][temphighdist] += \
+            newmetrics.ix[temphighdist, 'perimeter'] += \
                 (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]) -\
                  sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]))
-            
+    
             areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
-            newmetrics['area'][templowdist]  -= areachange
-            newmetrics['area'][temphighdist] += areachange
+            newmetrics.ix[templowdist, 'area'] -= areachange
+            newmetrics.ix[temphighdist,'area'] += areachange
             
-            newmetrics['bizarreness'][templowdist]  = bizarreness(newmetrics['area'][templowdist], \
+            newmetrics.ix[templowdist, 'bizarreness']  = bizarreness(newmetrics['area'][templowdist], \
                                                                   newmetrics['perimeter'][templowdist])
-            newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
+            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
                                                                   newmetrics['perimeter'][temphighdist])
-            
+
         else:
             
             #switch high node stuff to low node's district
@@ -86,51 +142,58 @@ def neighbor(state):
             proposedChanges = previousVersion.copy()
             #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
             
-            newstate.value[newstate.key == highnode] = switchTo
-            proposedChanges.lowdist[proposedChanges.low == highnode] = switchTo
-            proposedChanges.highdist[proposedChanges.high == highnode] = switchTo
+            newstate.ix[newstate.key == highnode, 'value'] = switchTo
+            proposedChanges.ix[proposedChanges.low == highnode, 'lowdist'] = switchTo
+            proposedChanges.ix[proposedChanges.high == highnode, 'highdist'] = switchTo
             proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
             #change values in the state as well as the proposedChanges
             
             #change population
             popchange = blockstats.population[highnode]
-            newmetrics['population'][temphighdist] -= popchange
-            newmetrics['population'][templowdist]  += popchange
+            newmetrics.ix[temphighdist, 'population'] -= popchange
+            newmetrics.ix[templowdist, 'population']  += popchange
             
             #change bizarreness
-            newmetrics['perimeter'][templowdist]  += \
+            newmetrics.ix[templowdist, 'perimeter']  += \
                 (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]) -\
                  sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]))
-            newmetrics['perimeter'][temphighdist] += \
+            newmetrics.ix[temphighdist, 'perimeter'] += \
                 (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]) -\
                  sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]))
             
             areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
-            newmetrics['area'][temphighdist] -= areachange
-            newmetrics['area'][templowdist]  += areachange
+            newmetrics.ix[temphighdist, 'area'] -= areachange
+            newmetrics.ix[templowdist, 'area']  += areachange
             
-            newmetrics['bizarreness'][temphighdist] = bizarreness(newmetrics['area'][temphighdist], \
-                                                                  newmetrics['perimeter'][temphighdist])
-            newmetrics['bizarreness'][templowdist] = bizarreness(newmetrics['area'][templowdist], \
-                                                                   newmetrics['perimeter'][templowdist])
-        time4  = time.clock()
+            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
+                                                                     newmetrics['perimeter'][temphighdist])
+            newmetrics.ix[templowdist, 'bizarreness'] = bizarreness(newmetrics['area'][templowdist], \
+                                                                    newmetrics['perimeter'][templowdist])
+        
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
-        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist)
-        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist)
-        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist)
-        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist)
-        time5 = time.clock()
-        if (oldContNeighborhoodLow != newContNeighborhoodLow):
-            newmetrics['contiguousness'][templowdist]  = contiguousness(newstate, templowdist)
-        else:
-            pass
+        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist,  proposedChanges)
+        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist, proposedChanges)
+        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist,  proposedChanges)
+        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist, proposedChanges)
         
-        if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
-            newmetrics['contiguousness'][temphighdist] = contiguousness(newstate, temphighdist)
-        else:
-            pass
-        time6 = time.clock()
+        if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
+            
+            tempframe = adjacencyFrame.copy()
+            tempframe.update(proposedChanges)
+            tempframe.lowdist  = tempframe.lowdist.astype(int)
+            tempframe.highdist = tempframe.highdist.astype(int)
+            
+            if (oldContNeighborhoodLow != newContNeighborhoodLow):
+                newmetrics.ix[templowdist, 'contiguousness']  = contiguousness(newstate, templowdist, tempframe)
+            else:
+                pass
+            
+            if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
+                newmetrics.ix[temphighdist, 'contiguousness'] = contiguousness(newstate, temphighdist, tempframe)
+            else:
+                pass
+        
     else:
         #If there are some districts missing, 
         changenode = newstate.key.sample(1)
