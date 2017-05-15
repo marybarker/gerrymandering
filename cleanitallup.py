@@ -25,11 +25,16 @@ adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
 foldername = "fffffff2/"
+foldername = "slambp3ALLOFTHESTATES/"
+foldername = "muffle/" # even when global metrics are incorrectly updated, we keep the incorrect version
+foldername = "huffle/" # reset global metrics after every MH call
+foldername = "buffle/" # low to high or high to low
+
 #os.mkdir(foldername)
 
-numstates= 50
+numstates= 1
 numsteps = 100
-numsaves = 1000
+numsaves = 20
 numplots = 10
 startingPoint=0
 
@@ -41,8 +46,43 @@ for i in range(numstates):
 efficiencyGapArray = np.zeros(50)
 for i in range(numstates):
     state = pd.read_csv(foldername + "state%d_start.csv"%(i))
-    temp = [demoEfficiency(state, dist, "repvotes", "demovotes") for dist in range(ndistricts)]
+    temp = [demoEfficiency(state, dist, "REP_C", "DEM_C") for dist in range(ndistricts)]
     efficiencyGapArray[i] = np.sum([x[0] - x[1] for x in temp])
+
+
+starting_state = contiguousStart()
+runningState = (starting_state.copy(), 1)
+updateGlobals(runningState[0])
+for i in range(numsaves):
+    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+    runningState[0].to_csv(foldername+"step%d.csv"%i)
+
+    metrics.to_csv(foldername+"m1_%d.csv"%i)
+    temp = metrics.copy()
+    updateGlobals(runningState[0])
+    metrics.to_csv(foldername+"m2_%d.csv"%i)
+    if dfEquiv(temp, metrics):
+        print "finished with step %d"%i
+    else:
+        print "finished with step %d --- oh no!! different values so we have a bug somewhere"%i
+        #metrics = temp # reset to the (wrong) version so that I can see how far we stray from reality
+
+m1 = [pd.read_csv(foldername+'m1_%d.csv'%x) for x in range(numsaves)]
+m2 = [pd.read_csv(foldername+'m2_%d.csv'%x) for x in range(numsaves)]
+comparecontig = [m2[x].contiguousness - m1[x].contiguousness for x in range(numsaves)]
+compareperim  = [m2[x].perimeter      - m1[x].perimeter      for x in range(numsaves)]
+comparearea   = [m2[x].area           - m1[x].area           for x in range(numsaves)]
+
+[sum(x) for x in comparecontig]
+[sum(x) for x in compareperim]
+[sum(x) for x in comparearea]
+
+
+def dfEquiv(f1, f2):
+    if any(f1.columns != f2.columns):
+        return False
+    else:
+        return all([ all(f1[col] == f2[col]) for col in f1.columns ])
 
 starting_state = pd.read_csv('./startingPoints/start0.csv')
 #starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
@@ -192,8 +232,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
             best_metrics = possible[2].copy()
             best_adjacency = adjacencyFrame.copy()
             best_adjacency.update(possible[1])
-            #best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
-            #best_adjacency.highdist = best_adjacency.highdist.astype(int)
+            best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
+            best_adjacency.highdist = best_adjacency.highdist.astype(int)
             
         if random.random() < moveprob(current_goodness, possible_goodness):
             if current_goodness < possible_goodness :
@@ -202,7 +242,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
                 worse_hops += 1
             current = possible[0].copy()
             current_goodness = possible_goodness
-            adjacencyFrame.update(possible[1])
+            changes = possible[1].copy()
+            adjacencyFrame.update(changes)
             adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
             adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
             metrics = possible[2].copy()
@@ -216,9 +257,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
     
     metrics = best_metrics.copy()
     
-    # " for metrics
-    
     return((best_state, best_goodness, better_hops, worse_hops, stays))
+
 
 
 def neighbor(state):
@@ -237,13 +277,13 @@ def neighbor(state):
     
     if len(missingdist) == 0:
         switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
-
+        
         lownode      = adjacencyFrame.low[switchedge]
         highnode     = adjacencyFrame.high[switchedge]
         templowdist  = adjacencyFrame.lowdist[switchedge]
         temphighdist = adjacencyFrame.highdist[switchedge]
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
-
+        
         if random.random() < 0.5:
             
             #switch low node stuff to high node's district
@@ -267,11 +307,11 @@ def neighbor(state):
     
             #change bizarreness
             newmetrics.ix[templowdist,'perimeter']  += \
-                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]) -\
-                 sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == templowdist) | (previousVersion.highdist == templowdist))]))
+                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]) -\
+                 sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]))
             newmetrics.ix[temphighdist, 'perimeter'] += \
-                (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]) -\
-                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == templowdist) | (proposedChanges.highdist == templowdist))]))
+                (sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]) -\
+                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]))
     
             areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
             newmetrics.ix[templowdist, 'area'] -= areachange
@@ -306,11 +346,11 @@ def neighbor(state):
             
             #change bizarreness
             newmetrics.ix[templowdist, 'perimeter']  += \
-                (sum(proposedChanges.length[-(proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]) -\
-                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.lowdist == temphighdist) | (proposedChanges.highdist == temphighdist))]))
+                (sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.low == highnode) | (proposedChanges.high == highnode))]) -\
+                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.low == highnode) | (proposedChanges.high == highnode))]))
             newmetrics.ix[temphighdist, 'perimeter'] += \
-                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]) -\
-                 sum(previousVersion.length[-(previousVersion.isSame==1) & ((previousVersion.lowdist == temphighdist) | (previousVersion.highdist == temphighdist))]))
+                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.low == highnode) | (previousVersion.high == highnode))]) -\
+                 sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.low == highnode) | (previousVersion.high == highnode))]))
             
             areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
             newmetrics.ix[temphighdist, 'area'] -= areachange
@@ -329,7 +369,6 @@ def neighbor(state):
         newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist, proposedChanges)
         
         if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
-            
             tempframe = adjacencyFrame.copy()
             tempframe.update(proposedChanges)
             tempframe.lowdist  = tempframe.lowdist.astype(int)
@@ -403,8 +442,11 @@ def contiguousness(state, district, subframe = "DEFAULT"):
     
     if type(subframe) == str:
         #If the subframe passed is the default, then use anything in the adjacencyframe that's in the district.
-        subframe = adjacencyFrame
-    subedges = subframe.ix[(subframe.length != 0) & (subframe.lowdist == district) & (subframe.highdist == district), ['low','high']]
+        subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
+    else:
+        #Still make sure we're only using stuff from the district.
+        subframe = subframe.loc[ (subframe.highdist == district ) & (subframe.lowdist == district) ]
+    subedges = subframe[subframe.length != 0][['low','high']]
     
     while len(regionlist) > 0:
         regions += 1
@@ -558,7 +600,7 @@ def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
 
 def contiguousStart(stats = blockstats):
-    
+
     #Begin with [ndistricts] different vtds to be the congressional districts.
     #Keep running list of series which are adjacent to the districts.
     #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
