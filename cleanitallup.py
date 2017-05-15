@@ -46,8 +46,12 @@ for i in range(numstates):
 efficiencyGapArray = np.zeros(50)
 for i in range(numstates):
     state = pd.read_csv(foldername + "state%d_start.csv"%(i))
-    temp = [demoEfficiency(state, dist, "REP_C", "DEM_C") for dist in range(ndistricts)]
+    #temp = [demoEfficiency(state, dist, "REP_C", "DEM_C") for dist in range(ndistricts)]
+    #temp = [demoEfficiency(state, dist, "REP_P", "DEM_P") for dist in range(ndistricts)]
+    temp = [demoEfficiency(state, dist, "REP_S", "DEM_S") for dist in range(ndistricts)]
     efficiencyGapArray[i] = np.sum([x[0] - x[1] for x in temp])
+plt.hist(efficiencyGapArray)
+
 
 
 starting_state = contiguousStart()
