@@ -10,9 +10,8 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv("vtdstats.csv")
+blockstats = pd.read_csv("noIslandsVTDStats.csv")
 blockstats.rename(columns = {"POP100":"population"}, inplace = True)
-blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
 totalpopulation = sum(blockstats.population)
 
@@ -20,19 +19,30 @@ cdtable = pd.read_csv('../cdbystate1.txt', '\t')
 ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
 nvtd = len(blockstats.VTD)
 
-adjacencyFrame = pd.read_csv('PRECINCTconnections.csv')
+adjacencyFrame = pd.read_csv("noIslandsPrecinctConnections.csv")
 adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
-foldername = "slambp3ALLOFTHESTATES/"
+foldername = "fffffff2/"
 #os.mkdir(foldername)
 
-numstates= 32
+numstates= 50
 numsteps = 100
 numsaves = 1000
 numplots = 10
 startingPoint=0
+
+for i in range(numstates):
+    state = contiguousStart()
+    state.to_csv(foldername + "state%d_start.csv"%(i), index = False)
+    print(i)
+
+efficiencyGapArray = np.zeros(50)
+for i in range(numstates):
+    state = pd.read_csv(foldername + "state%d_start.csv"%(i))
+    temp = [demoEfficiency(state, dist, "repvotes", "demovotes") for dist in range(ndistricts)]
+    efficiencyGapArray[i] = np.sum([x[0] - x[1] for x in temp])
 
 starting_state = pd.read_csv('./startingPoints/start0.csv')
 #starting_state = pd.read_csv('./slambp2/state0_save1000.csv')
@@ -375,15 +385,26 @@ def neighbor(state):
 
 
 def contiguousness(state, district, subframe = "DEFAULT"):
+    #This function is going to count the numbr of disjoint, connected regeions of the district.
+    #The arguments are a state of assignments of precincts to CDs, a district to evaluate, and
+    #  a subframe, which is a subset of the adjacencies so we can check contiguousness on a relative
+    #  topology.
     
     regions = 0
+        #start with 0
+        
     regionlist = list(state.key[state.value == district])
+        #We're going to keep track of the precincts that have been used already.
+        
     if len(regionlist) == 0:
+        #If there's nothing in this district...
         return 1
+            # ... we say that it's in one piece.
     
     if type(subframe) == str:
-        subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
-    subedges = subframe[subframe.length != 0][['low','high']]
+        #If the subframe passed is the default, then use anything in the adjacencyframe that's in the district.
+        subframe = adjacencyFrame
+    subedges = subframe.ix[(subframe.length != 0) & (subframe.lowdist == district) & (subframe.highdist == district), ['low','high']]
     
     while len(regionlist) > 0:
         regions += 1
@@ -418,15 +439,32 @@ def efficiency(state, district):
     subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
     rvotes = sum(subframe['repvotes'])
     dvotes = sum(subframe['demvotes'])
+    allvotes = rvotes + dvotes
     
     if rvotes > dvotes:
-        wastedR = max(rvotes, dvotes) - 0.5
+        wastedR = max(rvotes, dvotes) - 0.5*allvotes
         wastedD = min(rvotes,dvotes)
     else:
-        wastedD = max(rvotes, dvotes) - 0.5
+        wastedD = max(rvotes, dvotes) - 0.5*allvotes
         wastedR = min(rvotes,dvotes)
     
     return wastedR-wastedD 
+
+def demoEfficiency(state, district, demo1, demo2):
+    #returns difference in percentage of ineffective and superfluous votes by demographic.
+    subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
+    demo1Vote = sum(subframe[demo1])
+    demo2Vote = sum(subframe[demo2])
+    allvotes = demo1Vote + demo2Vote
+    
+    if demo1Vote > demo2Vote:
+        wasted1 = max(demo1Vote, demo2Vote) - 0.5*allvotes
+        wasted2 = min(demo1Vote, demo2Vote)
+    else:
+        wasted2 = max(demo1Vote, demo2Vote) - 0.5*allvotes
+        wasted1 = min(demo1Vote, demo2Vote)
+    
+    return (wasted1, wasted2)
 
 def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
@@ -519,19 +557,19 @@ def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
     adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
     adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
 
-def contiguousStart():
+def contiguousStart(stats = blockstats):
     
     #Begin with [ndistricts] different vtds to be the congressional districts.
     #Keep running list of series which are adjacent to the districts.
     #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
 
-    state = pd.DataFrame({"key":blockstats.VTD.copy(), "value":ndistricts })
-    subAdj = adjacencyFrame.ix[adjacencyFrame.length != 0, ['low','high']]
+    state = pd.DataFrame({"key":stats.VTD.copy(), "value":ndistricts })
+    subAdj = adjacencyFrame.ix[adjacencyFrame.low.isin(stats.VTD) & adjacencyFrame.high.isin(stats.VTD) & (adjacencyFrame.length != 0), ['low','high']]
     subAdj['lowdist']  = ndistricts
     subAdj['highdist'] = ndistricts
     
     missingdist = range(ndistricts)
-    assignments = np.random.choice(blockstats.VTD, ndistricts, replace = False)
+    assignments = np.random.choice(stats.VTD, ndistricts, replace = False)
     
     state.ix[state.key.isin(assignments), 'value'] = missingdist
     for i in range(ndistricts):
@@ -558,7 +596,7 @@ def contiguousStart():
             #changes = set(relevantAdjacencies.low.append(relevantAdjacencies.high))
             #changes = (relevantAdjacencies.low.append(relevantAdjacencies.high)).unique()
             state.ix[state.key.isin(changes), 'value'] = targdistr
-            pops[targdistr] += sum(blockstats.population[changes])
+            pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
         #print("%d districts left to assign."%(sum(state.value==ndistricts)))
