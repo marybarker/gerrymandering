@@ -10,9 +10,9 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv("noIslandsVTDStats.csv")
+blockstats = pd.read_csv('./noIslandsApportionmentData.csv')
 #blockstats.rename(columns = {"POP100":"population"}, inplace = True)
-#blockstats = blockstats.drop('Unnamed: 0', 1)
+blockstats = blockstats.drop('Unnamed: 0', 1)
 blockstats = blockstats.set_index(blockstats.VTD)
 totalpopulation = sum(blockstats.population)
 
@@ -25,6 +25,7 @@ adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 #adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
+foldername = "fffffff2/"
 foldername = "slambp3ALLOFTHESTATES/"
 foldername = "muffle/" # even when global metrics are incorrectly updated, we keep the incorrect version
 foldername = "huffle/" # reset global metrics after every MH call
@@ -32,13 +33,52 @@ foldername = "buffle/" # low to high or high to low
 
 #os.mkdir(foldername)
 
-numstates= 1
+numstates= 50
 numsteps = 100
-numsaves = 500
+numsaves = 1000
 numplots = 10
 startingPoint=0
 
+demo1 = "B02008e1"
+demo2 = "B03002e1"
 
+demo1 = "DEM_C"
+demo2 = "REP_C"
+
+efficiencyGapArray = np.zeros(numstates)
+gapArray = np.zeros((numstates, ndistricts))
+popArray = np.zeros((numstates, ndistricts))
+for i in range(numstates):
+    state = contiguousStart()
+    state.to_csv(foldername + "state%d_start.csv"%(i), index = False)
+    temp = [demoEfficiency(state, dist, demo1, demo2) for dist in range(ndistricts)]
+    gapArray[i,:] = [x[0] - x[1] for x in temp]
+    efficiencyGapArray[i] = np.sum(gapArray[i,:])
+    print(i)
+
+plt.hist(efficiencyGapArray)
+
+for i in range(numstates):
+    state = pd.read_csv(foldername + "state%d_start.csv"%(i))
+    #temp = [demoEfficiency(state, dist, "REP_C", "DEM_C") for dist in range(ndistricts)]
+    #temp = [demoEfficiency(state, dist, "REP_P", "DEM_P") for dist in range(ndistricts)]
+
+    temp = [demoEfficiency(state, dist, demo1, demo2) for dist in range(ndistricts)]
+    gapArray[i,:] = [x[0] - x[1] for x in temp]
+    efficiencyGapArray[i] = np.sum(gapArray[i,:])
+    
+    popArray[i, :] = [population(state, dist) for dist in range(ndistricts)]
+
+plt.hist(efficiencyGapArray)
+
+for i in range(numstates):
+    plt.hist(gapArray[i,:])
+
+for i in range(numstates):
+    plt.hist(popArray[i,:])
+
+for i in range(numstates):
+    plt.hist(gapArray[i,:]/popArray[i,:])
 
 
 
@@ -49,7 +89,7 @@ for i in range(numsaves):
     runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
     runningState[0].to_csv(foldername+"step%d.csv"%i)
 
-                                                                       metrics.to_csv(foldername+"m1_%d.csv"%i)
+    metrics.to_csv(foldername+"m1_%d.csv"%i)
     temp = metrics.copy()
     updateGlobals(runningState[0])
     metrics.to_csv(foldername+"m2_%d.csv"%i)
@@ -76,7 +116,6 @@ def dfEquiv(f1, f2):
     else:
         return all([ all(f1[col] == f2[col]) for col in f1.columns ])
 
-
 starting_state = pd.read_csv("../startingPoints2/start%d.csv"%startingpoint)
 updateGlobals(starting_state)
 runningState = (starting_state.copy() ,1)
@@ -86,7 +125,6 @@ for i in range(numsaves):
     runningState[0].to_csv(foldername+'plain%d_%d.csv'%(startingpoint, i))
     metrics.to_csv(foldername+'metrics_plain%d_%d.csv'%(startingpoint, i))
     print 'finished with %d in no-annealing'%i
-    
 
 maxBizArray1 = np.zeros((numstates,numsaves))
 meanBizArray1 = np.zeros((numstates,numsaves))
@@ -189,16 +227,16 @@ i = 999
 runningState = (pd.read_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1)),0)
 color_these_states(g, [runningState], 'two_million_', 0)
 
-foldername = 'bluebrangus2/'
+foldername = 'muffle'
 #os.mkdir(foldername)
 
-for startingpoint in range(1):#75, 76):
+for startingpoint in range(50):#75, 76):
     
-    starting_state = pd.read_csv('./startingPoints2/start%d.csv'%startingpoint)
-    updateGlobals(starting_state)
+    starting_state = pd.read_csv(foldername + 'state%d_start.csv'%startingpoint)
     runningState = (starting_state.copy(), 1)
+    updateGlobals(runningState[0])
     for i in range(numsaves):
-        exploration = 10**(4 - i/250.0)
+        #exploration = 10**(4 - i/250.0)
         
         #oldState = runningState[0].copy()
         #oldAdjacencyFrame = adjacencyFrame.copy()
@@ -215,8 +253,8 @@ for startingpoint in range(1):#75, 76):
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
     runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
 
-
-
+numsaves = numsaves + 39
+0
 maxBizArray = np.zeros((numstates,numsaves))
 meanBizArray = np.zeros((numstates,numsaves))
 totalVarArray = np.zeros((numstates,numsaves))
@@ -347,8 +385,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
     stays = 0
     for i in range(steps):
         possible = neighbor(current)
-        possible_goodness = goodness(
-        if best_goodness < possible_goodness:possible[2])
+        possible_goodness = goodness(possible[2])
+        if best_goodness < possible_goodness:
             best_state = possible[0].copy()
             best_goodness = possible_goodness
             best_metrics = possible[2].copy()
@@ -546,15 +584,27 @@ def neighbor(state):
 
 
 def contiguousness(state, district, subframe = "DEFAULT"):
+    #This function is going to count the numbr of disjoint, connected regeions of the district.
+    #The arguments are a state of assignments of precincts to CDs, a district to evaluate, and
+    #  a subframe, which is a subset of the adjacencies so we can check contiguousness on a relative
+    #  topology.
     
     regions = 0
+        #start with 0
+        
     regionlist = list(state.key[state.value == district])
+        #We're going to keep track of the precincts that have been used already.
+        
     if len(regionlist) == 0:
+        #If there's nothing in this district...
         return 1
+            # ... we say that it's in one piece.
     
     if type(subframe) == str:
+        #If the subframe passed is the default, then use anything in the adjacencyframe that's in the district.
         subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
     else:
+        #Still make sure we're only using stuff from the district.
         subframe = subframe.loc[ (subframe.highdist == district ) & (subframe.lowdist == district) ]
     subedges = subframe[subframe.length != 0][['low','high']]
     
@@ -591,15 +641,32 @@ def efficiency(state, district):
     subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
     rvotes = sum(subframe['repvotes'])
     dvotes = sum(subframe['demvotes'])
+    allvotes = rvotes + dvotes
     
     if rvotes > dvotes:
-        wastedR = max(rvotes, dvotes) - 0.5
+        wastedR = max(rvotes, dvotes) - 0.5*allvotes
         wastedD = min(rvotes,dvotes)
     else:
-        wastedD = max(rvotes, dvotes) - 0.5
+        wastedD = max(rvotes, dvotes) - 0.5*allvotes
         wastedR = min(rvotes,dvotes)
     
     return wastedR-wastedD 
+
+def demoEfficiency(state, district, demo1, demo2):
+    #returns difference in percentage of ineffective and superfluous votes by demographic.
+    subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
+    demo1Vote = sum(subframe[demo1])
+    demo2Vote = sum(subframe[demo2])
+    allvotes = demo1Vote + demo2Vote
+    
+    if demo1Vote > demo2Vote:
+        wasted1 = max(demo1Vote, demo2Vote) - 0.5*allvotes
+        wasted2 = min(demo1Vote, demo2Vote)
+    else:
+        wasted2 = max(demo1Vote, demo2Vote) - 0.5*allvotes
+        wasted1 = min(demo1Vote, demo2Vote)
+    
+    return (wasted1, wasted2)
 
 def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
@@ -644,7 +711,7 @@ def goodness(metrics):
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
     return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
-            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000000
+            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
@@ -652,61 +719,20 @@ def switchDistrict(current_goodness, possible_goodness): # fix
 def anneal(current_goodness, possible_goodness): # fix
     return 1/(1 + np.exp(float(current_goodness-possible_goodness)/exploration))
 
-def updateGlobalsFromOld(state1, state2, oldAdjacencyFrame, oldMetrics):
-    global metrics, adjacencyFrame
-    
-    adjacencyFrame = oldAdjacencyFrame
-    
-    substate1 = state1.loc[state1.value != state2.value]
-    if substate1.shape[0] == 0:
-        return
-    
-    substate2 = state2.loc[state1.value != state2.value]
-    subadjacency1 = oldAdjacencyFrame.loc[oldAdjacencyFrame.low.isin(substate2.key) | oldAdjacencyFrame.high.isin(substate2.key)]
-    subadjacency2 = subadjacency1.copy()
-    temp = dict(zip(state2.key, state2.value))
-    
-    lowdists  = subadjacency2.low.replace(temp)
-    highdists = subadjacency2.high.replace(temp)
-    isSame = lowdists==highdists
-    subadjacency2['isSame']   = isSame
-    subadjacency2['lowdist']  = lowdists
-    subadjacency2['highdist'] = highdists
-    
-    popdiff   = [population(substate2, i) - population(substate1, i) for i in range(ndistricts)]
-    areadiff  = [  distArea(substate2, i) -   distArea(substate1, i) for i in range(ndistricts)]
-    perimdiff = [sum(subadjacency2.length[~(subadjacency2.isSame==1) & ((subadjacency2.lowdist == i) | (subadjacency2.highdist == i))])-\
-                 sum(subadjacency1.length[~(subadjacency1.isSame==1) & ((subadjacency1.lowdist == i) | (subadjacency1.highdist == i))]) for i in range(ndistricts)]
-    
-    stPops  = [metrics['population'][i] + popdiff[i]   for i in range(ndistricts)]
-    stPerim = [metrics['perimeter'][i]  + perimdiff[i] for i in range(ndistricts)]
-    stArea  = [metrics['area'][i]       + areadiff[i]  for i in range(ndistricts)]
-    
-    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
-    
-    metrics = {'contiguousness': metrics['contiguousness'],
-               'population'    : stPops,
-               'bizarreness'   : stBiz,
-               'perimeter'     : stPerim,
-               'area'          : stArea}
-    
-    adjacencyFrame.update(subadjacency2)
-    adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
-    adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
 
-def contiguousStart():
-    
+def contiguousStart(stats = blockstats):
+
     #Begin with [ndistricts] different vtds to be the congressional districts.
     #Keep running list of series which are adjacent to the districts.
     #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
 
-    state = pd.DataFrame({"key":blockstats.VTD.copy(), "value":ndistricts })
-    subAdj = adjacencyFrame.ix[adjacencyFrame.length != 0, ['low','high']]
+    state = pd.DataFrame({"key":stats.VTD.copy(), "value":ndistricts })
+    subAdj = adjacencyFrame.ix[adjacencyFrame.low.isin(stats.VTD) & adjacencyFrame.high.isin(stats.VTD) & (adjacencyFrame.length != 0), ['low','high']]
     subAdj['lowdist']  = ndistricts
     subAdj['highdist'] = ndistricts
     
     missingdist = range(ndistricts)
-    assignments = np.random.choice(blockstats.VTD, ndistricts, replace = False)
+    assignments = np.random.choice(stats.VTD, ndistricts, replace = False)
     
     state.ix[state.key.isin(assignments), 'value'] = missingdist
     for i in range(ndistricts):
@@ -733,7 +759,7 @@ def contiguousStart():
             #changes = set(relevantAdjacencies.low.append(relevantAdjacencies.high))
             #changes = (relevantAdjacencies.low.append(relevantAdjacencies.high)).unique()
             state.ix[state.key.isin(changes), 'value'] = targdistr
-            pops[targdistr] += sum(blockstats.population[changes])
+            pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
         #print("%d districts left to assign."%(sum(state.value==ndistricts)))
