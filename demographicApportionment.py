@@ -85,6 +85,9 @@ precincts = features(lyr)
 #VTD block group pairings.
 # VTD | block group | % of block group
 
+#blockFrame = pd.read_csv(assignmentfile)
+#groupStats = pd.read_csv(groupFile)
+
 vtdgrouppairing = { "VTD"      : [],
                     "GROUP"    : [],
                     "PCTGROUP" : [] }
@@ -117,4 +120,43 @@ vgpFrame = pd.DataFrame(vtdgrouppairing)
 problems = [vgpFrame.GROUP[i] for i in vgpFrame.index if \
             abs(sum(vgpFrame.PCTGROUP[vgpFrame.GROUP == vgpFrame.GROUP[i]]) - 1) > 0.001]
 
-vgpFrame.ix[vgpFrame.GROUP == problems[0]]
+vgpFrame.ix[ vgpFrame.GROUP == problems[0] ]
+
+
+
+def applyDemographicInfo(vtds, listOfStatsToCompute, VTDToBlockGroup, blockGroupValues, outputfilename):
+    blockGroupValues = blockGroupValues.set_index("GEOID10")
+    thewholething = pd.DataFrame(columns=listOfStatsToCompute)
+
+    for vtd in vtds:
+        tempRow = pd.DataFrame(dict(zip(listOfStatsToCompute, [0 for x in listOfStatsToCompute])), index=[1])
+        stufftomultiply = VTDToBlockGroup.ix[VTDToBlockGroup.VTD == vtd, ['PCTGROUP', 'GROUP']]
+        
+        for group in stufftomultiply.GROUP:
+            tempRow += blockGroupValues.ix[group, listOfStatsToCompute].values*stufftomultiply.ix[stufftomultiply.GROUP == group, 'PCTGROUP'].values
+        thewholething = thewholething.append(tempRow)
+
+    thewholething['VTD'] = vtds
+    thewholething.to_csv(outputfilename)
+
+applyDemographicInfo(startingState, ['B03002m1', 'C17002m1'], vgpFrame, groupStats, "all_the_apportionments.csv")
+columns = [
+            'B02001e1',  # 
+            'B02008e1',  # 
+            'B02009e1',  # 
+            'B02010e1',  # 
+            'B02011e1',  # 
+            'B02012e1',  # 
+            'B02013e1',  # 
+            'B03002e1',  # 
+            'B03003e1',  # 
+            'B17017e1',  # 
+            'B17021e1',  # 
+            'B19301e1',  # 
+            'C17002e1',  # 
+          ]
+thing = blockstats.VTD.copy()
+applyDemographicInfo(thing, columns, vgpFrame, groupStats, "all_the_apportionments_try_2.csv")
+
+
+
