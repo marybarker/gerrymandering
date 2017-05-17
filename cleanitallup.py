@@ -10,11 +10,19 @@ import time
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv('./noIslandsApportionmentData.csv')
-#blockstats.rename(columns = {"POP100":"population"}, inplace = True)
-blockstats = blockstats.drop('Unnamed: 0', 1)
+blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="VTD")
+for key in blockstats.keys():
+    if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
+        blockstats = blockstats.drop(key, 1)
+
 blockstats = blockstats.set_index(blockstats.VTD)
 totalpopulation = sum(blockstats.population)
+
+conccolumn = 'aframcon'
+blockstats['aframcon'] = blockstats.B02009e1.values/blockstats.B02001e1.values
+stateconcentration = np.nansum(blockstats.B02009e1.values)/np.nansum(blockstats.B02001e1.values)
+numMajMinDists = min(totalpopulation/1975932, int(18*stateconcentration)) 
+#number found from blobbing out majorityminority districts once.  This result is suspect.
 
 cdtable = pd.read_csv('../cdbystate1.txt', '\t')
 ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
@@ -636,6 +644,10 @@ def distArea(state, district):
 def population(state, district):
     return sum(blockstats.population[blockstats.VTD.isin(list(state.key[state.value == district]))])
 
+def minorityConc(state, district, conccolumn):
+    regionlist = list(state.key[state.value == district])
+    return np.nansum(blockstats.ix[regionlist,conccolumn]*blockstats.ix[regionlist, 'population'])/np.nansum(blockstats.ix[regionlist, 'population'])
+
 def efficiency(state, district):
     #returns difference in percentage of votes wasted.  Negative values benefit R.
     subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
@@ -671,6 +683,8 @@ def demoEfficiency(state, district, demo1, demo2):
 def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
 
+def minorityEntropy(minorityVec):
+    sum([min(x - stateconcentration, 0) for x in minorityVec])
 
 def updateGlobals(state):
     global metrics, adjacencyFrame
@@ -687,14 +701,16 @@ def updateGlobals(state):
     stPerim = [     perimeter(state, i) for i in range(ndistricts)]
     stArea  = [      distArea(state, i) for i in range(ndistricts)]
     
+    stAfram = [minorityConc(state, i, 'aframcon') for i in range(ndistricts)]
     stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
     
     metrics = pd.DataFrame({'contiguousness': stConts,
                             'population'    : stPops,
                             'bizarreness'   : stBiz,
                             'perimeter'     : stPerim,
-                            'area'          : stArea}
-                          )
+                            'area'          : stArea
+                            'aframcon'      : stAfram
+                           })
 
 
 def goodness(metrics):
@@ -718,7 +734,6 @@ def switchDistrict(current_goodness, possible_goodness): # fix
 
 def anneal(current_goodness, possible_goodness): # fix
     return 1/(1 + np.exp(float(current_goodness-possible_goodness)/exploration))
-
 
 def contiguousStart(stats = blockstats):
 
