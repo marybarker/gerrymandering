@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+import math
 from osgeo import ogr
 os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 foldername = 'attempt1/'
@@ -111,10 +112,7 @@ for vtd in bettervtds:
     name = vtd.NAME10
     feature = ogr.Feature(featureDefn)
     feature.SetGeometry(g)
-    #outLayer.CreateFeature(feature)
-    
-    #feature.SetField("GEOID10", geoid)
-    #feature.SetField("NAME10", name)
+
     for key in vtd.keys():
         feature.SetField(key, vtd[key])
     outLayer.CreateFeature(feature)
@@ -153,3 +151,97 @@ for vtd in vtds:
     centroids.append(centroid)
 
 pd.DataFrame({"VTD":names, "centroid":centroids}).to_csv("noIslandsCentroids.csv")
+
+
+############################################################################################################
+#                                Contested districts: 23, 26, 27, 35 
+# (https://www.dallasnews.com/news/politics/2017/03/10/report-us-court-voids-texas-congressional-districts)
+############################################################################################################
+os.chdir("/Users/marybarker/Downloads/Texas/")
+CDsToLookAt = [15, 16, 20, 21, 23, 27, 28, 34, 35]
+
+# read Congressional District shapefile first
+ds = ogr.Open("TX_CURRENT_CD/CDS.shp")
+lyr = ds.GetLayer(0)
+CDS = [feat for feat in lyr] 
+CDS = [CDS[x - 1] for x in CDsToLookAt]
+
+# now get all vtds 
+ds = ogr.Open("precinct/precinct.shp")
+lyr = ds.GetLayer(0)
+vtds = [feat for feat in lyr]
+
+lookup = []
+#counter = 0
+#for vtd in vtds:
+for counter in range(len(vtds)):
+    vtd = vtds[counter]
+    vtdg = vtd.geometry()
+    mycd = -1
+    myintarea = 0.0
+    for cd in CDS:
+        cdg = cd.geometry()
+        if vtdg.Intersects(cdg):
+            newintarea = vtdg.Intersection(cdg).Area()
+            if newintarea > myintarea:
+                mycd = cd.DISTRICT
+                myintarea = newintarea
+    if mycd != -1:
+        lookup.append( (counter, vtd.VTD, mycd) )
+
+thing = pd.DataFrame(lookup, columns=['number', 'VTD', 'CD'])
+thing.to_csv("VTD_to_CD.csv")
+
+
+# now build connectivity frame for vtds
+adjacencyFrame = adjacencies([vtds[i] for i in myindices])
+adjacencyFrame.to_csv("temporary_edges.csv")
+vtdboundaries = boundaries([vtds[i] for i in myindices])
+adjacencyFrame = adjacentEdgeLengths(adjacencyFrame, vtdboundaries)
+adjacencyFrame.to_csv("PRECINCTconnections.csv")
+
+
+#now write relevant vtd statistics to file
+myindices = zip(*lookup)[0]
+allthestats = pd.DataFrame()
+for key in vtds[0].keys():
+    allthestats[key] = [vtds[i][key] for i in myindices] 
+allthestats['PERIM'] = [sum(adjacencyFrame.ix[(adjacencyFrame.low == vtds[i].CNTYVTD) | (adjacencyFrame.high == vtds[i].CNTYVTD), 'length']) for i in myindices]
+allthestats['ALAND'] = [vtds[i].geometry().Area() for i in myindices]
+allthestats['AWATER'] = 0
+allthestats.rename(columns={'e_total':'POP100', 'CNTYVTD':'GEOID10', 'VTDKEY':'NAME10'}, inplace=True)
+allthestats.to_csv("vtdstats.csv")
+
+
+outShapefile = str(os.getcwd()) + '/CDS_of_Interest.shp'
+outDriver = ogr.GetDriverByName("ESRI Shapefile")
+if os.path.exists(outShapefile):
+    outDriver.DeleteDataSource(outShapefile)
+# Create the output shapefile
+outDataSource = outDriver.CreateDataSource(outShapefile)
+outLayer = outDataSource.CreateLayer('vtds', geom_type=ogr.wkbPolygon)
+
+for key in vtds[0].keys():
+    thisfield = ogr.FieldDefn(key, ogr.OFTInteger)
+    outLayer.CreateField(thisfield)
+outLayer.CreateField(ogr.FieldDefn('GEOID10', ogr.OFTInteger))
+outLayer.CreateField(ogr.FieldDefn('NAME10', ogr.OFTInteger))
+
+for vtd in [vtds[i] for i in myindices]:
+    featureDefn = outLayer.GetLayerDefn()
+    g = vtd.geometry()
+    feature = ogr.Feature(featureDefn)
+    feature.SetGeometry(g)
+
+    for key in vtd.keys():
+        feature.SetField(key, vtd[key])
+    feature.SetField('GEOID10', vtd['CNTYVTD'])
+    feature.SetField('NAME10', '')
+    outLayer.CreateFeature(feature)
+    feature = None
+
+# Close DataSource
+outDataSource.Destroy()
+
+
+
