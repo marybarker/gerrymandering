@@ -736,6 +736,7 @@ def goodness(metrics):
     
     return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
             float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000
+    #functions should be written such that the numbers being scaled are between zero and one.
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
