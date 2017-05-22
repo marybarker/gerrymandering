@@ -684,8 +684,16 @@ def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
 
 def minorityEntropy(minorityVec):
-    sum([min(x - stateconcentration, 0) for x in minorityVec])
+    sum([min(max(x, 0.5) + np.sqrt(min(x-0.5, 0)) - stateconcentration, 0) for x in minorityVec])
 
+def minorityEntropy2(minorityVec):
+    modvec = [min(x, 0.5) + np.sqrt(min(x-0.5, 0)) for x in minorityVec].sorted(reverse = True) # more efficient options exist
+    return sum(modvec[:numMajMinDists])
+
+def minorityEntropyMuth(minorityVec):
+    modvec = [min(x, 0.5) for x in minorityVec].sorted(reverse = True) # more efficient options exist
+    return sum(modvec[:numMajMinDists])
+    
 def updateGlobals(state):
     global metrics, adjacencyFrame
     temp = dict(zip(state.key, state.value))
