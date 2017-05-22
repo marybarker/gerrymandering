@@ -187,9 +187,9 @@ for counter in range(len(vtds)):
                 mycd = cd.DISTRICT
                 myintarea = newintarea
     if mycd != -1:
-        lookup.append( (counter, vtd.VTD, mycd) )
+        lookup.append( (counter, vtd.CNTYVTD, vtd.VTDKEY, mycd) )
 
-thing = pd.DataFrame(lookup, columns=['number', 'VTD', 'CD'])
+thing = pd.DataFrame(lookup, columns=['number', 'GEOID10', 'NAME10', 'CD'])
 thing.to_csv("VTD_to_CD.csv")
 
 
@@ -213,7 +213,7 @@ allthestats.rename(columns={'e_total':'POP100', 'CNTYVTD':'GEOID10', 'VTDKEY':'N
 allthestats.to_csv("vtdstats.csv")
 
 
-outShapefile = str(os.getcwd()) + '/CDS_of_Interest.shp'
+outShapefile = str(os.getcwd()) + '/VTDS_of_Interest.shp'
 outDriver = ogr.GetDriverByName("ESRI Shapefile")
 if os.path.exists(outShapefile):
     outDriver.DeleteDataSource(outShapefile)
@@ -236,7 +236,7 @@ for vtd in [vtds[i] for i in myindices]:
     for key in vtd.keys():
         feature.SetField(key, vtd[key])
     feature.SetField('GEOID10', vtd['CNTYVTD'])
-    feature.SetField('NAME10', '')
+    feature.SetField('NAME10', vtd['VTDKEY'])
     outLayer.CreateFeature(feature)
     feature = None
 
