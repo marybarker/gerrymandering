@@ -684,8 +684,16 @@ def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
 
 def minorityEntropy(minorityVec):
-    sum([min(x - stateconcentration, 0) for x in minorityVec])
+    sum([min(max(x, 0.5) + np.sqrt(min(x-0.5, 0)) - stateconcentration, 0) for x in minorityVec])
 
+def minorityEntropy2(minorityVec):
+    modvec = [min(x, 0.5) + np.sqrt(min(x-0.5, 0)) for x in minorityVec].sorted(reverse = True) # more efficient options exist
+    return sum(modvec[:numMajMinDists])
+
+def minorityEntropyMuth(minorityVec):
+    modvec = [min(x, 0.5) for x in minorityVec].sorted(reverse = True) # more efficient options exist
+    return sum(modvec[:numMajMinDists])
+    
 def updateGlobals(state):
     global metrics, adjacencyFrame
     temp = dict(zip(state.key, state.value))
@@ -728,6 +736,7 @@ def goodness(metrics):
     
     return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
             float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000
+    #functions should be written such that the numbers being scaled are between zero and one.
 
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
