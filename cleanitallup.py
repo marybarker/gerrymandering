@@ -8,29 +8,10 @@ import time
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
-stateSHORT = 'PA'
+#os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Texas')
 
-blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="VTD")
-for key in blockstats.keys():
-    if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
-        blockstats = blockstats.drop(key, 1)
+execfile('setup.py') #Stack overflow doesn't like this, for the record.
 
-blockstats = blockstats.set_index(blockstats.VTD)
-totalpopulation = sum(blockstats.population)
-
-conccolumn = 'aframcon'
-blockstats['aframcon'] = blockstats.B02009e1.values/blockstats.B02001e1.values
-stateconcentration = np.nansum(blockstats.B02009e1.values)/np.nansum(blockstats.B02001e1.values)
-numMajMinDists = min(totalpopulation/1975932, int(18*stateconcentration)) 
-#number found from blobbing out majorityminority districts once.  This result is suspect.
-
-cdtable = pd.read_csv('../cdbystate1.txt', '\t')
-ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
-nvtd = len(blockstats.VTD)
-
-adjacencyFrame = pd.read_csv('noIslandsPrecinctConnections.csv')
-adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
-#adjacencyFrame.columns = ['low', 'high', 'length']
 metrics = pd.DataFrame()
 
 foldername = "fffffff2/"
@@ -240,7 +221,7 @@ foldername = 'muffle'
 
 for startingpoint in range(50):#75, 76):
     
-    starting_state = pd.read_csv(foldername + 'state%d_start.csv'%startingpoint)
+    starting_state = contiguousStart()
     runningState = (starting_state.copy(), 1)
     updateGlobals(runningState[0])
     for i in range(numsaves):
@@ -426,8 +407,6 @@ def MH(start, steps, neighbor, goodness, moveprob):
     metrics = best_metrics.copy()
     
     return((best_state, best_goodness, better_hops, worse_hops, stays))
-
-
 
 def neighbor(state):
     
@@ -693,7 +672,7 @@ def minorityEntropy2(minorityVec):
 def minorityEntropyMuth(minorityVec):
     modvec = [min(x, 0.5) for x in minorityVec].sorted(reverse = True) # more efficient options exist
     return sum(modvec[:numMajMinDists])
-    
+
 def updateGlobals(state):
     global metrics, adjacencyFrame
     temp = dict(zip(state.key, state.value))
@@ -716,7 +695,7 @@ def updateGlobals(state):
                             'population'    : stPops,
                             'bizarreness'   : stBiz,
                             'perimeter'     : stPerim,
-                            'area'          : stArea
+                            'area'          : stArea,
                             'aframcon'      : stAfram
                            })
 
@@ -744,19 +723,22 @@ def switchDistrict(current_goodness, possible_goodness): # fix
 def anneal(current_goodness, possible_goodness): # fix
     return 1/(1 + np.exp(float(current_goodness-possible_goodness)/exploration))
 
-def contiguousStart(stats = blockstats):
+def contiguousStart(stats = "DEFAULT"):
 
     #Begin with [ndistricts] different vtds to be the congressional districts.
     #Keep running list of series which are adjacent to the districts.
     #Using adjacencies, let the congressional districts grow by unioning with the remaining districts 
 
-    state = pd.DataFrame({"key":stats.VTD.copy(), "value":ndistricts })
-    subAdj = adjacencyFrame.ix[adjacencyFrame.low.isin(stats.VTD) & adjacencyFrame.high.isin(stats.VTD) & (adjacencyFrame.length != 0), ['low','high']]
+    if type(stats) == str:
+        stats = blockstats
+    
+    state = pd.DataFrame({"key":stats.index.copy(), "value":ndistricts })
+    subAdj = adjacencyFrame.ix[adjacencyFrame.low.isin(stats.index) & adjacencyFrame.high.isin(stats.index) & (adjacencyFrame.length != 0), ['low','high']]
     subAdj['lowdist']  = ndistricts
     subAdj['highdist'] = ndistricts
     
     missingdist = range(ndistricts)
-    assignments = np.random.choice(stats.VTD, ndistricts, replace = False)
+    assignments = np.random.choice(stats.index, ndistricts, replace = False)
     
     state.ix[state.key.isin(assignments), 'value'] = missingdist
     for i in range(ndistricts):
@@ -788,6 +770,7 @@ def contiguousStart(stats = blockstats):
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
         #print("%d districts left to assign."%(sum(state.value==ndistricts)))
     return state
+
 
 
 

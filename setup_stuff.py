@@ -125,7 +125,7 @@ def package_vtds(filetouse):
     paths = []
 
     for vtd in lyr:
-        name = str(vtd['GEOID10']) + vtd['NAME10']
+        name = str(vtd['GEOID10']) + str(vtd['NAME10'])
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -198,7 +198,7 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
             path = paths[p]
             if names[p] in redistricting.key.values:
                 facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
-                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor=colors[facecolor])#'black')
+                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')#colors[facecolor])#'black')
                 ax.add_patch(patch)
         ax.set_aspect(1.0)
         #plt.show()
@@ -210,7 +210,6 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
 #precinctBoundaryFile =  'precinct/precinct.shp'
 #precinctStatsFile = 'vtdstats.csv'
 #precinctConnectionsFile = 'PRECINCTconnections.csv'
-g = package_vtds("precinct/precinct.shp")
 
 #ds = ogr.Open(precinctBoundaryFile)
 #lyr = ds.GetLayer(0)
@@ -262,6 +261,12 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
+
+
+
+
+
 
 
 
