@@ -206,11 +206,14 @@ myindices = zip(*lookup)[0]
 allthestats = pd.DataFrame()
 for key in vtds[0].keys():
     allthestats[key] = [vtds[i][key] for i in myindices] 
-allthestats['PERIM'] = [sum(adjacencyFrame.ix[(adjacencyFrame.low == vtds[i].CNTYVTD) | (adjacencyFrame.high == vtds[i].CNTYVTD), 'length']) for i in myindices]
+allthestats['PERIM'] = [sum(adjacencyFrame.ix[(adjacencyFrame.low.astype(str) == (str(vtds[i].CNTYVTD)+str(vtds[i].VTDKEY))) | (adjacencyFrame.high.astype(str) == (str(vtds[i].CNTYVTD)+str(vtds[i].VTDKEY))), 'length']) for i in myindices]
 allthestats['ALAND'] = [vtds[i].geometry().Area() for i in myindices]
 allthestats['AWATER'] = 0
-allthestats.rename(columns={'e_total':'POP100', 'CNTYVTD':'GEOID10', 'VTDKEY':'NAME10'}, inplace=True)
-allthestats.to_csv("vtdstats.csv")
+allthestats['CNTYVTD']  = allthestats['GEOID10']
+allthestats[ 'VTDKEY'] = allthestats['NAME10']
+allthestats.rename(columns={'e_total':'population'}, inplace=True)
+allthestats['VTD'] = pd.Series([str(x) for x in allthestats.GEOID10.values]).str.cat([str(y) for y in allthestats.NAME10.values], sep='')
+allthestats.to_csv("alt_vtdstats_1.csv")
 
 
 outShapefile = str(os.getcwd()) + '/VTDS_of_Interest.shp'

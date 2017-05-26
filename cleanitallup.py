@@ -768,7 +768,7 @@ def contiguousStart(stats = "DEFAULT"):
             pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
-        #print("%d districts left to assign."%(sum(state.value==ndistricts)))
+        print("%d districts left to assign."%(sum(state.value==ndistricts)))
     return state
 
 
