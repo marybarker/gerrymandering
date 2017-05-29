@@ -172,9 +172,11 @@ def package_vtds(filetouse):
     return this_geom
 
 def colorDict(n):
-    return {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
+    districtColors = {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
+    districtColors[n] = colorsys.hsv_to_rgb(0, 0, 0.5)
+    return districtColors
 
-def color_these_states(geom_to_plot, list_of_states, foldername, number):
+def color_these_states(geom_to_plot, list_of_states, foldername, number, linewidth = 1, DPI = 300):
     colors = colorDict(ndistricts)
     #colors = {0:'yellow',1:'green'}
     #ax.set_xlim([-71.8, -71.2])
@@ -198,14 +200,14 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
             path = paths[p]
             if names[p] in redistricting.key.values:
                 facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
-                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')#colors[facecolor])#'black')
+                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)#colors[facecolor])#'black')
                 ax.add_patch(patch)
         ax.set_aspect(1.0)
         #plt.show()
-        plt.savefig(foldername+'output%04d.png'%(number+i))
+        plt.savefig(foldername+'output%04d.png'%(number+i), dpi=DPI)
         plt.clf()
         del fig
-    
+
 
 #precinctBoundaryFile =  'precinct/precinct.shp'
 #precinctStatsFile = 'vtdstats.csv'

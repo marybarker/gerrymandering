@@ -2,8 +2,8 @@ stateSHORT = 'TX'
 
 blockstats = pd.read_csv('./vtdstats.csv')#.merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="VTD")
 for key in blockstats.keys():
-    if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
-        blockstats = blockstats.drop(key, 1)
+    #if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
+    #    blockstats = blockstats.drop(key, 1)
     if key == "POP100":
         blockstats = blockstats.rename(columns={"POP100":"population"})
 #newindex = [str(blockstats.NAME10[i]) + str(blockstats.VTD[i]) for i in blockstats.index]

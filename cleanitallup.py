@@ -663,10 +663,10 @@ def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
 
 def minorityEntropy(minorityVec):
-    sum([min(max(x, 0.5) + np.sqrt(min(x-0.5, 0)) - stateconcentration, 0) for x in minorityVec])
+    sum([max(min(x, 0.5) + np.sqrt(max(x-0.5, 0)) - stateconcentration, 0) for x in minorityVec])
 
 def minorityEntropy2(minorityVec):
-    modvec = [min(x, 0.5) + np.sqrt(min(x-0.5, 0)) for x in minorityVec].sorted(reverse = True) # more efficient options exist
+    modvec = [min(x, 0.5) + np.sqrt(max(x-0.5, 0)) for x in minorityVec].sorted(reverse = True) # more efficient options exist
     return sum(modvec[:numMajMinDists])
 
 def minorityEntropyMuth(minorityVec):
@@ -761,7 +761,7 @@ def contiguousStart(stats = "DEFAULT"):
         else :
             #choose entry in relevantAdjacencies and switch the value of the other node.
             changes = set(relevantAdjacencies.low).union(\
-                      set(relevantAdjacencies.high))
+                      set(relevantAdjacencies.high)) - set(state.key[state.value == targdistr])
             #changes = set(relevantAdjacencies.low.append(relevantAdjacencies.high))
             #changes = (relevantAdjacencies.low.append(relevantAdjacencies.high)).unique()
             state.ix[state.key.isin(changes), 'value'] = targdistr
