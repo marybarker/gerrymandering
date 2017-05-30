@@ -248,3 +248,29 @@ outDataSource.Destroy()
 
 
 
+############################################################################################################
+# North Carolina
+
+os.chdir("/Users/marybarker/Documents/tarleton_misc/gerrymandering/NorthCarolina/")
+popdata = pd.read_excel("VTDTotalPopRaceAndEthnicity.xlsx", skiprows=1)
+cntyToFips = pd.read_csv("county_to_fips.csv", header=None)
+cntyToFips.columns=['state', 'stateFIPS', 'countyFIPS', 'countyName', 'fipsClass']
+cntyToFips.countyName = [x.replace(' County', '') for x in cntyToFips.countyName]
+countyFIPS = cntyToFips.countyFIPS.copy()
+cntyToFips.set_index(countyFIPS, inplace=True)
+blockstats = pd.read_csv("vtdstats.csv")
+
+
+lookupvtd = blockstats.VTDST10
+lookupcnty = [cntyToFips.countyName[x] for x in blockstats.COUNTYFP10]
+
+blockstats.VTDST10  == popdata.VTD
+cntyToFips[ blockstats.COUNTYFP10, 'countyName'] == popdata.County
+lookup_table = pd.DataFrame({'GEOID10':blockstats.GEOID10, 'excelCountyName':lookupcnty, 'excelVTDId':lookupvtd })
+lookup_table.to_csv("blockstats_to_excel_lookup.csv")
+lookup_table.set_index('GEOID10', inplace=True)
+population = [popdata.ix[((popdata.County == lookup_table.excelCountyName[x]) & (popdata.VTD == lookup_table.excelVTDId[x])), 'Total'] for x in blockstats.GEOID10]
+population = [sum(x.values) for x in population]
+
+blockstats['population'] = population
+
