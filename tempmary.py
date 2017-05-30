@@ -158,6 +158,7 @@ pd.DataFrame({"VTD":names, "centroid":centroids}).to_csv("noIslandsCentroids.csv
 # (https://www.dallasnews.com/news/politics/2017/03/10/report-us-court-voids-texas-congressional-districts)
 ############################################################################################################
 os.chdir("/Users/marybarker/Downloads/Texas/")
+os.chdir("/home/thisisme/Documents/gerrymandering/Texas/")
 CDsToLookAt = [15, 16, 20, 21, 23, 27, 28, 34, 35]
 
 # read Congressional District shapefile first
@@ -247,4 +248,63 @@ for vtd in [vtds[i] for i in myindices]:
 outDataSource.Destroy()
 
 
+############################################################################################################
+ds = ogr.Open("07_11_block_group_Texas.gdb")
+lyr1 = ds.GetLayer(0)
+lyr2 = ds.GetLayer(1)
+stuff1 = [feat for feat in lyr1]
+stuff2 = [feat for feat in lyr2]
 
+# first find out all of the keys that we want and write their explanations to a csv
+lookupFrame = [(a['Short_Name'], a['Full_Name']) for a in stuff1 if a['Short_Name'].endswith('e1')]
+lookupFrame = zip(*lookupFrame)
+pd.DataFrame({'ShortName':lookupFrame[0], 'LongName':lookupFrame[1]}).to_csv("meaningOfKeys.csv")
+
+
+allTheColumnsIWant1 = list(stuff2[0].keys()[:16])
+allTheColumnsIWant2 = list(lookupFrame[0])
+allTheColumnsIWant = allTheColumnsIWant1+allTheColumnsIWant2
+
+# Now we want to extract the important data for each block and write to csv 
+bigDataCsv = pd.DataFrame({key:[stuffthing[key] for stuffthing in stuff2] for key in allTheColumnsIWant})
+bigDataCsv.to_csv("blockGroupData.csv")
+
+# want to find the proportion of block to block group. 
+ds = ogr.Open("/home/thisisme/Downloads/tabblock2010_48_pophu.shp")
+lyr = ds.GetLayer(0)
+newblocks = [feat for feat in lyr]
+
+# just the blocks that are in our subset of Texas for efficiency's sake. 
+blockToCD = pd.read_csv('BlockAssign_ST48_TX_CD.txt')
+blockToCD.BLOCKID = blockToCD.BLOCKID.astype(str)
+blockToCD.set_index("BLOCKID", inplace=True)
+blockToVTD = pd.read_csv("BlockAssign_ST48_TX_VTD.txt")
+blockToVTD.BLOCKID = blockToVTD.BLOCKID.astype(str)
+blockToVTD.set_index(blockToVTD.BLOCKID, inplace=True)
+# write out population for each block
+newblocks = [b for b in newblocks if int(blockToCD.DISTRICT[str(b.BLOCKID10)]) in CDsToLookAt]
+pd.DataFrame({'id':[b.BLOCKID10 for b in newblocks], 'pop':[b.POP10 for b in newblocks]}).to_csv("blockPops.csv")
+# cut short our blockToCD and blockToVTD values just to the subset of Texas we care about
+blockToCD = blockToCD.ix[blockToCD.DISTRICT.isin(CDsToLookAt)]
+blockToVTD = blockToVTD.ix[blockToCD.index]
+
+blockstats=pd.read_csv("vtdstats.csv")
+blockstats.GEOID10 = blockstats.GEOID10.astype(str)
+blockstats.set_index(blockstats.GEOID10, inplace=True)
+vtds = blockstats.CNTY.astype(str).str.zfill(3).str.cat(blockstats.CNTYVTD.astype(str).str.slice(start=3))
+blockstats['compVTDS'] = vtds
+
+indices = blockToVTD.ix[ blockToVTD.COUNTYFP.astype(str).str.zfill(3).str.cat(blockToVTD.DISTRICT.astype(str).str.zfill(4)).isin(blockstats.compVTDS.astype(str))]
+blockToVTD = indices
+
+blockpops = pd.read_csv("blockPops.csv")
+blockpops['id'] = blockpops['id'].astype(str)
+blockpops.set_index(blockpops['id'], inplace=True)
+
+blockVTD = [ (blockstats.GEOID10[blockstats.compVTDS == (str(blockToVTD.COUNTYFP[block]).zfill(3)+str(blockToVTD.DISTRICT[block]).zfill(4) ) ], block)  for block in blockToVTD.index]
+pd.DataFrame(blockVTD, columns=['vtd', 'block']).to_csv("block_to_VTD_in_id_form.csv")
+blockVTD['population'] = [blockpops.population[x] for x in blockVTD.blockid]
+blockVTD.to_csv("block_to_VTD_in_id_form.csv")
+
+
+len(set(blockVTD.geoid.values))
