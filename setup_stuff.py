@@ -7,6 +7,7 @@ import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import colorsys
+
 plt.rcParams['agg.path.chunksize'] = 1000
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """   make a  list of all voting tabulation districts   """
@@ -203,11 +204,38 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number, linewid
                 patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)#colors[facecolor])#'black')
                 ax.add_patch(patch)
         ax.set_aspect(1.0)
-        #plt.show()
+        plt.show()
         plt.savefig(foldername+'output%04d.png'%(number+i), dpi=DPI)
         plt.clf()
         del fig
 
+def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
+    colors = colorDict(ndistricts)
+    #colors = {0:'yellow',1:'green'}
+    #ax.set_xlim([-71.8, -71.2])
+    #ax.set_ylim([42.6, 43.2])
+
+    paths = geom_to_plot['paths']
+    names = geom_to_plot['names']
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+    
+    #redistricting = redistricting.drop('Unnamed: 0', 1)
+    #redistricting.columns = ['key', 'value']
+    for p in range(len(paths)):
+        path = paths[p]
+        if names[p] in state.key.values:
+            facecolor = state.value[np.array(state.key) == names[p]].item()
+            patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)#colors[facecolor])#'black')
+            ax.add_patch(patch)
+    ax.set_aspect(1.0)
+    #plt.show()
+    plt.savefig(filename, dpi=DPI)
+    plt.clf()
+    del fig
 
 #precinctBoundaryFile =  'precinct/precinct.shp'
 #precinctStatsFile = 'vtdstats.csv'
@@ -263,6 +291,7 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
 
 
 

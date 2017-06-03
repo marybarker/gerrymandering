@@ -1,3 +1,4 @@
+"""
 import os
 import time
 import random
@@ -9,7 +10,9 @@ import time
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Texas')
+#os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/NorthCarolina')
 
+execfile('setup.py') #Stack overflow doesn't like this, for the record.
 execfile('setup.py') #Stack overflow doesn't like this, for the record.
 
 metrics = pd.DataFrame()
@@ -19,21 +22,23 @@ foldername = "slambp3ALLOFTHESTATES/"
 foldername = "muffle/" # even when global metrics are incorrectly updated, we keep the incorrect version
 foldername = "huffle/" # reset global metrics after every MH call
 foldername = "buffle/" # low to high or high to low
-
+foldername = "boundarydangle/"
 #os.mkdir(foldername)
 
-numstates= 50
+numstates= 1
 numsteps = 100
-numsaves = 1000
+numsaves = 100
 numplots = 10
 startingPoint=0
 
-demo1 = "B02008e1"
-demo2 = "B03002e1"
 
+#########
+#Determine efficiency gaps of states.
+#########
 demo1 = "DEM_C"
 demo2 = "REP_C"
 
+#States as they are being created
 efficiencyGapArray = np.zeros(numstates)
 gapArray = np.zeros((numstates, ndistricts))
 popArray = np.zeros((numstates, ndistricts))
@@ -45,13 +50,9 @@ for i in range(numstates):
     efficiencyGapArray[i] = np.sum(gapArray[i,:])
     print(i)
 
-plt.hist(efficiencyGapArray)
-
+#States in folder
 for i in range(numstates):
     state = pd.read_csv(foldername + "state%d_start.csv"%(i))
-    #temp = [demoEfficiency(state, dist, "REP_C", "DEM_C") for dist in range(ndistricts)]
-    #temp = [demoEfficiency(state, dist, "REP_P", "DEM_P") for dist in range(ndistricts)]
-
     temp = [demoEfficiency(state, dist, demo1, demo2) for dist in range(ndistricts)]
     gapArray[i,:] = [x[0] - x[1] for x in temp]
     efficiencyGapArray[i] = np.sum(gapArray[i,:])
@@ -60,190 +61,27 @@ for i in range(numstates):
 
 plt.hist(efficiencyGapArray)
 
-for i in range(numstates):
-    plt.hist(gapArray[i,:])
 
-for i in range(numstates):
-    plt.hist(popArray[i,:])
+#########
+#Run numstates instances from scratch, without annealing
+#########
 
-for i in range(numstates):
-    plt.hist(gapArray[i,:]/popArray[i,:])
-
-
-
-starting_state = contiguousStart()
-runningState = (starting_state.copy(), 1)
-updateGlobals(runningState[0])
-for i in range(numsaves):
-    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-    runningState[0].to_csv(foldername+"step%d.csv"%i)
-
-    metrics.to_csv(foldername+"m1_%d.csv"%i)
-    temp = metrics.copy()
-    updateGlobals(runningState[0])
-    metrics.to_csv(foldername+"m2_%d.csv"%i)
-    if dfEquiv(temp, metrics):
-        print "finished with step %d"%i
-    else:
-        print "finished with step %d --- oh no!! different values so we have a bug somewhere"%i
-        #metrics = temp # reset to the (wrong) version so that I can see how far we stray from reality
-
-m1 = [pd.read_csv(foldername+'m1_%d.csv'%x) for x in range(numsaves)]
-m2 = [pd.read_csv(foldername+'m2_%d.csv'%x) for x in range(numsaves)]
-comparecontig = [m2[x].contiguousness - m1[x].contiguousness for x in range(numsaves)]
-compareperim  = [m2[x].perimeter      - m1[x].perimeter      for x in range(numsaves)]
-comparearea   = [m2[x].area           - m1[x].area           for x in range(numsaves)]
-
-[sum(x) for x in comparecontig]
-[sum(x) for x in compareperim]
-[sum(x) for x in comparearea]
-
-
-def dfEquiv(f1, f2):
-    if any(f1.columns != f2.columns):
-        return False
-    else:
-        return all([ all(f1[col] == f2[col]) for col in f1.columns ])
-
-starting_state = pd.read_csv("../startingPoints2/start%d.csv"%startingpoint)
-updateGlobals(starting_state)
-runningState = (starting_state.copy() ,1)
-for i in range(numsaves):
-    exploration = 10**(4*(1 - i*1.0/numsaves))
-    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-    runningState[0].to_csv(foldername+'plain%d_%d.csv'%(startingpoint, i))
-    metrics.to_csv(foldername+'metrics_plain%d_%d.csv'%(startingpoint, i))
-    print 'finished with %d in no-annealing'%i
-
-maxBizArray1 = np.zeros((numstates,numsaves))
-meanBizArray1 = np.zeros((numstates,numsaves))
-totalVarArray1 = np.zeros((numstates,numsaves))
-maxContArray1 = np.zeros((numstates,numsaves))
-maxPopArray1 = np.zeros((numstates,numsaves))
-popDiffArray1 = np.zeros((numstates,numsaves))
-
-overallGoodnessArray1 = np.zeros((numstates,numsaves))
-
-maxBizArray2 = np.zeros((numstates,numsaves))
-meanBizArray2 = np.zeros((numstates,numsaves))
-totalVarArray2 = np.zeros((numstates,numsaves))
-maxContArray2 = np.zeros((numstates,numsaves))
-maxPopArray2 = np.zeros((numstates,numsaves))
-popDiffArray2 = np.zeros((numstates,numsaves))
-
-overallGoodnessArray2 = np.zeros((numstates,numsaves))
-
-for startingpoint in range(numstates):
-    for j in range(numsaves):
-        metrics_anneal = pd.read_csv(foldername+'metrics_anneal%d_%d.csv'%(startingpoint, j))
-        #metrics_plain  = pd.read_csv(foldername+'metrics_plain%d_%d.csv'%(startingpoint, j))
-
-        meanBizArray1[startingpoint,j]         = np.mean(metrics_anneal['bizarreness'])
-        maxBizArray1[startingpoint,j]          = np.max(metrics_anneal['bizarreness'])
-        maxContArray1[startingpoint,j]         = np.max(metrics_anneal['contiguousness'])
-        maxPopArray1[startingpoint,j]          = np.max(metrics_anneal['population'])
-        popDiffArray1[startingpoint,j]         = np.max(metrics_anneal['population']) - np.min(metrics_anneal['population'])
-        totalVarArray1[startingpoint,j]        = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics_anneal['population']])/(2*(1-float(1)/ndistricts))
-        overallGoodnessArray1[startingpoint,j] = -300*abs(sum(metrics_anneal['contiguousness']) - ndistricts) - 3000*totalVarArray1[startingpoint,j] - 1000*meanBizArray1[startingpoint,j] - \
-            float(max(0, popDiffArray1[startingpoint,j] - 25000 )**2)/1000000
-
-        meanBizArray2[startingpoint,j]         = np.mean(metrics_plain['bizarreness'])
-        maxBizArray2[startingpoint,j]          = np.max(metrics_plain['bizarreness'])
-        maxContArray2[startingpoint,j]         = np.max(metrics_plain['contiguousness'])
-        maxPopArray2[startingpoint,j]          = np.max(metrics_plain['population'])
-        popDiffArray2[startingpoint,j]         = np.max(metrics_plain['population']) - np.min(metrics_plain['population'])
-        totalVarArray2[startingpoint,j]        = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics_plain['population']])/(2*(1-float(1)/ndistricts))
-        overallGoodnessArray2[startingpoint,j] = -300*abs(sum(metrics_plain['contiguousness']) - ndistricts) - 3000*totalVarArray2[startingpoint,j] - 1000*meanBizArray2[startingpoint,j] - \
-            float(max(0, popDiffArray2[startingpoint,j] - 25000 )**2)/1000000
-
-for i in range(numstates):
-    plt.title('max biz array')
-    plt.plot(maxBizArray1[i,:], label='annealing')
-    #plt.plot(maxBizArray2[i,:], label='no annealing')
-    plt.legend()
-    plt.show()
-    plt.clf()
-    
-for i in range(numstates):
-    plt.title('mean biz array')
-    plt.plot(meanBizArray1[i,:], label='annealing')
-    #plt.plot(meanBizArray2[i,:], label='no annealing')
-    plt.legend()
-    plt.show()
-    plt.clf()
-
-for i in range(numstates):
-    plt.title('max cont array')
-    plt.plot(maxContArray1[i,:], label='annealing')
-    #plt.plot(maxContArray2[i,:], label='no annealing')
-    plt.legend()
-plt.show()
-
-for i in range(numstates):
-    plt.title('max pop array')
-    plt.plot(maxPopArray1[i,:], label='annealing')
-    #plt.plot(maxPopArray2[i,:], label='no annealing')
-    plt.legend()
-    plt.show()
-    plt.clf()
-
-for i in range(numstates):
-    plt.title('mean pop array')
-    plt.plot(popDiffArray1[i,:], label='annealing')
-    #plt.plot(popDiffArray2[i,:], label='no annealing')
-    plt.legend()
-    plt.show()
-    plt.clf()
-
-for i in range(numstates):
-    plt.title('overall goodness array')
-    plt.plot(-overallGoodnessArray1[i,:], label='annealing')
-    #plt.plot(-overallGoodnessArray2[i,:], label='no annealing')
-    plt.gca().invert_yaxis()
-    plt.gca().set_yscale('log')
-    plt.tick_params(axis='y', which='minor')
-    plt.legend()
-    plt.show()
-    plt.clf()
-
-
-
-
-
-
-startingpoint = 14
-i = 999
-runningState = (pd.read_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1)),0)
-color_these_states(g, [runningState], 'two_million_', 0)
-
-foldername = 'muffle'
-#os.mkdir(foldername)
-
-for startingpoint in range(50):#75, 76):
+for startingpoint in range(numsaves):
     
     starting_state = contiguousStart()
     runningState = (starting_state.copy(), 1)
     updateGlobals(runningState[0])
     for i in range(numsaves):
-        #exploration = 10**(4 - i/250.0)
         
-        #oldState = runningState[0].copy()
-        #oldAdjacencyFrame = adjacencyFrame.copy()
-        #oldMetrics = metrics.copy()
-        
-        #def MH(start, steps, neighbor, goodness, moveprob):
         runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
-        #runningState = MH(runningState[0], numsteps, neighbor, goodness, anneal)
+        
         runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
         
-        #updateGlobalsFromOld(oldState, runningState[0], oldAdjacencyFrame, oldMetrics)
         metrics.to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
     runningState[0].to_csv(foldername+"state%d_save%d.csv"%(startingpoint, i + 1), index = False)
 
-numsaves = numsaves + 39
-0
 maxBizArray = np.zeros((numstates,numsaves))
 meanBizArray = np.zeros((numstates,numsaves))
 totalVarArray = np.zeros((numstates,numsaves))
@@ -353,7 +191,7 @@ color_these_states(g, [(tempstate, 0)], foldername+'theverylast_', 0)
 tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(1, 1))
 color_these_states(g, [(tempstate, 0)], foldername+'theveryfirst_', 0)
 
-
+"""
 ##################################################################################
 def MH(start, steps, neighbor, goodness, moveprob):
     #  object starting state   |         |
@@ -468,7 +306,22 @@ def neighbor(state):
                                                                   newmetrics['perimeter'][templowdist])
             newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
                                                                   newmetrics['perimeter'][temphighdist])
-
+            
+                    #update boundary information
+            newmetrics['sumAframDiff'][temphighdist] = newmetrics['sumAframDiff'][temphighdist]\
+                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                       - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
+            newmetrics['sumAframDiff'][templowdist]  = newmetrics['sumAframDiff'][templowdist]\
+                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                       + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
+                                                       
+            newmetrics['sumHispDiff'][temphighdist]  = newmetrics['sumHispDiff'][temphighdist]\
+                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                       - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            newmetrics['sumHispDiff'][templowdist]   = newmetrics['sumHispDiff'][templowdist]\
+                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                       + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+        
         else:
             
             #switch high node stuff to low node's district
@@ -507,6 +360,21 @@ def neighbor(state):
                                                                      newmetrics['perimeter'][temphighdist])
             newmetrics.ix[templowdist, 'bizarreness'] = bizarreness(newmetrics['area'][templowdist], \
                                                                     newmetrics['perimeter'][templowdist])
+            
+            #update boundary information
+            newmetrics['sumAframDiff'][templowdist]  = newmetrics['sumAframDiff'][templowdist]\
+                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                       - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
+            newmetrics['sumAframDiff'][temphighdist] = newmetrics['sumAframDiff'][temphighdist]\
+                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                       + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
+                                                       
+            newmetrics['sumHispDiff'][templowdist]   = newmetrics['sumHispDiff'][templowdist]\
+                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                       - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            newmetrics['sumHispDiff'][temphighdist]  = newmetrics['sumHispDiff'][temphighdist]\
+                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                       + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
         
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
@@ -565,10 +433,7 @@ def neighbor(state):
                                                               newmetrics['perimeter'][olddist])
         newmetrics['bizarreness'][newdist] = bizarreness(newmetrics['area'][newdist], \
                                                               newmetrics['perimeter'][newdist])
-    
-    
     return (newstate, proposedChanges, newmetrics)
-
 
 def contiguousness(state, district, subframe = "DEFAULT"):
     #This function is going to count the numbr of disjoint, connected regeions of the district.
@@ -589,7 +454,7 @@ def contiguousness(state, district, subframe = "DEFAULT"):
     
     if type(subframe) == str:
         #If the subframe passed is the default, then use anything in the adjacencyframe that's in the district.
-        subframe = adjacencyFrame.loc[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)]
+        subframe = adjacencyFrame.ix[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district), :]
     else:
         #Still make sure we're only using stuff from the district.
         subframe = subframe.loc[ (subframe.highdist == district ) & (subframe.lowdist == district) ]
@@ -673,32 +538,69 @@ def minorityEntropyMuth(minorityVec):
     modvec = [min(x, 0.5) for x in minorityVec].sorted(reverse = True) # more efficient options exist
     return sum(modvec[:numMajMinDists])
 
+def conDiffSum(state, district, column):
+    subframe = adjacencyFrame.ix[(-adjacencyFrame.isSame) & ((adjacencyFrame.lowdist == district) | (adjacencyFrame.highdist == district)), :]
+    return sum(subframe[column].abs())
+
 def updateGlobals(state):
     global metrics, adjacencyFrame
-    temp = dict(zip(state.key, state.value))
-    lowdists  = adjacencyFrame.low.replace(temp)
-    highdists = adjacencyFrame.high.replace(temp)
-    isSame = lowdists==highdists
-    adjacencyFrame['isSame'] = isSame
-    adjacencyFrame['lowdist'] = lowdists
-    adjacencyFrame['highdist'] = highdists
     
-    stConts = [contiguousness(state, i) for i in range(ndistricts)]
-    stPops  = [    population(state, i) for i in range(ndistricts)]
-    stPerim = [     perimeter(state, i) for i in range(ndistricts)]
-    stArea  = [      distArea(state, i) for i in range(ndistricts)]
+    #lowdists  = pd.merge(adjacencyFrame, state, left_on = 'low' , right_on = 'key').value
+    #highdists = pd.merge(adjacencyFrame, state, left_on = 'high' , right_on = 'key').value
     
-    stAfram = [minorityConc(state, i, 'aframcon') for i in range(ndistricts)]
-    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    lowdists  = pd.merge(adjacencyFrame, state, left_on = 'low' , right_index = True, how= "left").value
+    highdists = pd.merge(adjacencyFrame, state, left_on = 'high' , right_index = True, how= "left").value
     
-    metrics = pd.DataFrame({'contiguousness': stConts,
-                            'population'    : stPops,
-                            'bizarreness'   : stBiz,
-                            'perimeter'     : stPerim,
-                            'area'          : stArea,
-                            'aframcon'      : stAfram
-                           })
+    #temp = dict(zip(state.key, state.value))
+    #lowdists = adjacencyFrame.low.replace(temp)
+    #highdists = adjacencyFrame.high.replace(temp)
+    
+    adjacencyFrame.ix[:, 'lowdist'] = lowdists.values
+    adjacencyFrame.ix[:, 'highdist'] = highdists.values
+    adjacencyFrame.ix[:, 'isSame'] = adjacencyFrame.lowdist == adjacencyFrame.highdist
+    
+    stConts  = [contiguousness(state, i) for i in range(ndistricts)]
+    stPops   = [    population(state, i) for i in range(ndistricts)]
+    stPerim  = [     perimeter(state, i) for i in range(ndistricts)]
+    stArea   = [      distArea(state, i) for i in range(ndistricts)]
+    
+    stdAfram = [conDiffSum(state, i, 'aframdiff') for i in range(ndistricts)]
+    stdHisp  = [conDiffSum(state, i,  'hispdiff') for i in range(ndistricts)]
+    
+    stMincon = [minorityConc(state, i, 'mincon') for i in range(ndistricts)]
+    stBiz    = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    
+    metrics  = pd.DataFrame({'contiguousness': stConts,
+                             'population'    : stPops,
+                             'bizarreness'   : stBiz,
+                             'perimeter'     : stPerim,
+                             'area'          : stArea,
+                             'mincon'        : stMincon,
+                             'sumAframDiff'  : stdAfram,
+                             'sumHispDiff'   : stdHisp
+                             })
 
+def goodnessNoVeto(metrics):
+    #stConts = [contiguousness(runningState[0], i) for i in range(ndistricts)]
+    #stPops  = [    population(runningState[0], i) for i in range(ndistricts)]
+    #stBiz   = [   bizarreness(runningState[0], i) for i in range(ndistricts)]
+    #stPerim = [     perimeter(runningState[0], i) for i in range(ndistricts)]
+    #stArea  = [      distArea(runningState[0], i) for i in range(ndistricts)]
+    
+    tempStConts  = metrics['contiguousness']
+    tempStPops   = metrics['population']
+    tempStBiz    = metrics['bizarreness']
+    tempStMincon = metrics['mincon']
+    tempStdAfram = metrics['sumAframDiff']
+    tempStdHisp  = metrics['sumHispDiff']
+    
+    mindists = tempStMincon.argsort()[-numMajMinDists:][::-1]
+    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
+    
+    return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
+            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000 + \
+            np.sum(tempStdAfram[mindists]) + np.sum(tempStdHisp[mindists])
+    #functions should be written such that the numbers being scaled are between zero and one.
 
 def goodness(metrics):
     #stConts = [contiguousness(runningState[0], i) for i in range(ndistricts)]
@@ -707,14 +609,23 @@ def goodness(metrics):
     #stPerim = [     perimeter(runningState[0], i) for i in range(ndistricts)]
     #stArea  = [      distArea(runningState[0], i) for i in range(ndistricts)]
     
-    tempStConts = metrics['contiguousness']
-    tempStPops  = metrics['population']
-    tempStBiz   = metrics['bizarreness']
+    tempStConts  = metrics['contiguousness']
     
+    if any([x!=1 for x in tempStConts]):
+        return float('-inf')
+    
+    tempStPops   = metrics['population']
+    tempStBiz    = metrics['bizarreness']
+    tempStMincon = metrics['mincon']
+    tempStdAfram = metrics['sumAframDiff']
+    tempStdHisp  = metrics['sumHispDiff']
+    
+    mindists = tempStMincon.argsort()[-numMajMinDists:][::-1]
     modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
     
-    return -30000*abs(sum(tempStConts) - ndistricts) - 3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
-            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000
+    return -3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
+            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000 + \
+            np.sum(tempStdAfram[mindists]) + np.sum(tempStdHisp[mindists])
     #functions should be written such that the numbers being scaled are between zero and one.
 
 def switchDistrict(current_goodness, possible_goodness): # fix
@@ -768,12 +679,58 @@ def contiguousStart(stats = "DEFAULT"):
             pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
-        print("%d districts left to assign."%(sum(state.value==ndistricts)))
-    return state
+        #print("%d districts left to assign."%(sum(state.value==ndistricts)))
+    return state.set_index(state.key)
 
+def dfEquiv(f1, f2):
+    if any(f1.columns != f2.columns):
+        return False
+    else:
+        return all([ all(f1[col] == f2[col]) for col in f1.columns ])
 
+def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
+    arrayList = [("maxBiz",    np.zeros((numstates,numsaves)), "Maximum Bizarreness"                          )
+                 ("meanBiz",   np.zeros((numstates,numsaves)), "Mean Bizarreness"                             )
+                 ("totalVar",  np.zeros((numstates,numsaves)), "Total Population Variation"                   )
+                 ("maxCont",   np.zeros((numstates,numsaves)), "Maximum Contiguousness"                       )
+                 ("maxPop",    np.zeros((numstates,numsaves)), "Maximum Population"                           )
+                 ("popDiff",   np.zeros((numstates,numsaves)), "Maximum Population Difference"                )
+                 ("hispDiff",  np.zeros((numstates,numsaves)), "Hispanic Boundary Difference Measure"         )
+                 ("aframDiff", np.zeros((numstates,numsaves)), "African American Boundary Difference Measure" )
+                 ("goodness",  np.zeros((numstates,numsaves)), "Goodness"                                     )]
+    for startingpoint in range(numstates):
+        for j in samplerate*arange(numsaves/samplerate):
+            thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(startingpoint, j+1))
+            mindists = thismetrics['mincon'].argsort()[-numMajMinDists:][::-1]
+            
+            arrayList[0][1][startingpoint,j] = np.max(thismetrics['bizarreness'])
+            arrayList[1][1][startingpoint,j] = np.mean(thismetrics['bizarreness'])
+            arrayList[2][1][startingpoint,j] = np.sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in thismetrics['population']])/(2*(1-float(1)/ndistricts))
+            arrayList[3][1][startingpoint,j] = np.max(thismetrics['contiguousness'])
+            arrayList[4][1][startingpoint,j] = np.max(thismetrics['population'])
+            arrayList[5][1][startingpoint,j] = np.max(thismetrics['population']) - np.min(thismetrics['population'])
+            arrayList[6][1][startingpoint,j] = np.sum(thismetrics['sumHispDiff'][mindists])
+            arrayList[7][1][startingpoint,j] = np.sum(thismetrics['sumAframDiff'][mindists])
+            arrayList[8][1][startingpoint,j] = goodness(thismetrics)
+        
+        print("Stored metrics for state %d"%(startingpoint))
+    return arrayList
 
-
-
-
+def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
+    
+    if type(states) = str:
+        if states == 'all'
+            states = np.arange(arrayList[0][1].shape[0])
+    if type(states) = int:
+        states = np.array([states])
+        
+    for arr in arrayList:
+        for state in states:
+            plt.plot(arrayList[arr][1][state,:])
+        plt.title(arrayList[arr][2])
+        if save:
+            plt.savefig(save + arrayList[0]'.png')
+        if show:
+            plt.show()
+    plt.clf()
 

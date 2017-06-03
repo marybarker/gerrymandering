@@ -267,37 +267,45 @@ def tiny_color_these_states(subset, geom_to_plot, list_of_states, foldername, nu
         del fig
 
 
+
 def updateGlobals(state):
     global metrics, adjacencyFrame
     
-    temp = dict(zip(state.key, state.value))
-    lowdists  = adjacencyFrame.low.replace(temp)
-    highdists = adjacencyFrame.high.replace(temp)
+    lowdists  = pd.merge(adjacencyFrame, state, left_on = 'low' , right_on = 'key').value
+    highdists = pd.merge(adjacencyFrame, state, left_on = 'high', right_on = 'key').value
+    
     isSame = lowdists==highdists
     adjacencyFrame['isSame'] = isSame
     adjacencyFrame['lowdist'] = lowdists
     adjacencyFrame['highdist'] = highdists
     
-    stConts = [contiguousness(state, i) for i in range(ndistricts)]
-    stPops  = [    population(state, i) for i in range(ndistricts)]
-    stPerim = [     perimeter(state, i) for i in range(ndistricts)]
-    stArea  = [      distArea(state, i) for i in range(ndistricts)]
+    stConts  = [contiguousness(state, i) for i in range(ndistricts)]
+    stPops   = [    population(state, i) for i in range(ndistricts)]
+    stPerim  = [     perimeter(state, i) for i in range(ndistricts)]
+    stArea   = [      distArea(state, i) for i in range(ndistricts)]
     
-    stBiz   = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    stdAfram = [conDiffSum(state, i, 'aframdiff') for i in range(ndistricts)]
+    stdHisp  = [conDiffSum(state, i,  'hispdiff') for i in range(ndistricts)]
     
-    metrics = pd.DataFrame({'contiguousness': stConts,
-                            'population'    : stPops,
-                            'bizarreness'   : stBiz,
-                            'perimeter'     : stPerim,
-                            'area'          : stArea}
-                          )
+    stMincon = [minorityConc(state, i, 'mincon') for i in range(ndistricts)]
+    stBiz    = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
+    
+    metrics  = pd.DataFrame({'contiguousness': stConts,
+                             'population'    : stPops,
+                             'bizarreness'   : stBiz,
+                             'perimeter'     : stPerim,
+                             'area'          : stArea,
+                             'mincon'        : stMincon,
+                             'sumAframDiff'  : stdAfram,
+                             'sumHispDiff'   : stdHisp
+                             })
 
-
+random.seed(100)
 foldername = "tests/"
 #os.mkdir(foldername)
-#tinyPenn = set(random.sample(blockstats.index, 1))
-
-degree = 5
+#execfile('setup.py') #Stack overflow doesn't like this, for the record.
+#tinyPenn = set(random.sample(blockstats.index, 1)); ndistricts = 3
+degree = 2
 
 for i in range(degree):
     tinyPenn = tinyPenn.union(
@@ -306,7 +314,7 @@ for i in range(degree):
                                 set(adjacencyFrame.low[adjacencyFrame.high.isin(tinyPenn)])
                              )
 
-blockstats = blockstats.ix[list(tinyPenn), :]
+tinyStats = blockstats.ix[list(tinyPenn), :]
 adjacencyFrame = adjacencyFrame.ix[adjacencyFrame.low.isin(tinyPenn) & adjacencyFrame.high.isin(tinyPenn), :]
 
 ndistricts = 4
