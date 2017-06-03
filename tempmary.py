@@ -93,40 +93,6 @@ for thing in glommers:
 
     bettervtds.append(thing)
 
-outShapefile = str(os.getcwd()) + '/'+foldername+"with_empty_polys.shp"
-outDriver = ogr.GetDriverByName("ESRI Shapefile")
-if os.path.exists(outShapefile):
-    outDriver.DeleteDataSource(outShapefile)
-# Create the output shapefile
-outDataSource = outDriver.CreateDataSource(outShapefile)
-outLayer = outDataSource.CreateLayer('vtds', geom_type=ogr.wkbPolygon)
-
-for key in vtds[0].keys():
-    thisfield = ogr.FieldDefn(key, ogr.OFTInteger)
-    outLayer.CreateField(thisfield)
-
-for vtd in bettervtds:
-    featureDefn = outLayer.GetLayerDefn()
-    g = vtd.geometry()
-    geoid = vtd.GEOID10
-    name = vtd.NAME10
-    feature = ogr.Feature(featureDefn)
-    feature.SetGeometry(g)
-
-    for key in vtd.keys():
-        feature.SetField(key, vtd[key])
-    outLayer.CreateFeature(feature)
-    feature = None
-
-# Close DataSource
-outDataSource.Destroy()
-
-
-
-
-
-
-
 
 #centroids
 centroids = []
@@ -158,19 +124,23 @@ pd.DataFrame({"VTD":names, "centroid":centroids}).to_csv("noIslandsCentroids.csv
 # (https://www.dallasnews.com/news/politics/2017/03/10/report-us-court-voids-texas-congressional-districts)
 ############################################################################################################
 os.chdir("/Users/marybarker/Downloads/Texas/")
+os.chdir("/home/thisisme/Documents/gerrymandering/Texas/")
 CDsToLookAt = [15, 16, 20, 21, 23, 27, 28, 34, 35]
 
 # read Congressional District shapefile first
 ds = ogr.Open("TX_CURRENT_CD/CDS.shp")
+ds = ogr.Open("cds/cds.shp")
 lyr = ds.GetLayer(0)
 CDS = [feat for feat in lyr] 
 CDS = [CDS[x - 1] for x in CDsToLookAt]
 
 # now get all vtds 
 ds = ogr.Open("precinct/precinct.shp")
+ds = ogr.Open("baseline_VTDS.shp")
 lyr = ds.GetLayer(0)
 vtds = [feat for feat in lyr]
 
+funname = 'current_'
 lookup = []
 #counter = 0
 #for vtd in vtds:
@@ -187,36 +157,40 @@ for counter in range(len(vtds)):
                 mycd = cd.DISTRICT
                 myintarea = newintarea
     if mycd != -1:
-        lookup.append( (counter, vtd.CNTYVTD, vtd.VTDKEY, mycd) )
+        #lookup.append( (counter, vtd.GEOID10, vtd.NAME10, mycd) )
+        lookup.append( (counter, str(vtd.CNTYVTD), str(vtd.VTDKEY), mycd) )
 
 thing = pd.DataFrame(lookup, columns=['number', 'GEOID10', 'NAME10', 'CD'])
-thing.to_csv("VTD_to_CD.csv")
+thing.to_csv(funname+"VTD_to_CD.csv")
 
 
 # now build connectivity frame for vtds
 adjacencyFrame = adjacencies([vtds[i] for i in myindices])
-adjacencyFrame.to_csv("temporary_edges.csv")
+adjacencyFrame.to_csv(funname+"temporary_edges.csv")
 vtdboundaries = boundaries([vtds[i] for i in myindices])
 adjacencyFrame = adjacentEdgeLengths(adjacencyFrame, vtdboundaries)
-adjacencyFrame.to_csv("PRECINCTconnections.csv")
+adjacencyFrame.to_csv(funname+"PRECINCTconnections.csv")
 
 
 #now write relevant vtd statistics to file
-myindices = zip(*lookup)[0]
+myindices = thing['number'].values#zip(*lookup)[0]
 allthestats = pd.DataFrame()
 for key in vtds[0].keys():
     allthestats[key] = [vtds[i][key] for i in myindices] 
+
 allthestats['PERIM'] = [sum(adjacencyFrame.ix[(adjacencyFrame.low.astype(str) == (str(vtds[i].CNTYVTD)+str(vtds[i].VTDKEY))) | (adjacencyFrame.high.astype(str) == (str(vtds[i].CNTYVTD)+str(vtds[i].VTDKEY))), 'length']) for i in myindices]
 allthestats['ALAND'] = [vtds[i].geometry().Area() for i in myindices]
 allthestats['AWATER'] = 0
-allthestats['CNTYVTD']  = allthestats['GEOID10']
-allthestats[ 'VTDKEY'] = allthestats['NAME10']
+allthestats['GEOID10'] = allthestats['CNTYVTD'].astype(str)
+allthestats['NAME10'] = allthestats[ 'VTDKEY'].astype(str)
+#allthestats['CNTYVTD']  = allthestats['GEOID10']
+#allthestats[ 'VTDKEY'] = allthestats['NAME10']
 allthestats.rename(columns={'e_total':'population'}, inplace=True)
-allthestats['VTD'] = pd.Series([str(x) for x in allthestats.GEOID10.values]).str.cat([str(y) for y in allthestats.NAME10.values], sep='')
-allthestats.to_csv("alt_vtdstats_1.csv")
+allthestats['VTD'] = allthestats.GEOID10.astype(str).str.cat(allthestats.NAME10.astype(str))
+allthestats.to_csv(funname+"vtdstats.csv")
 
 
-outShapefile = str(os.getcwd()) + '/VTDS_of_Interest.shp'
+outShapefile = str(os.getcwd()) + '/'+ 'best_ever_' + 'block_groups.shp'
 outDriver = ogr.GetDriverByName("ESRI Shapefile")
 if os.path.exists(outShapefile):
     outDriver.DeleteDataSource(outShapefile)
@@ -225,21 +199,21 @@ outDataSource = outDriver.CreateDataSource(outShapefile)
 outLayer = outDataSource.CreateLayer('vtds', geom_type=ogr.wkbPolygon)
 
 for key in vtds[0].keys():
-    thisfield = ogr.FieldDefn(key, ogr.OFTInteger)
+    thisfield = ogr.FieldDefn(key, ogr.OFTString)
     outLayer.CreateField(thisfield)
-outLayer.CreateField(ogr.FieldDefn('GEOID10', ogr.OFTInteger))
-outLayer.CreateField(ogr.FieldDefn('NAME10', ogr.OFTInteger))
+#outLayer.CreateField(ogr.FieldDefn('GEOID10', ogr.OFTString))
+#outLayer.CreateField(ogr.FieldDefn('NAME10', ogr.OFTString))
 
-for vtd in [vtds[i] for i in myindices]:
+for vtd in vtds: #[vtds[i] for i in myindices]:
     featureDefn = outLayer.GetLayerDefn()
     g = vtd.geometry()
     feature = ogr.Feature(featureDefn)
     feature.SetGeometry(g)
 
     for key in vtd.keys():
-        feature.SetField(key, vtd[key])
-    feature.SetField('GEOID10', vtd['CNTYVTD'])
-    feature.SetField('NAME10', vtd['VTDKEY'])
+        feature.SetField(key, str(vtd[key]))
+    #feature.SetField('GEOID10', str(vtd.CNTYVTD))
+    #feature.SetField('NAME10', str(vtd.VTDKEY))
     outLayer.CreateFeature(feature)
     feature = None
 
@@ -247,4 +221,65 @@ for vtd in [vtds[i] for i in myindices]:
 outDataSource.Destroy()
 
 
+
+os.chdir("/Users/marybarker/Dropbox/temp/")
+ds = ogr.Open("current_bgs_of_Interest.shp")
+lyr = ds.GetLayer()
+bgs = [feat for feat in lyr]
+
+thing1 = list(bgs[0].keys()[:15])
+thing2 = list(pd.read_csv("meaningOfKeys.csv").ShortName.values)
+thingstokeep = thing1 + thing2
+
+outputfilename = 'blockGroupData.csv'
+outputstuff = pd.DataFrame({reference:[str(x[str(reference)]) for x in bgs] for reference in thingstokeep})
+outputstuff.to_csv(outputfilename)
+
+
+############################################################################################################
+ds = ogr.Open("07_11_block_group_Texas.gdb")
+lyr1 = ds.GetLayer(0)
+lyr2 = ds.GetLayer(1)
+stuff1 = [feat for feat in lyr1]
+stuff2 = [feat for feat in lyr2]
+
+# first find out all of the keys that we want and write their explanations to a csv
+lookupFrame = [(a['Short_Name'], a['Full_Name']) for a in stuff1 if a['Short_Name'].endswith('e1')]
+lookupFrame = zip(*lookupFrame)
+pd.DataFrame({'ShortName':lookupFrame[0], 'LongName':lookupFrame[1]}).to_csv("meaningOfKeys.csv")
+
+
+############################################################################################################
+# North Carolina
+
+os.chdir("/Users/marybarker/Documents/tarleton_misc/gerrymandering/NorthCarolina/")
+popdata = pd.read_excel("VTDTotalPopRaceAndEthnicity.xlsx", skiprows=1)
+cntyToFips = pd.read_csv("county_to_fips.csv", header=None)
+cntyToFips.columns=['state', 'stateFIPS', 'countyFIPS', 'countyName', 'fipsClass']
+cntyToFips.countyName = [x.replace(' County', '') for x in cntyToFips.countyName]
+countyFIPS = cntyToFips.countyFIPS.copy()
+cntyToFips.set_index(countyFIPS, inplace=True)
+blockstats = pd.read_csv("vtdstats.csv")
+
+
+lookupvtd = blockstats.VTDST10
+lookupcnty = [cntyToFips.countyName[x] for x in blockstats.COUNTYFP10]
+
+blockstats.VTDST10  == popdata.VTD
+cntyToFips[ blockstats.COUNTYFP10, 'countyName'] == popdata.County
+lookup_table = pd.DataFrame({'GEOID10':blockstats.GEOID10, 'excelCountyName':lookupcnty, 'excelVTDId':lookupvtd })
+lookup_table.to_csv("blockstats_to_excel_lookup.csv")
+lookup_table.set_index('GEOID10', inplace=True)
+population = [popdata.ix[((popdata.County == lookup_table.excelCountyName[x]) & (popdata.VTD == lookup_table.excelVTDId[x])), 'Total'] for x in blockstats.GEOID10]
+population = [sum(x.values) for x in population]
+
+blockstats['population'] = population
+
+allTheColumnsIWant1 = list(stuff2[0].keys()[:16])
+allTheColumnsIWant2 = list(lookupFrame[0])
+allTheColumnsIWant = allTheColumnsIWant1+allTheColumnsIWant2
+
+# Now we want to extract the important data for each block and write to csv 
+bigDataCsv = pd.DataFrame({key:[stuffthing[key] for stuffthing in stuff2] for key in allTheColumnsIWant})
+bigDataCsv.to_csv("blockGroupData.csv")
 

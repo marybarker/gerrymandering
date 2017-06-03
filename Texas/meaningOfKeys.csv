@@ -1,0 +1,71 @@
+,LongName,ShortName
+0,SEX BY AGE - Universe:  Total population - Total: -- (Estimate),B01001e1
+1,MEDIAN AGE BY SEX - Universe:  Total population - Total: -- (Estimate),B01002e1
+2,RACE - Universe:  Total population - Total: -- (Estimate),B02001e1
+3,WHITE ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  White alone or in combination with one or more other races - Total: -- (Estimate),B02008e1
+4,BLACK OR AFRICAN AMERICAN ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  Black or African American alone or in combination with one or more other races - Total: -- (Estimate),B02009e1
+5,AMERICAN INDIAN AND ALASKA NATIVE ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  People who are American Indian or Alaska Native alone or in combination with one or more other races - Total: -- (Estimate),B02010e1
+6,ASIAN ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  Asian alone or in combination with one or more other races - Total: -- (Estimate),B02011e1
+7,NATIVE HAWAIIAN AND OTHER PACIFIC ISLANDER ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  Native Hawaiian and Other Pacific Islander alone or in combination with one or more other races - Total: -- (Estimate),B02012e1
+8,SOME OTHER RACE ALONE OR IN COMBINATION WITH ONE OR MORE OTHER RACES - Universe:  Some other race alone or in combination with one or more other races - Total: -- (Estimate),B02013e1
+9,HISPANIC OR LATINO ORIGIN BY RACE - Universe:  Total population - Total: -- (Estimate),B03002e1
+10,HISPANIC OR LATINO ORIGIN - Universe:  Total population - Total: -- (Estimate),B03003e1
+11,MEANS OF TRANSPORTATION TO WORK - Universe:  Workers 16 years and over - Total: -- (Estimate),B08301e1
+12,TRAVEL TIME TO WORK - Universe:  Workers 16 years and over who did not work at home - Total: -- (Estimate),B08303e1
+13,OWN CHILDREN UNDER 18 YEARS BY FAMILY TYPE AND AGE - Universe:  Own children under 18 years - Total: -- (Estimate),B09002e1
+14,RELATIONSHIP BY HOUSEHOLD TYPE (INCLUDING LIVING ALONE) FOR THE POPULATION 65 YEARS AND OVER - Universe:  Population 65 years and over - Total: -- (Estimate),B09017e1
+15,HOUSEHOLD TYPE (INCLUDING LIVING ALONE) - Universe:  Households - Total: -- (Estimate),B11001e1
+16,HOUSEHOLD TYPE BY HOUSEHOLD SIZE - Universe:  Households - Total: -- (Estimate),B11016e1
+17,SEX BY MARITAL STATUS FOR THE POPULATION 15 YEARS AND OVER - Universe:  Population 15 years and over - Total: -- (Estimate),B12001e1
+18,SEX BY EDUCATIONAL ATTAINMENT FOR THE POPULATION 25 YEARS AND OVER - Universe:  Population 25 years and over - Total: -- (Estimate),B15002e1
+19,AGE BY LANGUAGE SPOKEN AT HOME BY ABILITY TO SPEAK ENGLISH FOR THE POPULATION 5 YEARS AND OVER - Universe:  Population 5 years and over - Total: -- (Estimate),B16004e1
+20,POVERTY STATUS IN THE PAST 12 MONTHS BY HOUSEHOLD TYPE BY AGE OF HOUSEHOLDER - Universe:  Households - Total: -- (Estimate),B17017e1
+21,POVERTY STATUS OF INDIVIDUALS IN THE PAST 12 MONTHS BY LIVING ARRANGEMENT - Universe:  Population for whom poverty status is determined - Total: -- (Estimate),B17021e1
+22,HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Households - Total: -- (Estimate),B19001e1
+23,MEDIAN HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Households - Median household income in the past 12 months (in 2010 inflation-adjusted dollars) -- (Estimate),B19013e1
+24,EARNINGS IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19051e1
+25,WAGE OR SALARY INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19052e1
+26,SELF-EMPLOYMENT INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19053e1
+27,"INTEREST, DIVIDENDS, OR NET RENTAL INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate)",B19054e1
+28,SOCIAL SECURITY INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19055e1
+29,SUPPLEMENTAL SECURITY INCOME (SSI) IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19056e1
+30,PUBLIC ASSISTANCE INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19057e1
+31,RETIREMENT INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19059e1
+32,OTHER TYPES OF INCOME IN THE PAST 12 MONTHS FOR HOUSEHOLDS - Universe:  Households - Total: -- (Estimate),B19060e1
+33,FAMILY INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Families - Total: -- (Estimate),B19101e1
+34,MEDIAN FAMILY INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Families - Median family income in the past 12 months (in 2010 inflation-adjusted dollars) -- (Estimate),B19113e1
+35,NONFAMILY HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Nonfamily households - Total: -- (Estimate),B19201e1
+36,MEDIAN NONFAMILY HOUSEHOLD INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Nonfamily households - Median nonfamily household income in the past 12 months (in 2010 inflation-adjusted dollars) -- (Estimate),B19202e1
+37,PER CAPITA INCOME IN THE PAST 12 MONTHS (IN 2011 INFLATION-ADJUSTED DOLLARS) - Universe:  Total population - Per capita income in the past 12 months (in 2010 inflation-adjusted dollars) -- (Estimate),B19301e1
+38,SEX BY AGE BY VETERAN STATUS FOR THE CIVILIAN POPULATION 18 YEARS AND OVER - Universe:  Civilian population 18 years and over - Total: -- (Estimate),B21001e1
+39,PERIOD OF MILITARY SERVICE FOR CIVILIAN VETERANS 18 YEARS AND OVER - Universe:  Civilian veterans 18 years and over - Total: -- (Estimate),B21002e1
+40,EMPLOYMENT STATUS FOR THE POPULATION 16 YEARS AND OVER - Universe:  Population 16 years and over - Total: -- (Estimate),B23025e1
+41,HOUSING UNITS - Universe:  Housing units - Total: -- (Estimate),B25001e1
+42,OCCUPANCY STATUS - Universe:  Housing units - Total: -- (Estimate),B25002e1
+43,TENURE - Universe:  Occupied housing units - Total: -- (Estimate),B25003e1
+44,VACANCY STATUS - Universe:  Vacant housing units - Total: -- (Estimate),B25004e1
+45,RACE OF HOUSEHOLDER - Universe:  Occupied housing units - Total: -- (Estimate),B25006e1
+46,AVERAGE HOUSEHOLD SIZE OF OCCUPIED HOUSING UNITS BY TENURE - Universe:  Occupied housing units - Total: -- (Estimate),B25010e1
+47,TENURE BY OCCUPANTS PER ROOM - Universe:  Occupied housing units - Total: -- (Estimate),B25014e1
+48,ROOMS - Universe:  Housing units - Total: -- (Estimate),B25017e1
+49,MEDIAN NUMBER OF ROOMS - Universe:  Housing units - Median number of rooms -- (Estimate),B25018e1
+50,UNITS IN STRUCTURE - Universe:  Housing units - Total: -- (Estimate),B25024e1
+51,YEAR STRUCTURE BUILT - Universe:  Housing units - Total: -- (Estimate),B25034e1
+52,MEDIAN YEAR STRUCTURE BUILT - Universe:  Housing units - Median year structure built -- (Estimate),B25035e1
+53,HOUSE HEATING FUEL - Universe:  Occupied housing units - Total: -- (Estimate),B25040e1
+54,BEDROOMS - Universe:  Housing units - Total: -- (Estimate),B25041e1
+55,TENURE BY VEHICLES AVAILABLE - Universe:  Occupied housing units - Total: -- (Estimate),B25044e1
+56,PLUMBING FACILITIES FOR ALL HOUSING UNITS - Universe:  Housing units - Total: -- (Estimate),B25047e1
+57,KITCHEN FACILITIES FOR ALL HOUSING UNITS - Universe:  Housing units - Total: -- (Estimate),B25051e1
+58,CONTRACT RENT - Universe:  Renter-occupied housing units - Total: -- (Estimate),B25056e1
+59,"RENT ASKED - Universe:  Vacant-for-rent and rented, not occupied housing units - Total: -- (Estimate)",B25061e1
+60,GROSS RENT - Universe:  Renter-occupied housing units - Total: -- (Estimate),B25063e1
+61,MEDIAN GROSS RENT (DOLLARS) - Universe:  Renter-occupied housing units paying cash rent - Median gross rent -- (Estimate),B25064e1
+62,VALUE - Universe:  Owner-occupied housing units - Total: -- (Estimate),B25075e1
+63,MEDIAN VALUE (DOLLARS) - Universe:  Owner-occupied housing units - Median value (dollars) -- (Estimate),B25077e1
+64,MORTGAGE STATUS - Universe:  Owner-occupied housing units - Total: -- (Estimate),B25081e1
+65,"PRICE ASKED - Universe:  Vacant-for-sale-only and sold, not occupied housing units - Total: -- (Estimate)",B25085e1
+66,MORTGAGE STATUS AND SELECTED MONTHLY OWNER COSTS - Universe:  Owner-occupied housing units - Total: -- (Estimate),B25087e1
+67,RATIO OF INCOME TO POVERTY LEVEL IN THE PAST 12 MONTHS - Universe:  Population for whom poverty status is determined - Total: -- (Estimate),C17002e1
+68,SEX BY OCCUPATION FOR THE CIVILIAN EMPLOYED POPULATION 16 YEARS AND OVER - Universe:  Civilian employed population 16 years and over - Total: -- (Estimate),C24010e1
+69,HOUSEHOLD INCOME BY SELECTED MONTHLY OWNER COSTS AS A PERCENTAGE OF HOUSEHOLD INCOME IN THE PAST 12 MONTHS - Universe:  Owner-occupied housing units - Total: -- (Estimate),C25095e1
