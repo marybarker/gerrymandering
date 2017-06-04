@@ -210,11 +210,16 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number, linewid
         del fig
 
 def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
+    #                In setup.py for each state, there should be a line like the following
+    #                    g = package_vtds("./VTDS_of_Interest.shp")
+    #                g contains the geometries and names of the VTDS for your state space.
+    #                              |
+    #                              state should be a pandas dataframe that has columns "key" and "value",
+    #                                  with index set to be key.  ( state = state.set_index(state.key) )
+    #                              'key' is a column of vtds to color, and 'value' are integers corresponding
+    #                                  to district number.
+    
     colors = colorDict(ndistricts)
-    #colors = {0:'yellow',1:'green'}
-    #ax.set_xlim([-71.8, -71.2])
-    #ax.set_ylim([42.6, 43.2])
-
     paths = geom_to_plot['paths']
     names = geom_to_plot['names']
 
@@ -236,6 +241,36 @@ def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
     plt.savefig(filename, dpi=DPI)
     plt.clf()
     del fig
+
+
+def color_by_rgb(geom_to_plot, vtds_rgb_dict, foldername, number):
+    #            In setup.py for each state, there should be a line like the following
+    #                g = package_vtds("./VTDS_of_Interest.shp")
+    #            g contains the geometries and names of the VTDS for your state space.
+    #                          |
+    #                          vtds_rgb_dict should be a dictionary of VTD names with RGB triples to color them.
+    
+    subset = vtds_rgb_dict.keys()
+    thing = zip(geom_to_plot['paths'], geom_to_plot['names'])
+    paths = [x[0] for x in thing if x[1] in subset]
+    names = [x[1] for x in thing if x[1] in subset]
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        facecolor = vtds_rgb_dict[names[p]]
+        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=0.02)
+        ax.add_patch(patch)
+    ax.set_aspect(1.0)
+    #plt.show()
+    plt.savefig(foldername+'output%04d.png'%(number), dpi=2400)
+    plt.clf()
+    del fig
+
 
 #precinctBoundaryFile =  'precinct/precinct.shp'
 #precinctStatsFile = 'vtdstats.csv'
