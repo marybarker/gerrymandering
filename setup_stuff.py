@@ -13,9 +13,7 @@ plt.rcParams['agg.path.chunksize'] = 1000
 """   make a  list of all voting tabulation districts   """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 def features(layer):
-    features = []
-    for feat in layer: 
-        features.append( feat )
+    features = [feat for feat in layer]
     return features
 
 
@@ -65,28 +63,38 @@ def boundaries(mylistoffeatures):
         gtype = geom.GetGeometryType()
 
         if gtype == 6: 
-            x = []
-            y = []
+            allxy = []
+            #x = []
+            #y = []
             for i in xrange(geom.GetGeometryCount()):
                 g = geom.GetGeometryRef(i)
                 for ring in g:
+                    xy = []
                     for j in xrange(ring.GetPointCount()):
                         point = ring.GetPoint(j)
-                        x.append(point[0])
-                        y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+                        xy.append(point)
+                        #x.append(point[0])
+                        #y.append(point[1])
+                    allxy.append(xy)
+            #boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = allxy
         elif gtype == 3: # polygon
-            x = []
-            y = []
+            allxy = []
+            #x = []
+            #y = []
             for ring in geom:
+                xy = []
                 for i in xrange(ring.GetPointCount()):
                     point = ring.GetPoint(i)
-                    x.append(point[0])
-                    y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+                    #x.append(point[0])
+                    #y.append(point[1])
+                    xy.append(point)
+                allxy.append(xy)
+            #boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = allxy
         else:
             b = geom.GetBoundary()
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
+            boundaries[str(feat['GEOID10']) + feat['NAME10']] = [b.GetPoints()]
     return boundaries
 
 
@@ -100,10 +108,17 @@ def adjancentEdgeLengths(connectivitydf, boundaries):
         hi = connectivitydf.hi[i]
         b1 = boundaries[low]
         b2 = boundaries[hi]
-        pointsInCommon = [point for point in b1 if point in b2]
+        l = 0.0
+        #pointsInCommon = [point for point in b1 if point in b2]
         # Needs to make use of shape file to prevent the cutoff connection.
         #  b1 intersect b2?  whatever shapefile thing we use.
-        l = ToFeet(pointsInCommon)
+        #l = ToFeet(pointsInCommon)
+        for b11 in b1: 
+            b = len(b11)
+            if b > 1:
+                for b22 in b2:
+                    pointsInCommon = [ [b11[a], b11[(a+1)%b] ] for a in range(b) if ((b11[a] in b22) and (b11[(a+1)%b] in b22)) ]
+                    l += sum( [ToFeet(a) for a in pointsInCommon] )
         edgelengths.append(l)
     connectivitydf['length'] = edgelengths
     return connectivitydf
@@ -243,7 +258,7 @@ def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
     del fig
 
 
-def color_by_rgb(geom_to_plot, vtds_rgb_dict, foldername, number):
+def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300):
     #            In setup.py for each state, there should be a line like the following
     #                g = package_vtds("./VTDS_of_Interest.shp")
     #            g contains the geometries and names of the VTDS for your state space.
@@ -263,11 +278,11 @@ def color_by_rgb(geom_to_plot, vtds_rgb_dict, foldername, number):
     for p in range(len(paths)):
         path = paths[p]
         facecolor = vtds_rgb_dict[names[p]]
-        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=0.02)
+        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=linewidth)
         ax.add_patch(patch)
     ax.set_aspect(1.0)
     #plt.show()
-    plt.savefig(foldername+'output%04d.png'%(number), dpi=2400)
+    plt.savefig(filename, dpi=DPI)
     plt.clf()
     del fig
 
