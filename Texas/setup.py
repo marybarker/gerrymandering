@@ -1,15 +1,15 @@
 stateSHORT = 'TX'
 
-blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str})#.merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="VTD")
+blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str}).merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="ID")
 for key in blockstats.keys():
-    #if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
-    #    blockstats = blockstats.drop(key, 1)
+    if (key[:4] == "ID.") or (key[:9] == 'Unnamed: '):
+        blockstats = blockstats.drop(key, 1)
     if key == "POP100":
         blockstats = blockstats.rename(columns={"POP100":"population"})
 #newindex = [str(blockstats.NAME10[i]) + str(blockstats.VTD[i]) for i in blockstats.index]
 #blockstats = blockstats.set_index(pd.Series(newindex))
 #blockstats.VTD = blockstats.VTD.astype(str)
-blockstats = blockstats.set_index(blockstats.VTD)  #VTD is now a unique identifier
+blockstats = blockstats.set_index(blockstats.ID)  #ID is now a unique identifier
 totalpopulation = sum(blockstats.population)
 
 #conccolumn = 'aframcon'
@@ -34,7 +34,7 @@ adjacencyFrame.columns = [replacements.get(x,x) for x in adjacencyFrame.columns]
     #This setup is superior to our previous ones because we might have other information in adjacencyFrame.
     #We just add more things to replacements as they become relevant.
 
-g = package_vtds("./VTDS_of_Interest.shp")
+g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv")
 
 ###
 #Demographic differences across VTD boundaries
@@ -47,12 +47,12 @@ blockstats.ix[blockstats.aframcon.isnull(), "aframcon"] = 0
 blockstats.ix[blockstats.hispcon.isnull(),  "hispcon" ] = 0
 blockstats.ix[blockstats.mincon.isnull(),   "mincon"  ] = 0
 
-conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "aframcon"]], left_on = 'low', right_on = 'VTD').aframcon
-conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "aframcon"]], left_on = 'high', right_on = 'VTD').aframcon
+conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'low', right_on = 'ID').aframcon
+conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'high', right_on = 'ID').aframcon
 adjacencyFrame["aframdiff"] = conhigh - conlow
 
-conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "hispcon"]], left_on = 'low', right_on = 'VTD').hispcon
-conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "hispcon"]], left_on = 'high', right_on = 'VTD').hispcon
+conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'low', right_on = 'ID').hispcon
+conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'high', right_on = 'ID').hispcon
 adjacencyFrame["hispdiff"] = conhigh - conlow
 
 

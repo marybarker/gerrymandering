@@ -1,11 +1,11 @@
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="VTD")
+blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="ID")
 for key in blockstats.keys():
-    if (key[:4] == "VTD.") or (key[:9] == 'Unnamed: '):
+    if (key[:4] == "ID.") or (key[:9] == 'Unnamed: '):
         blockstats = blockstats.drop(key, 1)
 
-blockstats = blockstats.set_index(blockstats.VTD)
+blockstats = blockstats.set_index(blockstats.ID)
 totalpopulation = sum(blockstats.population)
 
 conccolumn = 'aframcon'
@@ -22,4 +22,4 @@ adjacencyFrame = pd.read_csv('noIslandsPrecinctConnections.csv')
 adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
 #adjacencyFrame.columns = ['low', 'high', 'length']
 
-g = package_vtds("precinct/precinct.shp")
+g = package_vtds("precinct/precinct.shp", "GEOIDToIDNUM.csv")

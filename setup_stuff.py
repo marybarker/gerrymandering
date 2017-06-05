@@ -41,15 +41,15 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name = str(f1['GEOID10']) + f1['NAME10']
+        name = f1['ID']
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append(str(f2['GEOID10']) + f2['NAME10'])
+                l2.append( f2['ID'] )
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
-    newthing.columns=['lo','hi']
+    newthing.columns=['low','high']
     return newthing
 
 
@@ -64,8 +64,6 @@ def boundaries(mylistoffeatures):
 
         if gtype == 6: 
             allxy = []
-            #x = []
-            #y = []
             for i in xrange(geom.GetGeometryCount()):
                 g = geom.GetGeometryRef(i)
                 for ring in g:
@@ -73,46 +71,34 @@ def boundaries(mylistoffeatures):
                     for j in xrange(ring.GetPointCount()):
                         point = ring.GetPoint(j)
                         xy.append(point)
-                        #x.append(point[0])
-                        #y.append(point[1])
                     allxy.append(xy)
-            #boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = allxy
+            boundaries[ feat['ID'] ] = allxy
         elif gtype == 3: # polygon
             allxy = []
-            #x = []
-            #y = []
             for ring in geom:
                 xy = []
                 for i in xrange(ring.GetPointCount()):
                     point = ring.GetPoint(i)
-                    #x.append(point[0])
-                    #y.append(point[1])
                     xy.append(point)
                 allxy.append(xy)
-            #boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = allxy
+            boundaries[ feat['ID'] ] = allxy
         else:
             b = geom.GetBoundary()
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = [b.GetPoints()]
+            boundaries[ feat['ID']  ] = [b.GetPoints()]
     return boundaries
 
 
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """          get lengths of each connectivity           """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
-def adjancentEdgeLengths(connectivitydf, boundaries):
+def adjacentEdgeLengths(connectivitydf, boundaries):
     edgelengths = list()
     for i in range(np.shape(connectivitydf)[0]): 
-        low = connectivitydf.lo[i]
-        hi = connectivitydf.hi[i]
-        b1 = boundaries[low]
+        lo = connectivitydf.low[i]
+        hi = connectivitydf.high[i]
+        b1 = boundaries[lo]
         b2 = boundaries[hi]
         l = 0.0
-        #pointsInCommon = [point for point in b1 if point in b2]
-        # Needs to make use of shape file to prevent the cutoff connection.
-        #  b1 intersect b2?  whatever shapefile thing we use.
-        #l = ToFeet(pointsInCommon)
         for b11 in b1: 
             b = len(b11)
             if b > 1:
@@ -123,11 +109,11 @@ def adjancentEdgeLengths(connectivitydf, boundaries):
     connectivitydf['length'] = edgelengths
     return connectivitydf
 
-def package_vtds(filetouse):
+def package_vtds(shapefile_to_use, id_to_number_lookup_file, name_of_keys=['GEOID10', 'NAME10']):
     this_geom = {}
 
     # get extents of the geometry first of all 
-    ds = ogr.Open(filetouse)
+    ds = ogr.Open(shapefile_to_use)
     nlay = ds.GetLayerCount()
     lyr = ds.GetLayer(0)
     ext = lyr.GetExtent()
@@ -136,12 +122,15 @@ def package_vtds(filetouse):
     this_geom['xlim'] = [ext[0]-xoffset,ext[1]+xoffset]
     this_geom['ylim'] = [ext[2]-yoffset,ext[3]+yoffset]
 
+    lookup = pd.read_csv(id_to_number_lookup_file)
+    lookup = dict(zip(lookup.GEOID, lookup.IDNUM))
+
     lyr.ResetReading()
     names = []
     paths = []
 
     for vtd in lyr:
-        name = str(vtd['GEOID10']) + str(vtd['NAME10'])
+        name = lookup[ ''.join([str(vtd[keyname]) for keyname in name_of_keys]) ]
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -194,9 +183,6 @@ def colorDict(n):
 
 def color_these_states(geom_to_plot, list_of_states, foldername, number, linewidth = 1, DPI = 300):
     colors = colorDict(ndistricts)
-    #colors = {0:'yellow',1:'green'}
-    #ax.set_xlim([-71.8, -71.2])
-    #ax.set_ylim([42.6, 43.2])
 
     paths = geom_to_plot['paths']
     names = geom_to_plot['names']
@@ -210,16 +196,14 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number, linewid
         
         this_state = list_of_states[i]
         redistricting = this_state[0]
-        #redistricting = redistricting.drop('Unnamed: 0', 1)
-        #redistricting.columns = ['key', 'value']
         for p in range(len(paths)):
             path = paths[p]
             if names[p] in redistricting.key.values:
                 facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
-                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)#colors[facecolor])#'black')
+                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)
                 ax.add_patch(patch)
         ax.set_aspect(1.0)
-        plt.show()
+        #plt.show()
         plt.savefig(foldername+'output%04d.png'%(number+i), dpi=DPI)
         plt.clf()
         del fig
@@ -341,6 +325,8 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
+
 
 
 
