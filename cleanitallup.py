@@ -482,11 +482,11 @@ def interiorPerimeter(state, district):
 
 def distArea(state, district):
     regionlist = list(state.key[state.value == district])
-    return sum(blockstats.ALAND[blockstats.VTD.isin(regionlist)]) + \
-           sum(blockstats.AWATER[blockstats.VTD.isin(regionlist)])
+    return sum(blockstats.ALAND[blockstats.ID.isin(regionlist)]) + \
+           sum(blockstats.AWATER[blockstats.ID.isin(regionlist)])
 
 def population(state, district):
-    return sum(blockstats.population[blockstats.VTD.isin(list(state.key[state.value == district]))])
+    return sum(blockstats.population[blockstats.ID.isin(list(state.key[state.value == district]))])
 
 def minorityConc(state, district, conccolumn):
     regionlist = list(state.key[state.value == district])
@@ -494,7 +494,7 @@ def minorityConc(state, district, conccolumn):
 
 def efficiency(state, district):
     #returns difference in percentage of votes wasted.  Negative values benefit R.
-    subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
+    subframe = blockstats.loc[blockstats.ID.isin(list(state.key[state.value == district]))]
     rvotes = sum(subframe['repvotes'])
     dvotes = sum(subframe['demvotes'])
     allvotes = rvotes + dvotes
@@ -510,7 +510,7 @@ def efficiency(state, district):
 
 def demoEfficiency(state, district, demo1, demo2):
     #returns difference in percentage of ineffective and superfluous votes by demographic.
-    subframe = blockstats.loc[blockstats.VTD.isin(list(state.key[state.value == district]))]
+    subframe = blockstats.loc[blockstats.ID.isin(list(state.key[state.value == district]))]
     demo1Vote = sum(subframe[demo1])
     demo2Vote = sum(subframe[demo2])
     allvotes = demo1Vote + demo2Vote
