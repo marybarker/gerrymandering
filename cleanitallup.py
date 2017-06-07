@@ -321,6 +321,13 @@ def neighbor(state):
             newmetrics['sumHispDiff'][templowdist]   = newmetrics['sumHispDiff'][templowdist]\
                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
                                                        + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            
+            newmetrics['numedges'][temphighdist] = newmetrics['numedges'][temphighdist]\
+                                                   + np.sum[-(proposedChanges.isSame)]\
+                                                   - np.sum[-(previousVersion.isSame)]
+            newmetrics['numedges'][templowdist]  = newmetrics['numedges'][templowdist]\
+                                                   - np.sum[-(proposedChanges.isSame)]\
+                                                   + np.sum[-(previousVersion.isSame)]
         
         else:
             
@@ -375,6 +382,13 @@ def neighbor(state):
             newmetrics['sumHispDiff'][temphighdist]  = newmetrics['sumHispDiff'][temphighdist]\
                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
                                                        + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            
+            newmetrics['numedges'][temphighdist] = newmetrics['numedges'][temphighdist]\
+                                                   - np.sum[-(proposedChanges.isSame)]\
+                                                   + np.sum[-(previousVersion.isSame)]
+            newmetrics['numedges'][templowdist]  = newmetrics['numedges'][templowdist]\
+                                                   + np.sum[-(proposedChanges.isSame)]\
+                                                   - np.sum[-(previousVersion.isSame)]
         
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
@@ -477,6 +491,9 @@ def contiguousness(state, district, subframe = "DEFAULT"):
 def perimeter(state, district):
     return sum(adjacencyFrame.length[(adjacencyFrame.lowdist == district) != (adjacencyFrame.highdist == district)])
 
+def numEdges(district):
+    return sum(-adjacencyFrame.isSame[adjacencyFrame.lowdist == district]) + sum(-adjacencyFrame.isSame[adjacencyFrame.highdist == district])
+
 def interiorPerimeter(state, district):
     return sum(adjacencyFrame.length[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district)])
 
@@ -570,6 +587,8 @@ def updateGlobals(state):
     stMincon = [minorityConc(state, i, 'mincon') for i in range(ndistricts)]
     stBiz    = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
     
+    stNumEdges = [numEdges(i) for i in range(ndistricts)]
+    
     metrics  = pd.DataFrame({'contiguousness': stConts,
                              'population'    : stPops,
                              'bizarreness'   : stBiz,
@@ -577,7 +596,8 @@ def updateGlobals(state):
                              'area'          : stArea,
                              'mincon'        : stMincon,
                              'sumAframDiff'  : stdAfram,
-                             'sumHispDiff'   : stdHisp
+                             'sumHispDiff'   : stdHisp,
+                             'numedges'      : stNumEdges
                              })
 
 def goodnessNoVeto(metrics):
@@ -679,7 +699,7 @@ def contiguousStart(stats = "DEFAULT"):
             pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
-        #print("%d districts left to assign."%(sum(state.value==ndistricts)))
+        print("%d districts left to assign."%(sum(state.value==ndistricts)))
     return state.set_index(state.key)
 
 def dfEquiv(f1, f2):
@@ -718,10 +738,10 @@ def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
 
 def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
     
-    if type(states) = str:
-        if states == 'all'
+    if type(states) == str:
+        if states == 'all':
             states = np.arange(arrayList[0][1].shape[0])
-    if type(states) = int:
+    if type(states) == int:
         states = np.array([states])
         
     for arr in arrayList:
@@ -729,7 +749,7 @@ def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
             plt.plot(arrayList[arr][1][state,:])
         plt.title(arrayList[arr][2])
         if save:
-            plt.savefig(save + arrayList[0]'.png')
+            plt.savefig(save + arrayList[arr][0] + '.png')
         if show:
             plt.show()
     plt.clf()

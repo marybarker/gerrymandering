@@ -14,6 +14,7 @@ import time
 execfile('../cleanitallup.py')
 execfile('../setup_stuff.py')
 execfile('setup.py') #Stack overflow doesn't like this, for the record.
+execfile('../tempjoseph.py')
 #%run -i simulator #Supposedly Stack overflow is okay with this, maybe?
 
 metrics = pd.DataFrame()
@@ -24,11 +25,12 @@ foldername = "muffle/" # even when global metrics are incorrectly updated, we ke
 foldername = "huffle/" # reset global metrics after every MH call
 foldername = "buffle/" # low to high or high to low
 foldername = "boundarydangle/"
+foldername = "awnw/"
 #os.mkdir(foldername)
 
 numstates= 1
 numsteps = 200
-numsaves = 1000
+numsaves = 10
 
 #########
 #Run numstates instances from scratch, without annealing
