@@ -41,13 +41,13 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name = f1['ID']
+        name =  str(f1['GEOID10'])+str(f1['NAME10']) #f1['ID']
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append( f2['ID'] )
+                l2.append( str(f2['GEOID10'])+str(f2['NAME10']) )#.append(f2['ID'])
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
     newthing.columns=['low','high']
     return newthing
@@ -72,7 +72,8 @@ def boundaries(mylistoffeatures):
                         point = ring.GetPoint(j)
                         xy.append(point)
                     allxy.append(xy)
-            boundaries[ feat['ID'] ] = allxy
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
+            #boundaries[ feat['ID'] ] = allxy
         elif gtype == 3: # polygon
             allxy = []
             for ring in geom:
@@ -81,10 +82,12 @@ def boundaries(mylistoffeatures):
                     point = ring.GetPoint(i)
                     xy.append(point)
                 allxy.append(xy)
-            boundaries[ feat['ID'] ] = allxy
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
+            #boundaries[ feat['ID'] ] = allxy
         else:
             b = geom.GetBoundary()
-            boundaries[ feat['ID']  ] = [b.GetPoints()]
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = [b.GetPoints()]
+            #boundaries[ feat['ID']  ] = [b.GetPoints()]
     return boundaries
 
 
@@ -301,7 +304,7 @@ vtds = features(lyr)
 
 vtd_boundaries = boundaries(vtds)
 vtd_connectivities = adjacencies(vtds)
-vtd_connectivities = adjancentEdgeLengths(vtd_connectivities, vtd_boundaries)
+vtd_connectivities = adjacentEdgeLengths(vtd_connectivities, vtd_boundaries)
 vtd_connectivities.to_csv('NEWVTDconnections.csv')
 
 
