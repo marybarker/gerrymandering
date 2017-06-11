@@ -14,7 +14,7 @@ import time
 execfile('../cleanitallup.py')
 execfile('../setup_stuff.py')
 execfile('setup.py') #Stack overflow doesn't like this, for the record.
-execfile('../tempjoseph.py')
+#execfile('../tempjoseph.py')
 #%run -i simulator #Supposedly Stack overflow is okay with this, maybe?
 
 metrics = pd.DataFrame()
@@ -29,8 +29,11 @@ foldername = "awnw/"
 #os.mkdir(foldername)
 
 numstates= 1
-numsteps = 200
-numsaves = 10
+numsteps = 100
+numsaves = 1000
+samplerate = 1
+numreads = numstates
+#numreads = 1281
 
 #########
 #Run numstates instances from scratch, without annealing
@@ -51,21 +54,27 @@ for startingpoint in range(numstates):
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
 
+#########
+#Read metrics and make graphs of stats for the run.
+#########
+
+plotMetricsByState(createMetricsArrays(foldername, numstates, numreads, samplerate), save = foldername, show = False)
+
 
 #########
 #Keep track of metrics
 #########
+"""
+maxBizArray = np.zeros((numstates,numreads))
+meanBizArray = np.zeros((numstates,numreads))
+totalVarArray = np.zeros((numstates,numreads))
+maxContArray = np.zeros((numstates,numreads))
+maxPopArray = np.zeros((numstates,numreads))
+popDiffArray = np.zeros((numstates,numreads))
+hispDiffArray = np.zeros((numstates,numreads))
+aframDiffArray = np.zeros((numstates,numreads))
 
-maxBizArray = np.zeros((numstates,numsaves))
-meanBizArray = np.zeros((numstates,numsaves))
-totalVarArray = np.zeros((numstates,numsaves))
-maxContArray = np.zeros((numstates,numsaves))
-maxPopArray = np.zeros((numstates,numsaves))
-popDiffArray = np.zeros((numstates,numsaves))
-hispDiffArray = np.zeros((numstates,numsaves))
-aframDiffArray = np.zeros((numstates,numsaves))
-
-overallGoodnessArray = np.zeros((numstates,numsaves))
+overallGoodnessArray = np.zeros((numstates,numreads))
 
 #States as they are being created
 
@@ -73,7 +82,7 @@ overallGoodnessArray = np.zeros((numstates,numsaves))
 
 #States in folder
 for startingpoint in range(numstates):
-    for j in range(numsaves):
+    for j in range(numreads):
         #tempstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1))
         #updateGlobals(tempstate)
         #pd.DataFrame(metrics).to_csv(foldername + 'metrics%d_save%d.csv'%(1, i+50), index = False)
@@ -98,7 +107,7 @@ for startingpoint in range(numstates):
         #           'area'          : stArea}
     
     print("Stored metrics for state %d"%(startingpoint))
-
+"""
 #####
 #Show Plots (Not Save)
 #####
@@ -154,6 +163,7 @@ plt.clf()
 #Save Plots
 #####
 
+"""
 startingpoint = 0
 
 plt.plot(meanBizArray[startingpoint,:])
@@ -200,19 +210,21 @@ plt.plot(overallGoodnessArray[startingpoint,:])
 plt.title('goodness')
 plt.savefig(foldername+'goodness%04d.png'%(startingpoint))
 plt.clf()
+"""
 
 #####
 #Make maps of states
 #####
 
-samplerate = 1
+samplerate = 10
 
 for i in range(numstates):
     if "maps_state%04d"%i not in os.listdir(foldername):
         os.mkdir(foldername + "maps_state%04d"%i)
     for j in samplerate*np.arange(numsaves/samplerate):
-        thisstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1) ,dtype={'key':str})
+        thisstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1))
         color_this_state(g, thisstate, foldername + "maps_state%04d/save%dmap.png"%(i, j), linewidth=0.3)
+        print("Made map of state %d, save %d"%(i,j))
 
 #####
 #Plots of all states

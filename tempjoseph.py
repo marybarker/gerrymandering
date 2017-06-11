@@ -5,8 +5,8 @@
 #####
 
 def popDiffScore(metrics):
-    return float(max(0, (np.max(metrics['population']) - np.min(metrics['population'])) - 25000 )**2)/ \
-           ((totalpopulation - 25000)**2)
+    return 1 - float(max(0, (np.max(metrics['population']) - np.min(metrics['population'])) - 25000 ))/ \
+               ((totalpopulation - 25000))
 
 def popVarScore(metrics):
     return 1 - sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics['population']])/(2*(1-float(1)/ndistricts))
@@ -22,18 +22,29 @@ def hispEdgeScore(metrics):
     mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]
     return np.sum(metrics['sumHispDiff'][mindists]) / np.sum(metrics['numedges'])
 
-
 def goodness(metrics):
-
+    
+    #A break in contiguousness should be vetoed; it has a goodness of -infinity.
     if any([x!=1 for x in metrics['contiguousness']]):
         return float('-inf')
+        
+    #Scores should be scaled such that they are between zero and one,
+    #    with one being "good".
+    scores  = np.array([popVarScore(metrics),
+                        bizScore(metrics),
+                        aframEdgeScore(metrics),
+                        hispEdgeScore(metrics)])
     
-    return (1     * popDiffScore(metrics)   + \
-            1     * popVarScore(metrics)    + \
-            1     * bizScore(metrics)       + \
-            1     * aframEdgeScore(metrics) + \
-            1     * hispEdgeScore(metrics)      )
-    #functions should be written such that the numbers being scaled are between zero and one.
+    #Because the scores are normalized, weights are more intuitive,
+    #    and roughly correspond to scaling the slope of the metric
+    #    in a given dimension.
+    weights = np.array([1000,
+                        10,
+                        1,
+                        1])
+    
+    #Multiply the scores by their weights, but then renormalize to between zero and one.
+    return scores.dot(weights)/np.sum(weights)
 
 def contiguousStart(stats = "DEFAULT"):
 
@@ -84,7 +95,16 @@ def contiguousStart(stats = "DEFAULT"):
     return state.set_index(state.key)
 
 
+def distArea(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(blockstats.Shape_area[blockstats.ID.isin(regionlist)])
 
+
+#####
+#Supplements to setup_stuff.py
+#####
+
+#None yet.
 
 #####
 #Supplements to setup.py
@@ -97,13 +117,15 @@ blockstats.ix[blockstats.aframcon.isnull(), "aframcon"] = 0
 blockstats.ix[blockstats.hispcon.isnull(),  "hispcon" ] = 0
 blockstats.ix[blockstats.mincon.isnull(),   "mincon"  ] = 0
 
+adjacencyFrame['low']  = adjacencyFrame.merge(adjacencyFrame.merge(blockstats.ix[:, ['ID', 'VTD']], 
+                             left_on='low',  right_on = 'VTD', sort=False)).ix[:, ['ID']]
+adjacencyFrame['high'] = adjacencyFrame.merge(adjacencyFrame.merge(blockstats.ix[:, ['ID', 'VTD']], 
+                             left_on='high', right_on = 'VTD', sort=False)).ix[:, ['ID']]
 
-conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "aframcon"]], left_on = 'low', right_on = 'VTD').aframcon
-conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["VTD", "aframcon"]], left_on = 'high', right_on = 'VTD').aframcon
+conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'low', right_on = 'ID').aframcon
+conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'high', right_on = 'ID').aframcon
 adjacencyFrame["aframdiff"] = conhigh - conlow
 
 conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'low', right_on = 'ID').hispcon
 conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'high', right_on = 'ID').hispcon
 adjacencyFrame["hispdiff"] = conhigh - conlow
-
-adjacencyFrame[(-adjacencyFrame.high.isin(blockstats.VTD))|(-adjacencyFrame.low.isin(blockstats.VTD))]

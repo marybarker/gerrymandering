@@ -219,6 +219,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
             best_metrics = possible[2].copy()
             best_adjacency = adjacencyFrame.copy()
             best_adjacency.update(possible[1])
+            best_adjacency.low  = best_adjacency.low.astype(int)
+            best_adjacency.high = best_adjacency.high.astype(int)
             best_adjacency.lowdist  = best_adjacency.lowdist.astype(int)
             best_adjacency.highdist = best_adjacency.highdist.astype(int)
             
@@ -231,6 +233,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
             current_goodness = possible_goodness
             changes = possible[1].copy()
             adjacencyFrame.update(changes)
+            adjacencyFrame.low  = adjacencyFrame.low.astype(int)
+            adjacencyFrame.high = adjacencyFrame.high.astype(int)
             adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
             adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
             metrics = possible[2].copy()
@@ -238,6 +242,8 @@ def MH(start, steps, neighbor, goodness, moveprob):
             stays += 1
     
     adjacencyFrame.update(best_adjacency)
+    adjacencyFrame.low  = adjacencyFrame.low.astype(int)
+    adjacencyFrame.high = adjacencyFrame.high.astype(int)
     adjacencyFrame.lowdist  = adjacencyFrame.lowdist.astype(int)
     adjacencyFrame.highdist = adjacencyFrame.highdist.astype(int)
     #Update adjacencyframe to the best that we ever had.
@@ -307,27 +313,27 @@ def neighbor(state):
             newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
                                                                   newmetrics['perimeter'][temphighdist])
             
-                    #update boundary information
-            newmetrics['sumAframDiff'][temphighdist] = newmetrics['sumAframDiff'][temphighdist]\
-                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                       - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            newmetrics['sumAframDiff'][templowdist]  = newmetrics['sumAframDiff'][templowdist]\
-                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                       + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-                                                       
-            newmetrics['sumHispDiff'][temphighdist]  = newmetrics['sumHispDiff'][temphighdist]\
-                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                       - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            newmetrics['sumHispDiff'][templowdist]   = newmetrics['sumHispDiff'][templowdist]\
-                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                       + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            #update boundary information
+            newmetrics.ix[temphighdist,'sumAframDiff'] = newmetrics.ix[temphighdist,'sumAframDiff']\
+                                                         + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                         - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
+            newmetrics.ix[templowdist,'sumAframDiff'] = newmetrics.ix[templowdist,'sumAframDiff']\
+                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
+                                                        + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
             
-            newmetrics['numedges'][temphighdist] = newmetrics['numedges'][temphighdist]\
-                                                   + np.sum[-(proposedChanges.isSame)]\
-                                                   - np.sum[-(previousVersion.isSame)]
-            newmetrics['numedges'][templowdist]  = newmetrics['numedges'][templowdist]\
-                                                   - np.sum[-(proposedChanges.isSame)]\
-                                                   + np.sum[-(previousVersion.isSame)]
+            newmetrics.ix[temphighdist,'sumHispDiff'] = newmetrics.ix[temphighdist,'sumHispDiff']\
+                                                        + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                        - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            newmetrics.ix[templowdist,'sumHispDiff']  = newmetrics.ix[templowdist,'sumHispDiff']\
+                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
+                                                        + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
+            
+            newmetrics.ix[temphighdist,'numEdges'] = newmetrics.ix[temphighdist,'numEdges']\
+                                                     + np.sum(-(proposedChanges.isSame))\
+                                                     - np.sum(-(previousVersion.isSame))
+            newmetrics.ix[templowdist,'numEdges']  = newmetrics.ix[templowdist,'numEdges']\
+                                                     - np.sum(-(proposedChanges.isSame))\
+                                                     + np.sum(-(previousVersion.isSame))
         
         else:
             
@@ -369,33 +375,36 @@ def neighbor(state):
                                                                     newmetrics['perimeter'][templowdist])
             
             #update boundary information
-            newmetrics['sumAframDiff'][templowdist]  = newmetrics['sumAframDiff'][templowdist]\
+            newmetrics.ix[templowdist,'sumAframDiff'] = newmetrics.ix[templowdist,'sumAframDiff']\
                                                        + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
                                                        - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            newmetrics['sumAframDiff'][temphighdist] = newmetrics['sumAframDiff'][temphighdist]\
+            newmetrics.ix[temphighdist,'sumAframDiff'] = newmetrics.ix[temphighdist,'sumAframDiff']\
                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
                                                        + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-                                                       
-            newmetrics['sumHispDiff'][templowdist]   = newmetrics['sumHispDiff'][templowdist]\
+            
+            newmetrics.ix[templowdist,'sumHispDiff'] = newmetrics.ix[templowdist,'sumHispDiff']\
                                                        + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
                                                        - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            newmetrics['sumHispDiff'][temphighdist]  = newmetrics['sumHispDiff'][temphighdist]\
+            newmetrics.ix[temphighdist,'sumHispDiff'] = newmetrics.ix[temphighdist,'sumHispDiff']\
                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
                                                        + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
             
-            newmetrics['numedges'][temphighdist] = newmetrics['numedges'][temphighdist]\
-                                                   - np.sum[-(proposedChanges.isSame)]\
-                                                   + np.sum[-(previousVersion.isSame)]
-            newmetrics['numedges'][templowdist]  = newmetrics['numedges'][templowdist]\
-                                                   + np.sum[-(proposedChanges.isSame)]\
-                                                   - np.sum[-(previousVersion.isSame)]
+            newmetrics.ix[temphighdist,'numedges'] = newmetrics.ix[temphighdist,'numedges']\
+                                                   - np.sum(-(proposedChanges.isSame))\
+                                                   + np.sum(-(previousVersion.isSame))
+            newmetrics.ix[templowdist,'numedges'] = newmetrics.ix[templowdist,'numedges']\
+                                                   + np.sum(-(proposedChanges.isSame))\
+                                                   - np.sum(-(previousVersion.isSame))
         
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
-        oldContNeighborhoodLow  = contiguousness(   state.loc[   state.key.isin(neighborhood)], templowdist,  proposedChanges)
-        oldContNeighborhoodHigh = contiguousness(   state.loc[   state.key.isin(neighborhood)], temphighdist, proposedChanges)
-        newContNeighborhoodLow  = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], templowdist,  proposedChanges)
-        newContNeighborhoodHigh = contiguousness(newstate.loc[newstate.key.isin(neighborhood)], temphighdist, proposedChanges)
+        nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
+        oldContNeighborhoodLow  = contiguousness(   state.loc[neighborhood], templowdist,  nhadj)
+        oldContNeighborhoodHigh = contiguousness(   state.loc[neighborhood], temphighdist, nhadj)
+        
+        nhadj.update(proposedChanges)
+        newContNeighborhoodLow  = contiguousness(newstate.loc[neighborhood], templowdist,  nhadj)
+        newContNeighborhoodHigh = contiguousness(newstate.loc[neighborhood], temphighdist, nhadj)
         
         if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
             tempframe = adjacencyFrame.copy()
@@ -480,7 +489,7 @@ def contiguousness(state, district, subframe = "DEFAULT"):
         addons = {regionlist[0]}
         while len(addons) > 0:
             currentregion = currentregion.union(addons)
-            subsubedges = subedges.loc[subedges.low.isin(currentregion) | subedges.high.isin(currentregion)]
+            subsubedges = subedges.loc[subedges.low.isin(addons) | subedges.high.isin(addons)]
             if(not subsubedges.empty):
                 addons = set(subsubedges['low']).union(set(subsubedges['high'])) - currentregion
             else:
@@ -709,14 +718,14 @@ def dfEquiv(f1, f2):
         return all([ all(f1[col] == f2[col]) for col in f1.columns ])
 
 def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
-    arrayList = [("maxBiz",    np.zeros((numstates,numsaves)), "Maximum Bizarreness"                          )
-                 ("meanBiz",   np.zeros((numstates,numsaves)), "Mean Bizarreness"                             )
-                 ("totalVar",  np.zeros((numstates,numsaves)), "Total Population Variation"                   )
-                 ("maxCont",   np.zeros((numstates,numsaves)), "Maximum Contiguousness"                       )
-                 ("maxPop",    np.zeros((numstates,numsaves)), "Maximum Population"                           )
-                 ("popDiff",   np.zeros((numstates,numsaves)), "Maximum Population Difference"                )
-                 ("hispDiff",  np.zeros((numstates,numsaves)), "Hispanic Boundary Difference Measure"         )
-                 ("aframDiff", np.zeros((numstates,numsaves)), "African American Boundary Difference Measure" )
+    arrayList = [("maxBiz",    np.zeros((numstates,numsaves)), "Maximum Bizarreness"                          ),
+                 ("meanBiz",   np.zeros((numstates,numsaves)), "Mean Bizarreness"                             ),
+                 ("totalVar",  np.zeros((numstates,numsaves)), "Total Population Variation"                   ),
+                 ("maxCont",   np.zeros((numstates,numsaves)), "Maximum Contiguousness"                       ),
+                 ("maxPop",    np.zeros((numstates,numsaves)), "Maximum Population"                           ),
+                 ("popDiff",   np.zeros((numstates,numsaves)), "Maximum Population Difference"                ),
+                 ("hispDiff",  np.zeros((numstates,numsaves)), "Hispanic Boundary Difference Measure"         ),
+                 ("aframDiff", np.zeros((numstates,numsaves)), "African American Boundary Difference Measure" ),
                  ("goodness",  np.zeros((numstates,numsaves)), "Goodness"                                     )]
     for startingpoint in range(numstates):
         for j in samplerate*arange(numsaves/samplerate):
@@ -746,11 +755,11 @@ def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
         
     for arr in arrayList:
         for state in states:
-            plt.plot(arrayList[arr][1][state,:])
-        plt.title(arrayList[arr][2])
+            plt.plot(arr[1][state,:])
+        plt.title(arr[2])
         if save:
-            plt.savefig(save + arrayList[arr][0] + '.png')
+            plt.savefig(save + arr[0] + '.png')
         if show:
             plt.show()
-    plt.clf()
+        plt.clf()
 

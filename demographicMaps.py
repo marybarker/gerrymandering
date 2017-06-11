@@ -1,13 +1,13 @@
 from bisect import bisect
 
+def createColorDict(column, color = (0,0,0), transform = lambda x: x):
+    highest = max(transform(blockstats[column]))
 
-highesthisp = max(blockstats.B03002e1.values/blockstats.B02001e1.values)
-loghighesthisp = np.log10(max(blockstats.B03002e1.values/blockstats.B02001e1.values))
-hisp = {blockstats.VTD[i] : (1 - blockstats.B03002e1[i]/blockstats.B02001e1[i]/highesthisp, 1, 1) for i in blockstats.index}
-loghisp = {blockstats.VTD[i] : (1 - max(0, np.log10(blockstats.B03002e1[i]/blockstats.B02001e1[i]))/loghighesthisp, 1, 1) for i in blockstats.index}
+highesthisp = max(blockstats.hispcon)
+hisp = {blockstats.index[i] : (1 - 0.5*blockstats.hispcon[i]/highesthisp, 1 - blockstats.hispcon[i]/highesthisp, 1 - 0.5*blockstats.hispcon[i]/highesthisp) for i in blockstats.index}
 
-highestblack = max(blockstats.B02009e1.values/blockstats.B02001e1.values)
-black = {blockstats.VTD[i] : (1 - (blockstats.B02009e1[i]/blockstats.B02001e1[i])/highestblack, 1 - (blockstats.B02009e1[i]/blockstats.B02001e1[i])/highestblack, 1) for i in blockstats.index}
+highestblack = max(blockstats.aframcon)
+black = {blockstats.index[i] : (1 - blockstats.aframcon[i]/highestblack, 1 - 0.3*blockstats.aframcon[i]/highestblack, 1 - blockstats.aframcon[i]/highestblack) for i in blockstats.index}
 
 highestincomelog = max(np.log10(blockstats.B19301e1.values))
 numiles = 25
