@@ -11,8 +11,11 @@ def popDiffScore(metrics):
 def popVarScore(metrics):
     return 1 - sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics['population']])/(2*(1-float(1)/ndistricts))
 
-def bizScore(metrics):
+def bizMeanScore(metrics):
     return 1.0/np.nanmean(metrics['bizarreness'])
+
+def bizMaxScore(metrics):
+    return 1.0/max(metrics['bizarreness'])
 
 def aframEdgeScore(metrics):
     mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]
@@ -31,17 +34,19 @@ def goodness(metrics):
     #Scores should be scaled such that they are between zero and one,
     #    with one being "good".
     scores  = np.array([popVarScore(metrics),
-                        bizScore(metrics),
+                        bizMeanScore(metrics),
+                        bizMaxScore(metrics),
                         aframEdgeScore(metrics),
                         hispEdgeScore(metrics)])
     
     #Because the scores are normalized, weights are more intuitive,
     #    and roughly correspond to scaling the slope of the metric
     #    in a given dimension.
-    weights = np.array([1000,
+    weights = np.array([500,
+                        100,
+                        100,
                         10,
-                        1,
-                        1])
+                        10])
     
     #Multiply the scores by their weights, but then renormalize to between zero and one.
     return scores.dot(weights)/np.sum(weights)

@@ -30,7 +30,7 @@ foldername = "awnw/"
 
 numstates= 1
 numsteps = 100
-numsaves = 1000
+numsaves = 10000
 samplerate = 1
 numreads = numstates
 #numreads = 1281
@@ -218,7 +218,7 @@ plt.clf()
 
 samplerate = 10
 
-for i in range(numstates):
+for i in range(numreads):
     if "maps_state%04d"%i not in os.listdir(foldername):
         os.mkdir(foldername + "maps_state%04d"%i)
     for j in samplerate*np.arange(numsaves/samplerate):

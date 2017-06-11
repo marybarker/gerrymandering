@@ -328,10 +328,10 @@ def neighbor(state):
                                                         - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
                                                         + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
             
-            newmetrics.ix[temphighdist,'numEdges'] = newmetrics.ix[temphighdist,'numEdges']\
+            newmetrics.ix[temphighdist,'numedges'] = newmetrics.ix[temphighdist,'numedges']\
                                                      + np.sum(-(proposedChanges.isSame))\
                                                      - np.sum(-(previousVersion.isSame))
-            newmetrics.ix[templowdist,'numEdges']  = newmetrics.ix[templowdist,'numEdges']\
+            newmetrics.ix[templowdist,'numedges']  = newmetrics.ix[templowdist,'numedges']\
                                                      - np.sum(-(proposedChanges.isSame))\
                                                      + np.sum(-(previousVersion.isSame))
         
@@ -728,7 +728,7 @@ def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
                  ("aframDiff", np.zeros((numstates,numsaves)), "African American Boundary Difference Measure" ),
                  ("goodness",  np.zeros((numstates,numsaves)), "Goodness"                                     )]
     for startingpoint in range(numstates):
-        for j in samplerate*arange(numsaves/samplerate):
+        for j in samplerate*np.arange(numsaves/samplerate):
             thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(startingpoint, j+1))
             mindists = thismetrics['mincon'].argsort()[-numMajMinDists:][::-1]
             
