@@ -1,3 +1,4 @@
+import sys
 import itertools as it
 import math
 from copy import copy
@@ -63,3 +64,6 @@ def get_summary_stats(v):
     ss = pd.DataFrame(v).describe().T
     ss['SE'] = ss['std'] / np.sqrt(ss['count'])
     return ss
+
+DIV1 = "*" * 80
+DIV2 = "#" * 80
