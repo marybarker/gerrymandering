@@ -7,14 +7,13 @@ import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import colorsys
+
 plt.rcParams['agg.path.chunksize'] = 1000
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """   make a  list of all voting tabulation districts   """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 def features(layer):
-    features = []
-    for feat in layer: 
-        features.append( feat )
+    features = [feat for feat in layer]
     return features
 
 
@@ -42,15 +41,15 @@ def adjacencies(mylistoffeatures):
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name = str(f1['GEOID10']) + f1['NAME10']
+        name =  str(f1['GEOID10'])+str(f1['NAME10']) #f1['ID']
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append(str(f2['GEOID10']) + f2['NAME10'])
+                l2.append( str(f2['GEOID10'])+str(f2['NAME10']) )#.append(f2['ID'])
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
-    newthing.columns=['lo','hi']
+    newthing.columns=['low','high']
     return newthing
 
 
@@ -64,54 +63,60 @@ def boundaries(mylistoffeatures):
         gtype = geom.GetGeometryType()
 
         if gtype == 6: 
-            x = []
-            y = []
+            allxy = []
             for i in xrange(geom.GetGeometryCount()):
                 g = geom.GetGeometryRef(i)
                 for ring in g:
+                    xy = []
                     for j in xrange(ring.GetPointCount()):
                         point = ring.GetPoint(j)
-                        x.append(point[0])
-                        y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+                        xy.append(point)
+                    allxy.append(xy)
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
+            #boundaries[ feat['ID'] ] = allxy
         elif gtype == 3: # polygon
-            x = []
-            y = []
+            allxy = []
             for ring in geom:
+                xy = []
                 for i in xrange(ring.GetPointCount()):
                     point = ring.GetPoint(i)
-                    x.append(point[0])
-                    y.append(point[1])
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = zip(x, y)
+                    xy.append(point)
+                allxy.append(xy)
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
+            #boundaries[ feat['ID'] ] = allxy
         else:
             b = geom.GetBoundary()
-            boundaries[str(feat['GEOID10']) + feat['NAME10']] = b.GetPoints()
+            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = [b.GetPoints()]
+            #boundaries[ feat['ID']  ] = [b.GetPoints()]
     return boundaries
 
 
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """          get lengths of each connectivity           """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
-def adjancentEdgeLengths(connectivitydf, boundaries):
+def adjacentEdgeLengths(connectivitydf, boundaries):
     edgelengths = list()
     for i in range(np.shape(connectivitydf)[0]): 
-        low = connectivitydf.lo[i]
-        hi = connectivitydf.hi[i]
-        b1 = boundaries[low]
+        lo = connectivitydf.low[i]
+        hi = connectivitydf.high[i]
+        b1 = boundaries[lo]
         b2 = boundaries[hi]
-        pointsInCommon = [point for point in b1 if point in b2]
-        # Needs to make use of shape file to prevent the cutoff connection.
-        #  b1 intersect b2?  whatever shapefile thing we use.
-        l = ToFeet(pointsInCommon)
+        l = 0.0
+        for b11 in b1: 
+            b = len(b11)
+            if b > 1:
+                for b22 in b2:
+                    pointsInCommon = [ [b11[a], b11[(a+1)%b] ] for a in range(b) if ((b11[a] in b22) and (b11[(a+1)%b] in b22)) ]
+                    l += sum( [ToFeet(a) for a in pointsInCommon] )
         edgelengths.append(l)
     connectivitydf['length'] = edgelengths
     return connectivitydf
 
-def package_vtds(filetouse):
+def package_vtds(shapefile_to_use, id_to_number_lookup_file, name_of_keys=['GEOID10', 'NAME10']):
     this_geom = {}
 
     # get extents of the geometry first of all 
-    ds = ogr.Open(filetouse)
+    ds = ogr.Open(shapefile_to_use)
     nlay = ds.GetLayerCount()
     lyr = ds.GetLayer(0)
     ext = lyr.GetExtent()
@@ -120,12 +125,15 @@ def package_vtds(filetouse):
     this_geom['xlim'] = [ext[0]-xoffset,ext[1]+xoffset]
     this_geom['ylim'] = [ext[2]-yoffset,ext[3]+yoffset]
 
+    lookup = pd.read_csv(id_to_number_lookup_file)
+    lookup = dict(zip(lookup.GEOID, lookup.IDNUM))
+
     lyr.ResetReading()
     names = []
     paths = []
 
     for vtd in lyr:
-        name = str(vtd['GEOID10']) + str(vtd['NAME10'])
+        name = lookup[ ''.join([str(vtd[keyname]) for keyname in name_of_keys]) ]
         geom = vtd.geometry()
         gtype = geom.GetGeometryType()
         
@@ -172,13 +180,12 @@ def package_vtds(filetouse):
     return this_geom
 
 def colorDict(n):
-    return {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
+    districtColors = {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
+    districtColors[n] = colorsys.hsv_to_rgb(0, 0, 0.5)
+    return districtColors
 
-def color_these_states(geom_to_plot, list_of_states, foldername, number):
+def color_these_states(geom_to_plot, list_of_states, foldername, number, linewidth = 1, DPI = 300):
     colors = colorDict(ndistricts)
-    #colors = {0:'yellow',1:'green'}
-    #ax.set_xlim([-71.8, -71.2])
-    #ax.set_ylim([42.6, 43.2])
 
     paths = geom_to_plot['paths']
     names = geom_to_plot['names']
@@ -192,20 +199,80 @@ def color_these_states(geom_to_plot, list_of_states, foldername, number):
         
         this_state = list_of_states[i]
         redistricting = this_state[0]
-        #redistricting = redistricting.drop('Unnamed: 0', 1)
-        #redistricting.columns = ['key', 'value']
         for p in range(len(paths)):
             path = paths[p]
             if names[p] in redistricting.key.values:
                 facecolor = redistricting.value[np.array(redistricting.key) == names[p]].item()
-                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black')#colors[facecolor])#'black')
+                patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)
                 ax.add_patch(patch)
         ax.set_aspect(1.0)
         #plt.show()
-        plt.savefig(foldername+'output%04d.png'%(number+i))
+        plt.savefig(foldername+'output%04d.png'%(number+i), dpi=DPI)
         plt.clf()
         del fig
+
+def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
+    #                In setup.py for each state, there should be a line like the following
+    #                    g = package_vtds("./VTDS_of_Interest.shp")
+    #                g contains the geometries and names of the VTDS for your state space.
+    #                              |
+    #                              state should be a pandas dataframe that has columns "key" and "value",
+    #                                  with index set to be key.  ( state = state.set_index(state.key) )
+    #                              'key' is a column of vtds to color, and 'value' are integers corresponding
+    #                                  to district number.
     
+    colors = colorDict(ndistricts)
+    paths = geom_to_plot['paths']
+    names = geom_to_plot['names']
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+    
+    #redistricting = redistricting.drop('Unnamed: 0', 1)
+    #redistricting.columns = ['key', 'value']
+    for p in range(len(paths)):
+        path = paths[p]
+        if names[p] in state.key.values:
+            facecolor = state.value[np.array(state.key) == names[p]].item()
+            patch = mpatches.PathPatch(path,facecolor=colors[facecolor],edgecolor='black', linewidth = linewidth)#colors[facecolor])#'black')
+            ax.add_patch(patch)
+    ax.set_aspect(1.0)
+    #plt.show()
+    plt.savefig(filename, dpi=DPI)
+    plt.clf()
+    del fig
+
+
+def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300):
+    #            In setup.py for each state, there should be a line like the following
+    #                g = package_vtds("./VTDS_of_Interest.shp")
+    #            g contains the geometries and names of the VTDS for your state space.
+    #                          |
+    #                          vtds_rgb_dict should be a dictionary of VTD names with RGB triples to color them.
+    
+    subset = vtds_rgb_dict.keys()
+    thing = zip(geom_to_plot['paths'], geom_to_plot['names'])
+    paths = [x[0] for x in thing if x[1] in subset]
+    names = [x[1] for x in thing if x[1] in subset]
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        facecolor = vtds_rgb_dict[names[p]]
+        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=linewidth)
+        ax.add_patch(patch)
+    ax.set_aspect(1.0)
+    #plt.show()
+    plt.savefig(filename, dpi=DPI)
+    plt.clf()
+    del fig
+
 
 #precinctBoundaryFile =  'precinct/precinct.shp'
 #precinctStatsFile = 'vtdstats.csv'
@@ -237,7 +304,7 @@ vtds = features(lyr)
 
 vtd_boundaries = boundaries(vtds)
 vtd_connectivities = adjacencies(vtds)
-vtd_connectivities = adjancentEdgeLengths(vtd_connectivities, vtd_boundaries)
+vtd_connectivities = adjacentEdgeLengths(vtd_connectivities, vtd_boundaries)
 vtd_connectivities.to_csv('NEWVTDconnections.csv')
 
 
@@ -261,6 +328,9 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
+
+
 
 
 
