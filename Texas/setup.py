@@ -33,7 +33,10 @@ replacements = {'lo': 'low', 'hi': 'high'}
 adjacencyFrame.columns = [replacements.get(x,x) for x in adjacencyFrame.columns]
     #This setup is superior to our previous ones because we might have other information in adjacencyFrame.
     #We just add more things to replacements as they become relevant.
-
+lookup = pd.read_csv("GEOIDToIDNUM.csv")
+lookup = dict(zip(lookup.GEOID, lookup.IDNUM))
+adjacencyFrame.low = [int(lookup.get(x)) for x in adjacencyFrame.low.values]
+adjacencyFrame.high = [int(lookup.get(x)) for x in adjacencyFrame.high.values]
 g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv")
 
 ###
