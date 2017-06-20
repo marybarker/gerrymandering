@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+from itertools import product
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
@@ -26,14 +27,15 @@ foldername = "huffle/" # reset global metrics after every MH call
 foldername = "buffle/" # low to high or high to low
 foldername = "boundarydangle/"
 foldername = "awnw/"
+foldername = "gridruns/"
 #os.mkdir(foldername)
 
 numstates= 1
-numsteps = 100
-numsaves = 10000
+numsteps = 10
+numsaves = 10
 samplerate = 1
-numreads = numstates
-#numreads = 1281
+numreads = numsaves
+#numreads = 1000
 
 #########
 #Run numstates instances from scratch, without annealing
@@ -53,6 +55,49 @@ for startingpoint in range(numstates):
         metrics.to_csv(foldername + 'metrics%d_save%d.csv'%(startingpoint, i+1), index = False)
         
         print("Written to state%d_save%d.csv"%(startingpoint, i + 1))
+
+
+#########
+#Run numstates instances FOR EACH set of parameters from scratch, without annealing
+#########
+
+numstates= 5
+numsteps = 100
+numsaves = 1000
+temp = product(*([[1, 10, 100]]*3))
+paramList = [[1, x[0], x[1], x[1], x[2], x[2]] for x in temp]
+"""
+    The way paramList works:
+        - It is assumed that globalWeights is of a known length, in this case, 6.
+        - I want a low, medium, and high importance option for the goodnesParams,
+          but the 3rd and 4th (indices 2 and 3) I wanted to have the same weight,
+          and similarly for the 5th and 6th.
+        - After numstates have been created with a given system of weights,
+          we can do some runs with the next set of weights.
+        - This should give us some radically different maps, which we can analyze later.
+"""
+samplerate = 1
+numreads = numsaves
+#numreads = 1000
+
+for weights in paramList:
+    
+    goodnessWeights = np.array(weights)
+    
+    for startingpoint in range(numstates):
+        
+        starting_state = contiguousStart()
+        runningState = (starting_state.copy(), 1)
+        updateGlobals(runningState[0])
+        for i in range(numsaves):
+            
+            runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+            
+            runningState[0].to_csv(foldername+"run%4d.%4d.%4d.state%4d_save%d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            
+            metrics.to_csv(foldername + 'run%4d.%4d.%4d.metrics%4d_save%d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            
+        print("Finished run%4d.%4d.%4d.state%4d"%(weights[1], weights[3], weights[5], startingpoint))
 
 #########
 #Read metrics and make graphs of stats for the run.
@@ -216,14 +261,14 @@ plt.clf()
 #Make maps of states
 #####
 
-samplerate = 10
+samplerate = numsaves/250
 
-for i in range(numreads):
+for i in range(numstates):
     if "maps_state%04d"%i not in os.listdir(foldername):
         os.mkdir(foldername + "maps_state%04d"%i)
-    for j in samplerate*np.arange(numsaves/samplerate):
+    for j in samplerate*np.arange(numreads/samplerate):
         thisstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1))
-        color_this_state(g, thisstate, foldername + "maps_state%04d/save%dmap.png"%(i, j), linewidth=0.3)
+        color_this_state(g, thisstate, foldername + "maps_state%04d/save%04dmap.png"%(i, j), linewidth=0.3)
         print("Made map of state %d, save %d"%(i,j))
 
 #####

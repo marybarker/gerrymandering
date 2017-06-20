@@ -657,8 +657,9 @@ def goodness(metrics):
             np.sum(tempStdAfram[mindists]) + np.sum(tempStdHisp[mindists])
     #functions should be written such that the numbers being scaled are between zero and one.
 
+_exploration = 1.0
 def switchDistrict(current_goodness, possible_goodness): # fix
-    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/10.0))
+    return float(1)/(1 + np.exp((current_goodness-possible_goodness)/_exploration))
 
 def anneal(current_goodness, possible_goodness): # fix
     return 1/(1 + np.exp(float(current_goodness-possible_goodness)/exploration))
