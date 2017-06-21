@@ -80,6 +80,7 @@ def neighbor(state):
         newmetrics.ix[templowdist,'numedges']  = newmetrics.ix[templowdist,'numedges']\
                                                  - np.sum(-(proposedChanges.isSame))\
                                                  + np.sum(-(previousVersion.isSame))
+                                                
         #update contiguousness
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
         nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
@@ -142,7 +143,7 @@ def neighbor(state):
                                                               newmetrics['perimeter'][newdist])
         newmetrics['mincon'][olddist] = minorityConc(newstate, olddist, 'mincon')
         newmetrics['mincon'][newdist] = blockstats.ix[changenode, 'mincon']
-
+    
     return (newstate, proposedChanges, newmetrics)
 
 
@@ -169,7 +170,8 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
         os.mkdir(foldername)
     os.chdir(foldername)
     
-    metadata = 80*'+'+"\nDate: %s"%str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))+\
+    metadata = 30*'+'+\
+                '\nDate: %s'%str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))+\
                 '\nSteps per run: %d'%(steps_per_perturbation)+\
                 '\nmisc: %s'%misc_data
     with open("Info.txt", "w") as metafile:
@@ -187,7 +189,7 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
     current_state.to_csv("data/initialState.csv", index=False)
     metrics.to_csv("data/initialMetrics.csv", index=False)
     initmet = metrics.copy()
-
+    
     for i in range(num_perturbations):
         updateGlobals(current_state)
         runningState = MH(current_state, steps_per_perturbation, neighbor, goodness, switchDistrict)
@@ -211,6 +213,13 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
     os.chdir("../")
 
 #def compare_current_state_to_possible_other_states()
+
+def NorthCarolinaWhat():
+    # FILES: 
+    #  VTDRegGenderAgeEthnicity
+    #  VTDRegPartyRace
+    #  VTDTotalPopRaceAndEthnicity
+    #  VTDVotingAgePopulation
 
 
 if False:
@@ -512,5 +521,12 @@ if False:
     bigDataCsv = pd.DataFrame({key:[stuffthing[key] for stuffthing in stuff2] for key in allTheColumnsIWant})
     bigDataCsv.to_csv("blockGroupData.csv")
     
+    GEE = pd.read_excel("VTDRegGenderAgeEthnicity.xlsx", skiprows=1, skipfooter=1)
+    PRE = pd.read_excel("VTDTotalPopRaceAndEthnicity.xlsx")
+    VAP = pd.read_excel("VTDVotingAgePopulation.xlsx", skipfooter=1, header=[0,1])
+    RPR = pd.read_excel("VTDRegPartyRace.xlsx", skiprows=1, header=[0, 1], skipfooter=1)
+    
+    RPR.columns = [' '.join([ x for x in col if 'Unnamed' not in x]) for col in RPR.columns.values]
+    GEE.columns = [' '.join([a for a in x if 'Unnamed' not in a]) for x in GEE.columns.values]
 
 
