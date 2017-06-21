@@ -58,4 +58,10 @@ conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on =
 conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'high', right_on = 'ID').hispcon
 adjacencyFrame["hispdiff"] = conhigh - conlow
 
+###
+#Overwritten functions because of naming differences
+###
 
+def distArea(state, district):
+    regionlist = list(state.key[state.value == district])
+    return sum(blockstats.Shape_area[blockstats.ID.isin(regionlist)])

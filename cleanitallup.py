@@ -276,177 +276,145 @@ def neighbor(state):
         #Randomly choose an adjacency.  Find the low node and high node for that adjacency.
         
         if random.random() < 0.5:
-            
             #switch low node stuff to high node's district
-            
-            switchTo = temphighdist
-            
-            previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
-            proposedChanges = previousVersion.copy()
-            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
-    
-            newstate.ix[newstate.key == lownode, 'value'] = switchTo
-            proposedChanges.ix[proposedChanges.low == lownode, 'lowdist'] = switchTo
-            proposedChanges.ix[proposedChanges.high == lownode, 'highdist'] = switchTo
-            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
-            #change values in the state as well as the proposedChanges
-            
-            #change population
-            popchange = blockstats.population[lownode]
-            newmetrics.ix[templowdist, 'population']  -= popchange
-            newmetrics.ix[temphighdist, 'population'] += popchange
-    
-            #change bizarreness
-            newmetrics.ix[templowdist,'perimeter']  += \
-                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]) -\
-                 sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]))
-            newmetrics.ix[temphighdist, 'perimeter'] += \
-                (sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]) -\
-                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]))
-    
-            areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
-            newmetrics.ix[templowdist, 'area'] -= areachange
-            newmetrics.ix[temphighdist,'area'] += areachange
-            
-            newmetrics.ix[templowdist, 'bizarreness']  = bizarreness(newmetrics['area'][templowdist], \
-                                                                  newmetrics['perimeter'][templowdist])
-            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
-                                                                  newmetrics['perimeter'][temphighdist])
-            
-            #update boundary information
-            newmetrics.ix[temphighdist,'sumAframDiff'] = newmetrics.ix[temphighdist,'sumAframDiff']\
-                                                         + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                         - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            newmetrics.ix[templowdist,'sumAframDiff'] = newmetrics.ix[templowdist,'sumAframDiff']\
-                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                        + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            
-            newmetrics.ix[temphighdist,'sumHispDiff'] = newmetrics.ix[temphighdist,'sumHispDiff']\
-                                                        + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                        - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            newmetrics.ix[templowdist,'sumHispDiff']  = newmetrics.ix[templowdist,'sumHispDiff']\
-                                                        - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                        + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            
-            newmetrics.ix[temphighdist,'numedges'] = newmetrics.ix[temphighdist,'numedges']\
-                                                     + np.sum(-(proposedChanges.isSame))\
-                                                     - np.sum(-(previousVersion.isSame))
-            newmetrics.ix[templowdist,'numedges']  = newmetrics.ix[templowdist,'numedges']\
-                                                     - np.sum(-(proposedChanges.isSame))\
-                                                     + np.sum(-(previousVersion.isSame))
-        
+            switchNode = lownode
+            winnerDist = temphighdist
+            loserDist  = templowdist
         else:
-            
             #switch high node stuff to low node's district
-            
-            switchTo = templowdist
-            #switch to low node
-            
-            previousVersion = adjacencyFrame[(adjacencyFrame.low == highnode) | (adjacencyFrame.high == highnode)]
-            proposedChanges = previousVersion.copy()
-            #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
-            
-            newstate.ix[newstate.key == highnode, 'value'] = switchTo
-            proposedChanges.ix[proposedChanges.low == highnode, 'lowdist'] = switchTo
-            proposedChanges.ix[proposedChanges.high == highnode, 'highdist'] = switchTo
-            proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
-            #change values in the state as well as the proposedChanges
-            
-            #change population
-            popchange = blockstats.population[highnode]
-            newmetrics.ix[temphighdist, 'population'] -= popchange
-            newmetrics.ix[templowdist, 'population']  += popchange
-            
-            #change bizarreness
-            newmetrics.ix[templowdist, 'perimeter']  += \
-                (sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.low == highnode) | (proposedChanges.high == highnode))]) -\
-                 sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.low == highnode) | (proposedChanges.high == highnode))]))
-            newmetrics.ix[temphighdist, 'perimeter'] += \
-                (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.low == highnode) | (previousVersion.high == highnode))]) -\
-                 sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.low == highnode) | (previousVersion.high == highnode))]))
-            
-            areachange = blockstats.ALAND[highnode] + blockstats.AWATER[highnode]
-            newmetrics.ix[temphighdist, 'area'] -= areachange
-            newmetrics.ix[templowdist, 'area']  += areachange
-            
-            newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
-                                                                     newmetrics['perimeter'][temphighdist])
-            newmetrics.ix[templowdist, 'bizarreness'] = bizarreness(newmetrics['area'][templowdist], \
-                                                                    newmetrics['perimeter'][templowdist])
-            
-            #update boundary information
-            newmetrics.ix[templowdist,'sumAframDiff'] = newmetrics.ix[templowdist,'sumAframDiff']\
-                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                       - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            newmetrics.ix[temphighdist,'sumAframDiff'] = newmetrics.ix[temphighdist,'sumAframDiff']\
-                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                       + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-            
-            newmetrics.ix[templowdist,'sumHispDiff'] = newmetrics.ix[templowdist,'sumHispDiff']\
-                                                       + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                       - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            newmetrics.ix[temphighdist,'sumHispDiff'] = newmetrics.ix[temphighdist,'sumHispDiff']\
-                                                       - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                       + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-            
-            newmetrics.ix[temphighdist,'numedges'] = newmetrics.ix[temphighdist,'numedges']\
-                                                   - np.sum(-(proposedChanges.isSame))\
-                                                   + np.sum(-(previousVersion.isSame))
-            newmetrics.ix[templowdist,'numedges'] = newmetrics.ix[templowdist,'numedges']\
-                                                   + np.sum(-(proposedChanges.isSame))\
-                                                   - np.sum(-(previousVersion.isSame))
+            switchNode = highnode
+            winnerDist = templowdist
+            loserDist  = temphighdist
         
-        #update contiguousness
+        """
+        Update adjacencyFrame
+        """
+        
+        #Keep track of the parts of adjacencyFrame which could be changing;
+        #   Also keep track of previous version of adjacencyFrame in case we want to go back.
+        previousVersion = adjacencyFrame[(adjacencyFrame.low == switchNode) | (adjacencyFrame.high == switchNode)]
+        proposedChanges = previousVersion.copy()
+
+        newstate.ix[newstate.key == switchNode, 'value'] = winnerDist
+        proposedChanges.ix[proposedChanges.low == switchNode, 'lowdist'] = winnerDist
+        proposedChanges.ix[proposedChanges.high == switchNode, 'highdist'] = winnerDist
+        proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
+        #change values in the state as well as the proposedChanges
+        
+        """
+        Change mincon
+               population
+               area
+        """
+        popChange = blockstats.population[switchNode]
+        areachange = blockstats.ALAND[switchNode] + blockstats.AWATER[switchNode]
+        conSwitch = blockstats.mincon[switchNode]
+        
+        newmetrics.ix[loserDist, 'mincon']  = (newmetrics.ix[ loserDist, 'mincon']*newmetrics.ix[ loserDist, 'population'] - \
+                                               conSwitch*popChange)/(newmetrics.ix[ loserDist, 'population'] - popChange)
+        newmetrics.ix[winnerDist, 'mincon'] = (newmetrics.ix[winnerDist, 'mincon']*newmetrics.ix[winnerDist, 'population'] + \
+                                               conSwitch*popChange)/(newmetrics.ix[winnerDist, 'population'] + popChange)
+        
+        newmetrics.ix[loserDist, 'population']  -= popChange
+        newmetrics.ix[winnerDist, 'population'] += popChange
+        
+        newmetrics.ix[loserDist, 'area'] -= areachange
+        newmetrics.ix[winnerDist,'area'] += areachange
+        
+        """
+        Change perimeter
+               sumAframDiff
+               sumHispDiff
+               numedges
+        (Boundary stuff)
+        """
+        winnerNewEdges  = proposedChanges.index[-(proposedChanges.isSame)             ] #Are no longer the same
+        winnerLostEdges = proposedChanges.index[  proposedChanges.isSame              ] #Are now the same
+        loserNewEdges   = previousVersion.index[  previousVersion.isSame.astype(bool) ] #Were the same
+        loserLostEdges  = proposedChanges.index[-(previousVersion.isSame.astype(bool))] #Were different
+        
+        newmetrics.ix[ loserDist,'perimeter'] +=\
+            sum(previousVersion.length[ loserNewEdges]) - sum(previousVersion.length[ loserLostEdges])
+        newmetrics.ix[winnerDist,'perimeter'] +=\
+            sum(previousVersion.length[winnerNewEdges]) - sum(previousVersion.length[winnerLostEdges])
+        
+        newmetrics.ix[ loserDist,'sumAframDiff'] +=\
+            sum(previousVersion.aframdiff[ loserNewEdges].abs()) - sum(previousVersion.aframdiff[ loserLostEdges].abs())
+        newmetrics.ix[winnerDist,'sumAframDiff'] +=\
+            sum(previousVersion.aframdiff[winnerNewEdges].abs()) - sum(previousVersion.aframdiff[winnerLostEdges].abs())
+        
+        newmetrics.ix[ loserDist,'sumHispDiff'] +=\
+            sum(previousVersion.hispdiff[ loserNewEdges].abs()) - sum(previousVersion.hispdiff[ loserLostEdges].abs())
+        newmetrics.ix[winnerDist,'sumHispDiff'] +=\
+            sum(previousVersion.hispdiff[winnerNewEdges].abs()) - sum(previousVersion.hispdiff[winnerLostEdges].abs())
+        
+        newmetrics.ix[ loserDist,'numedges'] +=\
+            len( loserNewEdges) - len( loserLostEdges)
+        newmetrics.ix[winnerDist,'numedges'] +=\
+            len(winnerNewEdges) - len(winnerLostEdges)
+        
+        """
+        Change bizarreness
+        """
+        newmetrics.ix[ loserDist, 'bizarreness'] = bizarreness(newmetrics['area'][ loserDist], \
+                                                               newmetrics['perimeter'][ loserDist])
+        newmetrics.ix[winnerDist, 'bizarreness'] = bizarreness(newmetrics['area'][winnerDist], \
+                                                               newmetrics['perimeter'][winnerDist])
+        
+        """
+        Change contiguousness
+        """
+        #First check if our switch changes local contiguousness.
         neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
+        
         nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
-        oldContNeighborhoodLow  = contiguousness(   state.loc[neighborhood], templowdist,  nhadj)
-        oldContNeighborhoodHigh = contiguousness(   state.loc[neighborhood], temphighdist, nhadj)
+        oldContNeighborhood = contiguousness(   state.loc[neighborhood], loserDist, nhadj)
         
         nhadj.update(proposedChanges)
-        newContNeighborhoodLow  = contiguousness(newstate.loc[neighborhood], templowdist,  nhadj)
-        newContNeighborhoodHigh = contiguousness(newstate.loc[neighborhood], temphighdist, nhadj)
+        newContNeighborhood = contiguousness(newstate.loc[neighborhood], loserDist, nhadj)
         
-        if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
+        #If local contiguousness changes, check the whole loserDist, since it could be an annulus.
+        if (oldContNeighborhood != newContNeighborhood):
             tempframe = adjacencyFrame.copy()
             tempframe.update(proposedChanges)
             tempframe.lowdist  = tempframe.lowdist.astype(int)
             tempframe.highdist = tempframe.highdist.astype(int)
+            tempframe.low      = tempframe.low.astype(int)
+            tempframe.high     = tempframe.high.astype(int)
             
-            if (oldContNeighborhoodLow != newContNeighborhoodLow):
-                newmetrics.ix[templowdist, 'contiguousness']  = contiguousness(newstate, templowdist, tempframe)
-            else:
-                pass
-            
-            if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
-                newmetrics.ix[temphighdist, 'contiguousness'] = contiguousness(newstate, temphighdist, tempframe)
-            else:
-                pass
+            newmetrics.ix[loserDist, 'contiguousness']  = contiguousness(newstate, loserDist, tempframe)
         
     else:
+        #It is currently impossible to get to this piece of code.
+        #The last time it was accessed, it broke.
+        #It will be updated when it is determined to be useful in any capacity.
         #If there are some districts missing, 
-        changenode = newstate.key.sample(1)
+        
+        changenode = np.random.choice(newstate.index, 1)[1]
         olddist = newstate.value[changenode]
         newdist = list(missingdist)[0]
-        newstate.value[newstate.key == changenode] = newdist
+        newstate.ix[changenode, 'value'] = newdist
         #We want to select one randomly, and make it one of the missing districts
-        proposedChanges = adjacencyFrame.loc[(adjacencyFrame.low == changenode) | \
+        
+        previousVersion = adjacencyFrame.loc[(adjacencyFrame.low == changenode) | \
                               (adjacencyFrame.high == changenode)]
-        proposedChanges.lowdist[proposedChanges.low == changenode] = newdist
-        proposedChanges.highdist[proposedChanges.high == changenode] = newdist
+        proposedChanges = previousVersion.copy()
+        proposedChanges.ix[proposedChanges.low  == changenode, "lowdist" ] = newdist
+        proposedChanges.ix[proposedChanges.high == changenode, "highdist"] = newdist
         proposedChanges.isSame = False
         # And none of its adjacencies match anymore.
         
         #change contiguousness
-        newmetrics['contiguousness'][olddist] = contiguousness(newstate, olddist)
+        newmetrics.ix[olddist, 'contiguousness'] = contiguousness(newstate, olddist)
         
         #change population
         popchange = blockstats.population[changenode]
-        newmetrics['population'][olddist] -= popchange
-        newmetrics['population'][newdist] += popchange
+        newmetrics.ix[olddist, 'population'] -= popchange
+        newmetrics.ix[newdist, 'population'] += popchange
         
         #change bizarreness
-        newmetrics['perimeter'][olddist] = perimeter(newstate, olddist)
-        newmetrics['perimeter'][newdist] = perimeter(newstate, newdist)
+        newmetrics.ix[olddist, 'perimeter'] = perimeter(newstate, olddist)
+        newmetrics.ix[newdist, 'perimeter'] = perimeter(newstate, newdist)
         
         areachange = blockstats.ALAND[changenode] + blockstats.AWATER[changenode]
         newmetrics['area'][olddist] -= areachange
@@ -472,9 +440,9 @@ def contiguousness(state, district, subframe = "DEFAULT"):
         
     if len(regionlist) == 0:
         #If there's nothing in this district...
-        return 1
-            # ... we say that it's in one piece.
-    
+        return float('inf')
+            # ... we're going to want to veto that.
+
     if type(subframe) == str:
         #If the subframe passed is the default, then use anything in the adjacencyframe that's in the district.
         subframe = adjacencyFrame.ix[(adjacencyFrame.lowdist == district) & (adjacencyFrame.highdist == district), :]
@@ -631,33 +599,35 @@ def goodnessNoVeto(metrics):
             np.sum(tempStdAfram[mindists]) + np.sum(tempStdHisp[mindists])
     #functions should be written such that the numbers being scaled are between zero and one.
 
-def goodness(metrics):
-    #stConts = [contiguousness(runningState[0], i) for i in range(ndistricts)]
-    #stPops  = [    population(runningState[0], i) for i in range(ndistricts)]
-    #stBiz   = [   bizarreness(runningState[0], i) for i in range(ndistricts)]
-    #stPerim = [     perimeter(runningState[0], i) for i in range(ndistricts)]
-    #stArea  = [      distArea(runningState[0], i) for i in range(ndistricts)]
-    
-    tempStConts  = metrics['contiguousness']
-    
-    if any([x!=1 for x in tempStConts]):
+def contScore(metrics):
+    if any([x!=1 for x in metrics['contiguousness']]):
         return float('-inf')
-    
-    tempStPops   = metrics['population']
-    tempStBiz    = metrics['bizarreness']
-    tempStMincon = metrics['mincon']
-    tempStdAfram = metrics['sumAframDiff']
-    tempStdHisp  = metrics['sumHispDiff']
-    
-    mindists = tempStMincon.argsort()[-numMajMinDists:][::-1]
-    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
-    
-    return -3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
-            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000 + \
-            np.sum(tempStdAfram[mindists]) + np.sum(tempStdHisp[mindists])
-    #functions should be written such that the numbers being scaled are between zero and one.
+    return 1
 
-_exploration = 1.0
+def popDiffScore(metrics):
+    return 1 - float(max(0, (np.max(metrics['population']) - np.min(metrics['population'])) - 25000 ))/ \
+               ((totalpopulation - 25000))
+
+def popVarScore(metrics):
+    return 1 - sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics['population']])/(2*(1-float(1)/ndistricts))
+
+def bizMeanScore(metrics):
+    return 1.0/np.nanmean(metrics['bizarreness'])
+
+def bizMaxScore(metrics):
+    return 1.0/max(metrics['bizarreness'])
+
+def aframEdgeScore(metrics):
+    mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]
+    return np.sum(metrics['sumAframDiff'][mindists]) / np.sum(metrics['numedges'])
+
+def hispEdgeScore(metrics):
+    mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]
+    return np.sum(metrics['sumHispDiff'][mindists]) / np.sum(metrics['numedges'])
+
+def goodness(metrics):
+    return sum(x*f(metrics) for f,x in zip(goodnessParams, goodnessWeights))/sum(goodnessWeights)
+
 def switchDistrict(current_goodness, possible_goodness): # fix
     return float(1)/(1 + np.exp((current_goodness-possible_goodness)/_exploration))
 
@@ -718,7 +688,7 @@ def dfEquiv(f1, f2):
     else:
         return all([ all(f1[col] == f2[col]) for col in f1.columns ])
 
-def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
+def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1, pad = False):
     arrayList = [("maxBiz",    np.zeros((numstates,numsaves)), "Maximum Bizarreness"                          ),
                  ("meanBiz",   np.zeros((numstates,numsaves)), "Mean Bizarreness"                             ),
                  ("totalVar",  np.zeros((numstates,numsaves)), "Total Population Variation"                   ),
@@ -730,7 +700,11 @@ def createMetricsArrays(foldername, numstates, numsaves, samplerate = 1):
                  ("goodness",  np.zeros((numstates,numsaves)), "Goodness"                                     )]
     for startingpoint in range(numstates):
         for j in samplerate*np.arange(numsaves/samplerate):
-            thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(startingpoint, j+1))
+            if pad:
+                thismetrics = pd.read_csv(foldername+'metrics%04d_save%04d.csv'%(startingpoint, j+1))
+            else:
+                thismetrics = pd.read_csv(foldername+'metrics%d_save%d.csv'%(startingpoint, j+1))
+            
             mindists = thismetrics['mincon'].argsort()[-numMajMinDists:][::-1]
             
             arrayList[0][1][startingpoint,j] = np.max(thismetrics['bizarreness'])
@@ -760,7 +734,11 @@ def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
         plt.title(arr[2])
         if save:
             plt.savefig(save + arr[0] + '.png')
+            plt.clf()
         if show:
             plt.show()
-        plt.clf()
 
+
+goodnessParams  = [contScore, popVarScore, bizMeanScore, bizMaxScore, aframEdgeScore, hispEdgeScore]
+goodnessWeights = np.array([1, 500, 100, 100, 10, 10])
+_exploration = 1.0

@@ -15,7 +15,7 @@ from itertools import product
 execfile('../cleanitallup.py')
 execfile('../setup_stuff.py')
 execfile('setup.py') #Stack overflow doesn't like this, for the record.
-#execfile('../tempjoseph.py')
+execfile('../tempjoseph.py')
 #%run -i simulator #Supposedly Stack overflow is okay with this, maybe?
 
 metrics = pd.DataFrame()
@@ -31,11 +31,11 @@ foldername = "gridruns/"
 #os.mkdir(foldername)
 
 numstates= 1
-numsteps = 10
-numsaves = 10
+numsteps = 100
+numsaves = 1000
 samplerate = 1
 numreads = numsaves
-#numreads = 1000
+#numreads = 734
 
 #########
 #Run numstates instances from scratch, without annealing
@@ -93,18 +93,92 @@ for weights in paramList:
             
             runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
             
-            runningState[0].to_csv(foldername+"run%4d.%4d.%4d.state%4d_save%d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            runningState[0].to_csv(foldername+"run%04d.%04d.%04d.state%04d_save%04d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
             
-            metrics.to_csv(foldername + 'run%4d.%4d.%4d.metrics%4d_save%d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            metrics.to_csv(foldername + 'run%04d.%04d.%04d.metrics%04d_save%04d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
             
-        print("Finished run%4d.%4d.%4d.state%4d"%(weights[1], weights[3], weights[5], startingpoint))
+            print(str(i))
+            
+        print("\nFinished run%04d.%04d.%04d.state%04d\n"%(weights[1], weights[3], weights[5], startingpoint))
 
+"""
+tempi = i
+tempstartingpoint = startingpoint+1
+tempweights = weights
+
+tempstartingpoint = 2
+tempweights = [1, 10, 10, 10, 100, 100]
+"""
+
+"""
+#For restarting inner loop from specified save range.
+for i in range(tempi, numsaves):
+    
+    runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+    
+    runningState[0].to_csv(foldername+"run%04d.%04d.%04d.state%04d_save%04d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+    
+    metrics.to_csv(foldername + 'run%04d.%04d.%04d.metrics%04d_save%04d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+    
+    print(str(i))
+    
+print("\nFinished run%04d.%04d.%04d.state%04d\n"%(weights[1], weights[3], weights[5], startingpoint))
+"""
+
+"""
+#For restarting middle loop from specified state number
+for startingpoint in range(tempstartingpoint, numstates):
+    
+    starting_state = contiguousStart()
+    runningState = (starting_state.copy(), 1)
+    updateGlobals(runningState[0])
+    for i in range(numsaves):
+        
+        runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+        
+        runningState[0].to_csv(foldername+"run%04d.%04d.%04d.state%04d_save%04d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+        
+        metrics.to_csv(foldername + 'run%04d.%04d.%04d.metrics%04d_save%04d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+        
+        print(str(i))
+        
+    print("\nFinished run%04d.%04d.%04d.state%04d\n"%(weights[1], weights[3], weights[5], startingpoint))
+
+"""
+
+"""
+#For restarting outer loop from specified weight
+for weights in paramList[14:]:
+    
+    goodnessWeights = np.array(weights)
+    
+    for startingpoint in range(numstates):
+        
+        starting_state = contiguousStart()
+        runningState = (starting_state.copy(), 1)
+        updateGlobals(runningState[0])
+        for i in range(numsaves):
+            
+            runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
+            
+            runningState[0].to_csv(foldername+"run%04d.%04d.%04d.state%04d_save%04d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            
+            metrics.to_csv(foldername + 'run%04d.%04d.%04d.metrics%04d_save%04d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            
+            print(str(i))
+            
+        print("\nFinished run%04d.%04d.%04d.state%04d\n"%(weights[1], weights[3], weights[5], startingpoint))
+
+"""
 #########
 #Read metrics and make graphs of stats for the run.
 #########
-
-plotMetricsByState(createMetricsArrays(foldername, numstates, numreads, samplerate), save = foldername, show = False)
-
+"""
+tempweights = paramList[5]
+extendedname = foldername + "run%04d.%04d.%04d."%(tempweights[1], tempweights[3], tempweights[5])
+plotMetricsByState(createMetricsArrays(extendedname, numstates, numreads, samplerate, pad = True))
+"""
+plotMetricsByState(createMetricsArrays(foldername, numstates, numreads, samplerate))
 
 #########
 #Keep track of metrics
