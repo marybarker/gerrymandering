@@ -8,6 +8,7 @@ import time
 from itertools import product
 
 #os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/Pennsylvania')
+#os.chdir('/Users/marybarker/Documents/tarleton_misc/gerrymandering/NorthCarolina/')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Pennsylvania')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/Texas')
 #os.chdir('/home/odin/Documents/gerrymandering/gerrymandering/NorthCarolina')
