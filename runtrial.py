@@ -15,7 +15,7 @@ from itertools import product
 execfile('../cleanitallup.py')
 execfile('../setup_stuff.py')
 execfile('setup.py') #Stack overflow doesn't like this, for the record.
-execfile('../tempjoseph.py')
+#execfile('../tempjoseph.py')
 #%run -i simulator #Supposedly Stack overflow is okay with this, maybe?
 
 metrics = pd.DataFrame()
