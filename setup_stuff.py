@@ -36,18 +36,18 @@ def ToFeet(listofpoints):
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """  create a lookup table of adjacencies between vtds  """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
-def adjacencies(mylistoffeatures):
+def adjacencies(mylistoffeatures, name_of_keys=['GEOID10', 'NAME10']):
     l1 = list()
     l2 = list()
     for count in range(len(mylistoffeatures)):
         f1 = mylistoffeatures[count]
-        name =  str(f1['GEOID10'])+str(f1['NAME10']) #f1['ID']
+        name =  ''.join([ str(f1[x]) for x in name_of_keys])
         g1 = f1.geometry()
         for f2 in mylistoffeatures[count+1:]:
             g2 = f2.geometry()
             if g1.Touches(g2):
                 l1.append(name)
-                l2.append( str(f2['GEOID10'])+str(f2['NAME10']) )#.append(f2['ID'])
+                l2.append( ''.join([ str(f2[x]) for x in name_of_keys]) )
     newthing = pd.DataFrame(np.column_stack((np.array(l1), np.array(l2))))
     newthing.columns=['low','high']
     return newthing
@@ -56,7 +56,7 @@ def adjacencies(mylistoffeatures):
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
 """  create a lookup dict boundaries as lat/long lists  """
 """ * * * * * * * * * * * * * * * * * * * * * * * * * * """
-def boundaries(mylistoffeatures):
+def boundaries(mylistoffeatures, name_of_keys = ['GEOID10', 'NAME10']):
     boundaries = {}
     for feat in mylistoffeatures:
         geom = feat.geometry()
@@ -72,8 +72,7 @@ def boundaries(mylistoffeatures):
                         point = ring.GetPoint(j)
                         xy.append(point)
                     allxy.append(xy)
-            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
-            #boundaries[ feat['ID'] ] = allxy
+            boundaries[ ''.join([ str(feat[x]) for x in name_of_keys]) ] = allxy
         elif gtype == 3: # polygon
             allxy = []
             for ring in geom:
@@ -82,12 +81,10 @@ def boundaries(mylistoffeatures):
                     point = ring.GetPoint(i)
                     xy.append(point)
                 allxy.append(xy)
-            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = allxy
-            #boundaries[ feat['ID'] ] = allxy
+            boundaries[ ''.join([ str(feat[x]) for x in name_of_keys]) ] = allxy
         else:
             b = geom.GetBoundary()
-            boundaries[str(feat['GEOID10'])+str(feat['NAME10'])] = [b.GetPoints()]
-            #boundaries[ feat['ID']  ] = [b.GetPoints()]
+            boundaries[ ''.join([ str(feat[x]) for x in name_of_keys]) ] = [b.GetPoints()]
     return boundaries
 
 
@@ -302,10 +299,10 @@ ds = ogr.Open(vtdfile)
 lyr = ds.GetLayer(0)
 vtds = features(lyr)
 
-vtd_boundaries = boundaries(vtds)
-vtd_connectivities = adjacencies(vtds)
+vtd_boundaries = boundaries(vtds, ['GEOID10'])
+vtd_connectivities = adjacencies(vtds, ['GEOID10'])
 vtd_connectivities = adjacentEdgeLengths(vtd_connectivities, vtd_boundaries)
-vtd_connectivities.to_csv('NEWVTDconnections.csv')
+vtd_connectivities.to_csv('PRECINCTconnections.csv')
 
 
 
@@ -328,6 +325,8 @@ for connection in names:
     color_these_states(g, [(newframe, 0)], foldername, count)
 
 """
+
+
 
 
 
