@@ -2,8 +2,9 @@ stateSHORT = 'NC'
 ndistricts = 13
 
 blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str}).rename(columns={"ALAND10":"ALAND", "AWATER10":"AWATER"})
-blockstats = blockstats.set_index(blockstats.ID)
-
+blockstats = blockstats.set_index(blockstats.ID)n Libs", "VR: Mult Race Ls", \
+                   "VR:All Unaf.", "VR: White Unafil.", "VR: Black Unafil.", "VR: Asian Unafil.", "VR: Other Unafil."
+                  ]]
 #GEE = pd.read_csv("RegGenderAgeEthnicity.csv")
 PRE = pd.read_csv("TotalPopRaceAndEthnicity.csv")
 #VAP = pd.read_csv("VotingAgePopulation.csv")
@@ -36,6 +37,7 @@ RPR = RPR.loc[:, ['GEOID10', 'percentDem', 'percentRep', 'percentOther', \
 
 PRE = PRE.loc[:, ['Total', 'GEOID10', '% Total Black', '%  Hisp ']].rename(columns={'Total':'population', '% Total Black':'aframcon', '%  Hisp ':'hispcon'})
 PRE["mincon"] = PRE.loc[:, ['aframcon', 'hispcon']].sum(axis=1)
+PRE.mincon[PRE.mincon > 1.0] = 1.0
 
 votingResultsData = pd.read_csv("NC_2012_with_GEOID.csv").loc[:, ['GEOID10', 'g2012_USH_dv', 'g2012_USH_rv', 'g2012_USH_tv']]
 blockstats = pd.merge(votingResultsData, pd.merge(blockstats, pd.merge(PRE, RPR, on='GEOID10'), on='GEOID10'), on='GEOID10')
