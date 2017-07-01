@@ -66,7 +66,8 @@ numstates= 5
 numsteps = 100
 numsaves = 1000
 temp = product(*([[1, 10, 100]]*3))
-paramList = [[1, x[0], x[1], x[1], x[2], x[2]] for x in temp]
+distinctParam = [0,1,2,3,4,5,6,7,8,9,10,11,12,15,18,19,20,21,24]
+paramList = [[1, 10* x[0], x[1], x[1], x[2], x[2]] for x in temp]
 """
     The way paramList works:
         - It is assumed that globalWeights is of a known length, in this case, 6.
@@ -81,7 +82,10 @@ samplerate = 1
 numreads = numsaves
 #numreads = 1000
 
-for weights in paramList:
+for weights in [paramList[i] for i in distinctParam]:
+    subfoldername = "grid%04d.%04d.%04d/"(weights[1],weights[3],weights[5])
+    if subfoldername not in os.listdir(foldername):
+        os.mkdir(foldername + subfoldername)
     
     goodnessWeights = np.array(weights)
     
@@ -94,9 +98,9 @@ for weights in paramList:
             
             runningState = MH(runningState[0], numsteps, neighbor, goodness, switchDistrict)
             
-            runningState[0].to_csv(foldername+"run%04d.%04d.%04d.state%04d_save%04d.csv"%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            runningState[0].to_csv(foldername+subfoldername + "state%04d_save%04d.csv"%(startingpoint, i + 1), index = False)
             
-            metrics.to_csv(foldername + 'run%04d.%04d.%04d.metrics%04d_save%04d.csv'%(weights[1], weights[3], weights[5], startingpoint, i + 1), index = False)
+            metrics.to_csv(foldername + subfoldername + 'metrics%04d_save%04d.csv'%(startingpoint, i + 1), index = False)
             
             print(str(i))
             
@@ -337,7 +341,7 @@ plt.clf()
 #####
 
 samplerate = numsaves/250
-
+"""
 for i in range(numstates):
     if "maps_state%04d"%i not in os.listdir(foldername):
         os.mkdir(foldername + "maps_state%04d"%i)
@@ -345,8 +349,18 @@ for i in range(numstates):
         thisstate = pd.read_csv(foldername + "state%d_save%d.csv"%(i, j+1))
         color_this_state(g, thisstate, foldername + "maps_state%04d/save%04dmap.png"%(i, j), linewidth=0.3)
         print("Made map of state %d, save %d"%(i,j))
-
+"""
+for weights in [paramList[i] for i in distinctParam]:
+    subfoldername = "grid%04d.%04d.%04d/"%(weights[1],weights[3],weights[5])
+    for i in range(numstates):
+        if "maps_state%04d"%i not in os.listdir(foldername + subfoldername):
+            os.mkdir(foldername + subfoldername+ "maps_state%04d"%i)
+        for j in samplerate*np.arange(numreads/samplerate):
+            thisstate = pd.read_csv(foldername + subfoldername + "state%04d_save%04d.csv"%(i, j+1))
+            color_this_state(g, thisstate, foldername + subfoldername+ "maps_state%04d/save%04dmap.png"%(i, j), linewidth=0.3)
+            print("Made map of state %d, save %d"%(i,j))
 #####
+
 #Plots of all states
 #####
 
