@@ -1,171 +1,93 @@
-def neighbor(state):
-    
-    global adjacencyFrame, metrics
-    newstate = state.copy()
-    newmetrics = metrics.copy()
-    
-    missingdist = set.difference(set(range(ndistricts)), set(newstate['value']))
-    #If we've blobbed out some districts, we wants to behave differently
-    
-    if len(missingdist) == 0:
-        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1)])
-        
-        if random.random() < 0.5:
-            lownode      = adjacencyFrame.low[switchedge]
-            highnode     = adjacencyFrame.high[switchedge]
-            templowdist  = adjacencyFrame.lowdist[switchedge]
-            temphighdist = adjacencyFrame.highdist[switchedge]
-        else:
-            lownode      = adjacencyFrame.high[switchedge]
-            highnode     = adjacencyFrame.low[switchedge]
-            templowdist  = adjacencyFrame.highdist[switchedge]
-            temphighdist = adjacencyFrame.lowdist[switchedge]
-            
-        switchTo = temphighdist
-        
-        previousVersion = adjacencyFrame[(adjacencyFrame.low == lownode) | (adjacencyFrame.high == lownode)]
-        proposedChanges = previousVersion.copy()
-        #want proposedChanges to be a slice of adjacencyFrame where the values could be changing.
-        
-        newstate.ix[newstate.key == lownode, 'value'] = switchTo
-        proposedChanges.ix[proposedChanges.low == lownode, 'lowdist'] = switchTo
-        proposedChanges.ix[proposedChanges.high == lownode, 'highdist'] = switchTo
-        proposedChanges.isSame = proposedChanges.lowdist == proposedChanges.highdist
-        #change values in the state as well as the proposedChanges
-        
-        #change minority concentration while population is unchanged. 
-        newmetrics.ix[templowdist,  'mincon'] -= float(blockstats.ix[lownode, 'population'] * blockstats.ix[lownode, 'mincon']) / np.nansum(newmetrics.ix[templowdist,  'population'])
-        newmetrics.ix[temphighdist, 'mincon'] += float(blockstats.ix[lownode, 'population'] * blockstats.ix[lownode, 'mincon']) / np.nansum(newmetrics.ix[temphighdist, 'population'])
-        
-        #change population
-        popchange = blockstats.population[lownode]
-        newmetrics.ix[templowdist, 'population']  -= popchange
-        newmetrics.ix[temphighdist, 'population'] += popchange
-        
-        #change bizarreness
-        newmetrics.ix[templowdist,'perimeter']  += \
-            (sum(previousVersion.length[ (previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]) -\
-             sum(previousVersion.length[~(previousVersion.isSame==1) & ((previousVersion.low == lownode) | (previousVersion.high == lownode))]))
-        newmetrics.ix[temphighdist, 'perimeter'] += \
-            (sum(proposedChanges.length[~(proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]) -\
-             sum(proposedChanges.length[ (proposedChanges.isSame==1) & ((proposedChanges.low == lownode) | (proposedChanges.high == lownode))]))
-        
-        areachange = blockstats.ALAND[lownode] + blockstats.AWATER[lownode]
-        newmetrics.ix[templowdist, 'area'] -= areachange
-        newmetrics.ix[temphighdist,'area'] += areachange
-        
-        newmetrics.ix[templowdist, 'bizarreness']  = bizarreness(newmetrics['area'][templowdist], \
-                                                              newmetrics['perimeter'][templowdist])
-        newmetrics.ix[temphighdist, 'bizarreness'] = bizarreness(newmetrics['area'][temphighdist], \
-                                                              newmetrics['perimeter'][temphighdist])
-        
-        #update boundary information
-        newmetrics.ix[temphighdist,'sumAframDiff'] = newmetrics.ix[temphighdist,'sumAframDiff']\
-                                                     + np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                     - np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-        newmetrics.ix[templowdist,'sumAframDiff'] = newmetrics.ix[templowdist,'sumAframDiff']\
-                                                    - np.sum((-proposedChanges.isSame)*proposedChanges.aframdiff)\
-                                                    + np.sum((-previousVersion.isSame)*previousVersion.aframdiff)
-        
-        newmetrics.ix[temphighdist,'sumHispDiff'] = newmetrics.ix[temphighdist,'sumHispDiff']\
-                                                    + np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                    - np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-        newmetrics.ix[templowdist,'sumHispDiff']  = newmetrics.ix[templowdist,'sumHispDiff']\
-                                                    - np.sum((-proposedChanges.isSame)*proposedChanges.hispdiff)\
-                                                    + np.sum((-previousVersion.isSame)*previousVersion.hispdiff)
-        
-        newmetrics.ix[temphighdist,'numedges'] = newmetrics.ix[temphighdist,'numedges']\
-                                                 + np.sum(-(proposedChanges.isSame))\
-                                                 - np.sum(-(previousVersion.isSame))
-        newmetrics.ix[templowdist,'numedges']  = newmetrics.ix[templowdist,'numedges']\
-                                                 - np.sum(-(proposedChanges.isSame))\
-                                                 + np.sum(-(previousVersion.isSame))
-                                                
-        #update contiguousness
-        neighborhood = set(proposedChanges.low).union(set(proposedChanges.high))
-        nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
-        oldContNeighborhoodLow  = contiguousness(   state.loc[neighborhood], templowdist,  nhadj)
-        oldContNeighborhoodHigh = contiguousness(   state.loc[neighborhood], temphighdist, nhadj)
-        
-        nhadj.update(proposedChanges)
-        newContNeighborhoodLow  = contiguousness(newstate.loc[neighborhood], templowdist,  nhadj)
-        newContNeighborhoodHigh = contiguousness(newstate.loc[neighborhood], temphighdist, nhadj)
-        
-        if ((oldContNeighborhoodLow != newContNeighborhoodLow)|(oldContNeighborhoodHigh != newContNeighborhoodHigh)):
-            tempframe = adjacencyFrame.copy()
-            tempframe.update(proposedChanges)
-            tempframe.lowdist  = tempframe.lowdist.astype(int)
-            tempframe.highdist = tempframe.highdist.astype(int)
-            
-            if (oldContNeighborhoodLow != newContNeighborhoodLow):
-                newmetrics.ix[templowdist, 'contiguousness']  = contiguousness(newstate, templowdist, tempframe)
-            else:
-                pass
-            
-            if (oldContNeighborhoodHigh != newContNeighborhoodHigh):
-                newmetrics.ix[temphighdist, 'contiguousness'] = contiguousness(newstate, temphighdist, tempframe)
-            else:
-                pass
-        
-    else:
-        #If there are some districts missing, 
-        changenode = newstate.key.sample(1)
-        olddist = newstate.value[changenode]
-        newdist = list(missingdist)[0]
-        newstate.value[newstate.key == changenode] = newdist
-        #We want to select one randomly, and make it one of the missing districts
-        proposedChanges = adjacencyFrame.loc[(adjacencyFrame.low == changenode) | \
-                              (adjacencyFrame.high == changenode)]
-        proposedChanges.lowdist[proposedChanges.low == changenode] = newdist
-        proposedChanges.highdist[proposedChanges.high == changenode] = newdist
-        proposedChanges.isSame = False
-        # And none of its adjacencies match anymore.
-        
-        #change contiguousness
-        newmetrics['contiguousness'][olddist] = contiguousness(newstate, olddist)
-        
-        #change population
-        popchange = blockstats.population[changenode]
-        newmetrics['population'][olddist] -= popchange
-        newmetrics['population'][newdist] += popchange
-        
-        #change bizarreness
-        newmetrics['perimeter'][olddist] = perimeter(newstate, olddist)
-        newmetrics['perimeter'][newdist] = perimeter(newstate, newdist)
-        
-        areachange = blockstats.ALAND[changenode] + blockstats.AWATER[changenode]
-        newmetrics['area'][olddist] -= areachange
-        newmetrics['area'][newdist] += areachange
-        
-        newmetrics['bizarreness'][olddist] = bizarreness(newmetrics['area'][olddist], \
-                                                              newmetrics['perimeter'][olddist])
-        newmetrics['bizarreness'][newdist] = bizarreness(newmetrics['area'][newdist], \
-                                                              newmetrics['perimeter'][newdist])
-        newmetrics['mincon'][olddist] = minorityConc(newstate, olddist, 'mincon')
-        newmetrics['mincon'][newdist] = blockstats.ix[changenode, 'mincon']
-    
-    return (newstate, proposedChanges, newmetrics)
+# Things I now know: 
+
+# Percent black  21.5
+# Percent white  68.5
+# Percent Hisp    8.4
+
+# Percent registered as democrat: 46
+# Percent registered as republican: 31 
+# Percent registered unafilliated: 23.5
+# Percent registered libertarian: 0.1
+
+# average registered voter age: 47.2 w standard deviation ~3
 
 
-def goodness(metrics):
-    
-    tempStConts  = metrics['contiguousness']
-    
-    if any([x!=1 for x in tempStConts]):
-        return float('-inf')
-    
-    tempStPops   = metrics['population']
-    tempStBiz    = metrics['bizarreness']
-    
-    modTotalVar = sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in tempStPops])/(2*(1-float(1)/ndistricts))
-    
-    return -3000*modTotalVar - 300*np.nanmean(tempStBiz) - \
-            float(max(0, (np.max(tempStPops) - np.min(tempStPops)) - 25000 )**2)/1000000 
-    #functions should be written such that the numbers being scaled are between zero and one.
+"""
+allthingy = pd.merge(pd.read_csv("TotalPopRaceAndEthnicity.csv"), pd.read_csv("RegPartyRace.csv"), on='GEOID10')
+allthingy = allthingy.merge(pd.read_csv("RegGenderAgeEthnicity.csv"), on='GEOID10')
+
+plt.scatter(allthingy['VR: All Reps'] / allthingy['VR Total'], allthingy['% White Non Hisp'])
+plt.xlabel("percent republican")
+plt.ylabel("percent white non-hispanic")
+plt.title('White Non-Hispanic Republican')
+
+plt.scatter(allthingy['VR: All Reps'] / allthingy['VR Total'], 1.0 - allthingy.loc[:, ['% Total Black', '%  Hisp ']].sum(axis=1))
+plt.xlabel("percent republican")
+plt.ylabel("percent non-minority")
+plt.title("Non-minority republican")
+
+plt.scatter(allthingy['VR: All Dems'] / allthingy['VR Total'], allthingy['% Total Black'])
+plt.xlabel("percent democratic")
+plt.ylabel("percent black")
+plt.title("black democrat")
+
+plt.scatter(allthingy['Voter Registration by Gender Male %'], allthingy['VR: All Dems'] / allthingy['VR Total'])
+
+plt.scatter(allthingy['Voter Registration by Gender Female %'], allthingy['% Total Black'])
+
+x = len(allthingy['VR: All Reps'])
+plt.scatter(allthingy['% Total Black'], 
+            allthingy['VR: All Dems']/allthingy['VR Total'], 
+            c=np.column_stack((np.ones(x), 
+                               np.zeros(x), 
+                               np.zeros(x), 
+                               allthingy['VR Total'].astype(float) / np.maximum( allthingy['Total'].astype(float), 
+                               allthingy['VR Total'].astype(float)))) )
+
+
+meanAge = allthingy.loc[:, ['Voter Registration by Age 18-25 %', \
+                            'Voter Registration by Age 26-40 %', \
+                            'Voter Registration by Age 41-65 %', \
+                            'Voter Registration by Age 66+ %']].apply(lambda x: sum(x * np.array([21.5, 33, 53, 66])), axis=1)
+
+# allthingy['Voter Registration by Age 18-25 %'] stats: 
+#  average is 0.10648 with standard dev of 0.0602
+
+np.average(allthingy.loc[allthingy['Voter Registration by Age 18-25 %'] >= 0.22, '% White '] - np.average(allthingy['% White ']))
+#-0.10491356745559763 is the value, meaning that when we are 2 standard deviations away from the average for 
+# young voter registration, then we are on average 10 percent lower white (i.e. young voters != white)
+
+
+allthingy.loc[allthingy['Voter Registration by Age 26-40 %'] >= 0.3, 'VR Total']
+
+
+plt.scatter(allthingy['% Total Black'], 
+            allthingy['VR: All Dems']/allthingy['VR Total'], 
+            #c=np.column_stack((np.zeros(x), allthingy[''], 1.0 - allthingy[''], np.ones(x)*0.5 )))
+            c=np.column_stack((np.zeros(x), 
+                               allthingy['VR Total'].astype(float) / np.maximum( allthingy['Total'].astype(float), 
+                               allthingy['VR Total'].astype(float)), 
+                               1.0 - allthingy['VR Total'].astype(float) / np.maximum( allthingy['Total'].astype(float), 
+                               allthingy['VR Total'].astype(float)), np.ones(x)*0.25 )))
+
+plt.scatter(allthingy['VR: All Reps']/allthingy['VR Total'], 
+            allthingy['VR: All Dems']/allthingy['VR Total'], 
+            c=np.column_stack((np.zeros(x), meanAge / max(meanAge), 1. - meanAge / max(meanAge), np.ones(x)*0.125 )))
+"""
+
+goodnessWeights=[1, 100, 100, 100, 0, 0]
+_exploration = 1
+currentNCstate = pd.read_csv("VTD_to_CD.csv").loc[:, ['GEOID10', 'CD']].rename(columns={"GEOID10":"key", 'CD':'value'})
+currentNCstate.key   = [lookup.get(x) for x in currentNCstate.key]
+currentNCstate.value = [int(x) - 3701 for x in currentNCstate.value]
+compare_current_state_to_possible_perturbations(currentNCstate, 100, 1000000, foldername, "initial look at NC demographics")
+
+states = [(pd.read_csv(foldername+'data/state%d.csv'%i), 0) for i in range(10)]
 
 
 def compare_current_state_to_possible_perturbations(current_state, num_perturbations, steps_per_perturbation, foldername, misc_data =''):
-    import datetime
+    import datetime, inspect
+    global goodnessWeights, goodnessParams
     if not os.path.isdir(foldername):
         os.mkdir(foldername)
     os.chdir(foldername)
@@ -173,6 +95,9 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
     metadata = 30*'+'+\
                 '\nDate: %s'%str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))+\
                 '\nSteps per run: %d'%(steps_per_perturbation)+\
+                '\ngoodness function: %s'%inspect.getsource(goodness)+\
+                '\ngoodness Weights: %s'%' '.join([str(x) for x in goodnessWeights])+\
+                '\ngoodness Params: %s'%' '.join([str(x) for x in goodnessParams])+\
                 '\nmisc: %s'%misc_data
     with open("Info.txt", "w") as metafile:
         metafile.write(metadata)
@@ -199,6 +124,12 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
         allMetrics.append(metrics)
         print 'finished with step %d of %d. Saved in %sdata/'%(i+1, num_perturbations, foldername)
     
+    tempgoodnessParams  = [x for x in goodnessParams]
+    tempgoodnessWeights = [x for x in goodnessWeights]
+
+    goodnessParams  = [contScore, popVarScore]
+    goodnessWeights = np.array([1, 500])
+
     allGoodnesses = [goodness(allMetrics[i]) for i in range(num_perturbations)]
     plt.plot( allGoodnesses )
     plt.savefig("pictures/goodness.png")
@@ -210,16 +141,11 @@ def compare_current_state_to_possible_perturbations(current_state, num_perturbat
     plt.savefig("pictures/minorityConc.png", dpi=600)
     plt.clf()
     
+    goodnessParams  = tempgoodnessParams
+    goodnessWeights = tempgoodnessWeights
     os.chdir("../")
 
 #def compare_current_state_to_possible_other_states()
-
-def NorthCarolinaWhat():
-    # FILES: 
-    #  VTDRegGenderAgeEthnicity
-    #  VTDRegPartyRace
-    #  VTDTotalPopRaceAndEthnicity
-    #  VTDVotingAgePopulation
 
 
 if False:
