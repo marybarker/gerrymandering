@@ -2,9 +2,8 @@ stateSHORT = 'NC'
 ndistricts = 13
 
 blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str}).rename(columns={"ALAND10":"ALAND", "AWATER10":"AWATER"})
-blockstats = blockstats.set_index(blockstats.ID)n Libs", "VR: Mult Race Ls", \
-                   "VR:All Unaf.", "VR: White Unafil.", "VR: Black Unafil.", "VR: Asian Unafil.", "VR: Other Unafil."
-                  ]]
+blockstats = blockstats.set_index(blockstats.ID)
+
 #GEE = pd.read_csv("RegGenderAgeEthnicity.csv")
 PRE = pd.read_csv("TotalPopRaceAndEthnicity.csv")
 #VAP = pd.read_csv("VotingAgePopulation.csv")
