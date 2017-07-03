@@ -47,7 +47,7 @@ stateconcentration = np.nansum(blockstats.mincon * blockstats.population) * 1.0 
 numMajMinDists = int(ndistricts*stateconcentration)
 
 
-lookup = dict(zip(blockstats.GEOID10.values, blockstats.index))
+lookup = dict(zip(blockstats.GEOID10, blockstats.ID))
 adjacencyFrame = pd.read_csv("PRECINCTconnections.csv")
 adjacencyFrame.low = [lookup.get(x) for x in adjacencyFrame.low]
 adjacencyFrame.high = [lookup.get(x) for x in adjacencyFrame.high]
