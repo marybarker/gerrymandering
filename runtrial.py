@@ -64,9 +64,10 @@ for startingpoint in range(numstates):
 
 numstates= 5
 numsteps = 100
-numsaves = 1000
+numsaves = 500
 temp = product(*([[1, 10, 100]]*3))
 distinctParam = [0,1,2,3,4,5,6,7,8,9,10,11,12,15,18,19,20,21,24]
+
 paramList = [[1, 10* x[0], x[1], x[1], x[2], x[2]] for x in temp]
 """
     The way paramList works:
@@ -82,14 +83,14 @@ samplerate = 1
 numreads = numsaves
 #numreads = 1000
 
-for weights in [paramList[i] for i in distinctParam]:
-    subfoldername = "grid%04d.%04d.%04d/"(weights[1],weights[3],weights[5])
-    if subfoldername not in os.listdir(foldername):
-        os.mkdir(foldername + subfoldername)
-    
-    goodnessWeights = np.array(weights)
-    
-    for startingpoint in range(numstates):
+for startingpoint in range(numstates):
+    for weights in [paramList[i] for i in distinctParam]:
+        subfoldername = "grid%04d.%04d.%04d/"%(weights[1],weights[3],weights[5])
+        if subfoldername not in os.listdir(foldername):
+            os.mkdir(foldername + subfoldername)
+        
+        goodnessWeights = np.array(weights)
+        
         
         starting_state = contiguousStart()
         runningState = (starting_state.copy(), 1)
@@ -340,7 +341,7 @@ plt.clf()
 #Make maps of states
 #####
 
-samplerate = numsaves/250
+samplerate = numsaves/50
 """
 for i in range(numstates):
     if "maps_state%04d"%i not in os.listdir(foldername):

@@ -2,9 +2,9 @@ stateSHORT = 'NC'
 ndistricts = 13
 
 blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str}).rename(columns={"ALAND10":"ALAND", "AWATER10":"AWATER"})
-blockstats = blockstats.set_index(blockstats.ID)n Libs", "VR: Mult Race Ls", \
-                   "VR:All Unaf.", "VR: White Unafil.", "VR: Black Unafil.", "VR: Asian Unafil.", "VR: Other Unafil."
-                  ]]
+blockstats = blockstats.set_index(blockstats.ID)#n Libs", "VR: Mult Race Ls", \
+                   #"VR:All Unaf.", "VR: White Unafil.", "VR: Black Unafil.", "VR: Asian Unafil.", "VR: Other Unafil."
+                  #]]
 #GEE = pd.read_csv("RegGenderAgeEthnicity.csv")
 PRE = pd.read_csv("TotalPopRaceAndEthnicity.csv")
 #VAP = pd.read_csv("VotingAgePopulation.csv")
@@ -60,6 +60,11 @@ adjacencyFrame["aframdiff"] = conhigh - conlow
 conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'low', right_on = 'ID').hispcon
 conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'high', right_on = 'ID').hispcon
 adjacencyFrame["hispdiff"] = conhigh - conlow
+
+blockstats["repPop"  ] = blockstats.percentRep*blockstats.population
+blockstats["demPop"  ] = blockstats.percentDem*blockstats.population
+blockstats["hispPop" ] = blockstats.hispcon*blockstats.population
+blockstats["aframPop"] = blockstats.aframcon*blockstats.population
 
 g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv", ['GEOID10'])
 
