@@ -2,9 +2,7 @@ stateSHORT = 'NC'
 ndistricts = 13
 
 blockstats = pd.read_csv('./vtdstats.csv', dtype={"VTD":str}).rename(columns={"ALAND10":"ALAND", "AWATER10":"AWATER"})
-blockstats = blockstats.set_index(blockstats.ID)#n Libs", "VR: Mult Race Ls", \
-                   #"VR:All Unaf.", "VR: White Unafil.", "VR: Black Unafil.", "VR: Asian Unafil.", "VR: Other Unafil."
-                  #]]
+blockstats = blockstats.set_index(blockstats.ID)
 #GEE = pd.read_csv("RegGenderAgeEthnicity.csv")
 PRE = pd.read_csv("TotalPopRaceAndEthnicity.csv")
 #VAP = pd.read_csv("VotingAgePopulation.csv")
@@ -48,7 +46,7 @@ stateconcentration = np.nansum(blockstats.mincon * blockstats.population) * 1.0 
 numMajMinDists = int(ndistricts*stateconcentration)
 
 
-lookup = dict(zip(blockstats.GEOID10.values, blockstats.index))
+lookup = dict(zip(blockstats.GEOID10, blockstats.ID))
 adjacencyFrame = pd.read_csv("PRECINCTconnections.csv")
 adjacencyFrame.low = [lookup.get(x) for x in adjacencyFrame.low]
 adjacencyFrame.high = [lookup.get(x) for x in adjacencyFrame.high]
@@ -67,10 +65,6 @@ blockstats["hispPop" ] = blockstats.hispcon*blockstats.population
 blockstats["aframPop"] = blockstats.aframcon*blockstats.population
 
 g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv", ['GEOID10'])
-
-
-
-
 
 
 

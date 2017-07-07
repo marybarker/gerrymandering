@@ -480,7 +480,7 @@ def distArea(state, district):
            sum(blockstats.AWATER[blockstats.ID.isin(regionlist)])
 
 def population(state, district):
-    return sum(blockstats.population[blockstats.ID.isin(list(state.key[state.value == district]))])
+    return sum(blockstats.population[blockstats.index.isin(list(state.key[state.value == district]))])
 
 def minorityConc(state, district, conccolumn):
     regionlist = list(state.key[state.value == district])
@@ -605,8 +605,8 @@ def contScore(metrics):
     return 1
 
 def popDiffScore(metrics):
-    return 1 - float(max(0, (np.max(metrics['population']) - np.min(metrics['population'])) - 25000 ))/ \
-               ((totalpopulation - 25000))
+    return 1 - float(max(0, (np.max(metrics['population']) - np.min(metrics['population'])) - _popTolerance ))/ \
+               ((totalpopulation - _popTolerance))
 
 def popVarScore(metrics):
     return 1 - sum([abs(float(x)/totalpopulation - float(1)/ndistricts) for x in metrics['population']])/(2*(1-float(1)/ndistricts))
@@ -679,7 +679,8 @@ def contiguousStart(stats = "DEFAULT"):
             pops[targdistr] += sum(stats.population[changes])
             subAdj.ix[subAdj.low.isin(changes),  'lowdist' ] = targdistr
             subAdj.ix[subAdj.high.isin(changes), 'highdist'] = targdistr
-        print("%d districts left to assign."%(sum(state.value==ndistricts)))
+        print("Creating contiguous state.  Districts left to assign: %d"%(sum(state.value==ndistricts)))
+    print("\n")
     return state.set_index(state.key)
 
 def dfEquiv(f1, f2):
@@ -742,3 +743,4 @@ def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
 goodnessParams  = [contScore, popVarScore, bizMeanScore, bizMaxScore, aframEdgeScore, hispEdgeScore]
 goodnessWeights = np.array([1, 500, 100, 100, 10, 10])
 _exploration = 1.0
+_popTolerance = 25000
