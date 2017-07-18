@@ -19,7 +19,6 @@ execfile('setup.py') #Stack overflow doesn't like this, for the record.
 #execfile('../tempjoseph.py')
 #%run -i simulator #Supposedly Stack overflow is okay with this, maybe?
 
-metrics = pd.DataFrame()
 
 foldername = "fffffff2/"
 foldername = "slambp3ALLOFTHESTATES/"
@@ -341,7 +340,7 @@ plt.clf()
 #Make maps of states
 #####
 
-samplerate = numsaves/50
+samplerate = numsaves/20
 """
 for i in range(numstates):
     if "maps_state%04d"%i not in os.listdir(foldername):

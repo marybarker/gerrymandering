@@ -39,6 +39,8 @@ PRE.mincon[PRE.mincon > 1.0] = 1.0
 
 votingResultsData = pd.read_csv("NC_2012_with_GEOID.csv").loc[:, ['GEOID10', 'g2012_USH_dv', 'g2012_USH_rv', 'g2012_USH_tv']]
 blockstats = pd.merge(votingResultsData, pd.merge(blockstats, pd.merge(PRE, RPR, on='GEOID10'), on='GEOID10'), on='GEOID10')
+blockstats = blockstats.set_index(blockstats.ID).sort_index()
+
 totalpopulation = sum(blockstats.population)
 nvtd = len(blockstats.VTD)
 
@@ -64,8 +66,14 @@ blockstats["demPop"  ] = blockstats.percentDem*blockstats.population
 blockstats["hispPop" ] = blockstats.hispcon*blockstats.population
 blockstats["aframPop"] = blockstats.aframcon*blockstats.population
 
+blockstats["numAdjacent"] = [len(adjacencyFrame.index[ (adjacencyFrame.low == i) | (adjacencyFrame.high == i)]) for i in blockstats.index]
+blockstats["totalBorder"] = [sum(adjacencyFrame.length[(adjacencyFrame.low == i) | (adjacencyFrame.high == i)]) for i in blockstats.index]
+
+mutableBlockStats = {}
+
 g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv", ['GEOID10'])
 
+metrics = pd.DataFrame()
 
 
 

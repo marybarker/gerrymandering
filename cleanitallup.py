@@ -537,7 +537,7 @@ def conDiffSum(state, district, column):
     return sum(subframe[column].abs())
 
 def updateGlobals(state):
-    global metrics, adjacencyFrame
+    global metrics, adjacencyFrame, mutableBlockStats
     
     #lowdists  = pd.merge(adjacencyFrame, state, left_on = 'low' , right_on = 'key').value
     #highdists = pd.merge(adjacencyFrame, state, left_on = 'high' , right_on = 'key').value
@@ -576,6 +576,8 @@ def updateGlobals(state):
                              'sumHispDiff'   : stdHisp,
                              'numedges'      : stNumEdges
                              })
+    
+    mutableBlockStats = pd.DataFrame({"boundAdjacent": [len(adjacencyFrame.index[-adjacencyFrame.isSame & ((adjacencyFrame.low == i) | (adjacencyFrame.high == i))]) for i in blockstats.index]})
 
 def goodnessNoVeto(metrics):
     #stConts = [contiguousness(runningState[0], i) for i in range(ndistricts)]
