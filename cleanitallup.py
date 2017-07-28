@@ -502,21 +502,30 @@ def efficiency(state, district):
     
     return wastedR-wastedD 
 
-def demoEfficiency(state, district, demo1, demo2):
-    #returns difference in percentage of ineffective and superfluous votes by demographic.
-    subframe = blockstats.loc[blockstats.ID.isin(list(state.key[state.value == district]))]
-    demo1Vote = sum(subframe[demo1])
-    demo2Vote = sum(subframe[demo2])
-    allvotes = demo1Vote + demo2Vote
-    
-    if demo1Vote > demo2Vote:
-        wasted1 = max(demo1Vote, demo2Vote) - 0.5*allvotes
-        wasted2 = min(demo1Vote, demo2Vote)
-    else:
-        wasted2 = max(demo1Vote, demo2Vote) - 0.5*allvotes
-        wasted1 = min(demo1Vote, demo2Vote)
-    
-    return (wasted1, wasted2)
+def demoEfficiency(state, demo, popcol, party1, party2):
+    wasted = [0,0]
+    for district in range(ndistricts):
+        
+        subframe = blockstats.ix[blockstats.ID.isin(list(state.key[state.value == district])), [demo, party1, party2]]
+        
+        p1Votes  = sum(subframe[party1])
+        p2Votes  = sum(subframe[party2])
+        numVotes = p1Votes + p2Votes
+        
+        if p1Votes > p2Votes:
+            #p1 wins, waste sum(min/pop*p2)
+            #         waste (p1Votes - 0.5*numVotes)*sum(min)/sum(pop)
+            wasted[0] = wasted[0] + float(sum(blockstats[demo]*blockstats[party2]))/numVotes + \
+                                    (p1Votes - 0.5*numVotes)*sum(blockstats[demo])/numVotes
+            wasted[1] = wasted[1] + float(sum((blockstats[popcol] - blockstats[demo])*blockstats[party2]))/numVotes + \
+                                    (p1Votes - 0.5*numVotes)*sum((blockstats[popcol] - blockstats[demo]))/numVotes
+        else:
+            #then p2 wins, do the opposite
+            wasted[0] = wasted[0] + float(sum(blockstats[demo]*blockstats[party1]))/numVotes + \
+                                    (p2Votes - 0.5*numVotes)*sum(blockstats[demo])/numVotes
+            wasted[1] = wasted[1] + float(sum((blockstats[popcol] - blockstats[demo])*blockstats[party1]))/numVotes + \
+                                    (p2Votes - 0.5*numVotes)*sum((blockstats[popcol] - blockstats[demo]))/numVotes
+    return [float(wasted[0])/sum(blockstats[demo]), float(wasted[1])/sum(blockstats[popcol] - blockstats[demo])]
 
 def bizarreness(A, p):
     return p/(2*np.sqrt(np.pi*A))   #Ratio of perimeter to circumference of circle with same area       
@@ -740,6 +749,145 @@ def plotMetricsByState(arrayList, states = 'all', save = False, show = True):
             plt.clf()
         if show:
             plt.show()
+
+def flatPopulationRun(state, threshold = 25000, report = 10000):
+    
+    global adjacencyFrame, metrics, mutableBlockStats
+    #Prepare new state to change, and update globals
+    idealpop = float(sum(blockstats.population))/ndistricts
+    newstate = state.copy()
+    updateGlobals(newstate)
+    
+    currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
+    freshreport = currentdiff + report
+    
+    while currentdiff > threshold:
+        
+        if currentdiff <= freshreport - report:
+            print("Even-ing population.  Current range: %d"%currentdiff)
+            freshreport = currentdiff
+        
+        #Make changes to newstate based on randomly selected district.  Extremes are more likely to be chosen.
+        diffs = (metrics.population - idealpop).abs()
+        weight = diffs/sum(diffs)
+        choicedist = np.random.choice(range(ndistricts), p = weight)
+        
+        """
+        SELECTION OF SMOLDIST AND BIGGNODE
+        """
+        
+        #Look at district boundaries
+        bounds = adjacencyFrame.index[-adjacencyFrame.isSame & (adjacencyFrame.length != 0) & \
+                                      ((adjacencyFrame.lowdist == choicedist ) | (adjacencyFrame.highdist == choicedist))]
+        #select other district based on population difference from choicedist
+        choicediff = (metrics.population[set(adjacencyFrame.lowdist[bounds]).union(set(adjacencyFrame.highdist[bounds]))] - metrics.population[choicedist]).abs()
+        choiceweight = choicediff/sum(choicediff)
+        otherdist = np.random.choice(choiceweight.index, p = choiceweight)
+        
+        #Compare sizes:
+        #    Set biggdist and smoldist
+        if metrics.population[choicedist] < metrics.population[otherdist]:
+            tempsmoldist = choicedist
+            tempbiggdist = otherdist
+        else:
+            tempbiggdist = choicedist
+            tempsmoldist = otherdist
+        
+        #Nodes in biggdist where the other node is in smoldist.
+        templow  = adjacencyFrame.ix[((adjacencyFrame.lowdist == tempbiggdist) & (adjacencyFrame.highdist == tempsmoldist)), "low"]
+        temphigh = adjacencyFrame.ix[((adjacencyFrame.lowdist == tempsmoldist) & (adjacencyFrame.highdist == tempbiggdist)), "high"]
+        
+        #For each of these, find the length of the internal boundary and the length of the boundary with smoldist
+        borderLands   = set(templow).union(set(temphigh))
+        borderLengths = pd.DataFrame({"inner": [sum(adjacencyFrame.length[adjacencyFrame.isSame & ((adjacencyFrame.low == i) | (adjacencyFrame.high == i))]) for i in borderLands], 
+                                      "outer": [sum(adjacencyFrame.length[((adjacencyFrame.low == i) | (adjacencyFrame.high    == i)) &\
+                                                                          ((adjacencyFrame.lowdist == tempsmoldist) | (adjacencyFrame.highdist == tempsmoldist))]) for i in borderLands]}, 
+                                     index = borderLands)
+        borderLengths["proportionDiff"] = borderLengths.outer/borderLengths.inner
+        #Choose randomly from the ones with the smallest number of neighbors within.
+        lengthWeight = borderLengths.proportionDiff/sum(borderLengths.proportionDiff)
+        
+        biggnode = np.random.choice(borderLengths.index, p = lengthWeight)
+        
+        """
+        END SELECTION OF SMOLDIST AND BIGGNODE
+        """
+        
+        #Check if this change would violate contiguousness
+        biggadjacent = adjacencyFrame.ix[((adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode)) & (adjacencyFrame.length != 0),["low","high", "lowdist", "highdist","isSame"]]
+        proposedChanges = biggadjacent.copy()
+        proposedChanges.ix[proposedChanges.low  == biggnode,  "lowdist"] = tempsmoldist
+        proposedChanges.ix[proposedChanges.high == biggnode, "highdist"] = tempsmoldist
+        proposedChanges.ix[:, "isSame"] = proposedChanges.lowdist == proposedChanges.highdist
+        neighborhood = set(biggadjacent.low).union(set(biggadjacent.high))
+        proposedState = newstate.ix[neighborhood, :].copy()
+        proposedState.ix[biggnode, "value"] = tempsmoldist
+        
+        nhadj = adjacencyFrame.ix[(adjacencyFrame.length != 0) & (adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood)), ['low','high','length', 'lowdist', 'highdist']]
+        oldContNeighborhood = contiguousness(newstate.loc[neighborhood], tempbiggdist, nhadj)
+        
+        nhadj.ix[nhadj.low  == biggnode,  "lowdist"] = tempsmoldist
+        nhadj.ix[nhadj.high == biggnode, "highdist"] = tempsmoldist
+        newContNeighborhood = contiguousness(proposedState, tempbiggdist, nhadj)
+        
+        #If local contiguousness changes, check the whole loserDist, since it could be an annulus.
+        if (oldContNeighborhood != newContNeighborhood):
+            tempframe = adjacencyFrame.copy()
+            tempframe.update(proposedChanges)
+            tempframe.lowdist  = tempframe.lowdist.astype(int)
+            tempframe.highdist = tempframe.highdist.astype(int)
+            tempframe.low      = tempframe.low.astype(int)
+            tempframe.high     = tempframe.high.astype(int)
+            tempstate = newstate.copy()
+            tempstate.value[biggnode] = tempsmoldist
+            newCont = contiguousness(tempstate, tempbiggdist, tempframe)
+        else:
+            newCont = newContNeighborhood
+        
+        if newCont == 1:
+            #Change everything for realz
+            popchange = blockstats.population[biggnode]
+            newstate.ix[biggnode, "value"] = tempsmoldist
+            adjacencyFrame.ix[(adjacencyFrame.low  == biggnode), "lowdist"]  = tempsmoldist
+            adjacencyFrame.ix[(adjacencyFrame.high == biggnode), "highdist"] = tempsmoldist
+            adjacencyFrame.ix[:, "isSame"] = (adjacencyFrame.ix[:, "lowdist"] == adjacencyFrame.ix[:, "highdist"])
+            metrics.ix[tempbiggdist, "population"] -= popchange
+            metrics.ix[tempsmoldist, "population"] += popchange
+            
+            #Change numedge information
+            biggNewEdges   = biggadjacent.index[  biggadjacent.isSame ] #Were the same
+            biggLostEdges  = biggadjacent.index[-(biggadjacent.isSame)] #Were different
+            biggadjacent = adjacencyFrame.ix[(adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode),["low","high", "isSame"]]
+            smolNewEdges  = biggadjacent.index[-(biggadjacent.isSame)] #Are no longer the same
+            smolLostEdges = biggadjacent.index[  biggadjacent.isSame ] #Are now the same
+
+            metrics.ix[tempbiggdist,'numedges'] +=\
+                len(biggNewEdges) - len(biggLostEdges)
+            metrics.ix[tempsmoldist,'numedges'] +=\
+                len(smolNewEdges) - len(smolLostEdges)
+            
+            """
+            #For i in neighborhood, update mutableBlockStats to the correct value.
+            subMute = pd.DataFrame({"boundAdjacent": \
+                      [len(adjacencyFrame.index[-adjacencyFrame.isSame & ((adjacencyFrame.low == i) | \
+                                                (adjacencyFrame.high == i))])\
+                       for i in neighborhood]}, index = neighborhood)
+            
+            # NOTE FROM MARY: SHOULD THIS BE: 
+            # subMute.index = [i for i in neighborhood]
+            mutableBlockStats.ix[subMute.index, "boundAdjacent"] = subMute.boundAdjacent
+            """
+        else:
+            pass
+            #Reject these changes, and hope for a better one on the next pass.
+        
+        currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
+    print("\n")
+    #return once currentdiff is less than threshold
+    
+    updateGlobals(newstate)
+    return newstate
+
 
 
 goodnessParams  = [contScore, popVarScore, bizMeanScore, bizMaxScore, aframEdgeScore, hispEdgeScore]

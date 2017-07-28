@@ -17,31 +17,6 @@ def demoWastedVotes(state, district, demo, party1, party2):
         return float(sum(blockstats[demo]*blockstats[party1]))/numVotes + \
                (p2Votes - 0.5*numVotes)*sum(blockstats[demo])/numVotes
 
-def demoEfficiency(state, demo, popcol, party1, party2):
-    wasted = [0,0]
-    for district in range(ndistricts):
-        
-        subframe = blockstats.ix[blockstats.ID.isin(list(state.key[state.value == district])), [demo, party1, party2]]
-        
-        p1Votes  = sum(subframe[party1])
-        p2Votes  = sum(subframe[party2])
-        numVotes = p1Votes + p2Votes
-        
-        if p1Votes > p2Votes:
-            #p1 wins, waste sum(min/pop*p2)
-            #         waste (p1Votes - 0.5*numVotes)*sum(min)/sum(pop)
-            wasted[0] = wasted[0] + float(sum(blockstats[demo]*blockstats[party2]))/numVotes + \
-                                    (p1Votes - 0.5*numVotes)*sum(blockstats[demo])/numVotes
-            wasted[1] = wasted[1] + float(sum((blockstats[popcol] - blockstats[demo])*blockstats[party2]))/numVotes + \
-                                    (p1Votes - 0.5*numVotes)*sum((blockstats[popcol] - blockstats[demo]))/numVotes
-        else:
-            #then p2 wins, do the opposite
-            wasted[0] = wasted[0] + float(sum(blockstats[demo]*blockstats[party1]))/numVotes + \
-                                    (p2Votes - 0.5*numVotes)*sum(blockstats[demo])/numVotes
-            wasted[1] = wasted[1] + float(sum((blockstats[popcol] - blockstats[demo])*blockstats[party1]))/numVotes + \
-                                    (p2Votes - 0.5*numVotes)*sum((blockstats[popcol] - blockstats[demo]))/numVotes
-    return [float(wasted[0])/sum(blockstats[demo]), float(wasted[1])/sum(blockstats[popcol] - blockstats[demo])]
-
 def singleDemoEfficiency(state, demo, popcol = "population"):
     wasted = [0,0]
     for district in range(ndistricts):
@@ -72,22 +47,27 @@ savereads  = numsaves
 
 gridrange = [paramList[x] for x in distinctParam]
 
-arrayDict = {"maxBiz"    : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Bizarreness"                          ),
-             "meanBiz"   : (np.zeros((len(gridrange)*statereads,numsaves)), "Mean Bizarreness"                             ),
-             "totalVar"  : (np.zeros((len(gridrange)*statereads,numsaves)), "Total Population Variation"                   ),
-             "maxCont"   : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Contiguousness"                       ),
-             "maxPop"    : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Population"                           ),
-             "popDiff"   : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Population Difference"                ),
-             "hispDiff"  : (np.zeros((len(gridrange)*statereads,numsaves)), "Hispanic Boundary Difference Measure"         ),
-             "aframDiff" : (np.zeros((len(gridrange)*statereads,numsaves)), "African American Boundary Difference Measure" ),
-             "baseEff"   : (np.zeros((len(gridrange)*statereads,numsaves)), "Baseline Vote Efficiency"                     ),
-             "aframEff"  : (np.zeros((len(gridrange)*statereads,numsaves)), "African American Vote Efficiency"             ),
-             "hispEff"   : (np.zeros((len(gridrange)*statereads,numsaves)), "Hispanic Vote Efficiency"                     ),
-             "goodness"  : (np.zeros((len(gridrange)*statereads,numsaves)), "Goodness"                                     )}
+foldername = "gridyesflat/"
+
+arrayDict = {"maxBiz"        : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Bizarreness"                          ),
+             "meanBiz"       : (np.zeros((len(gridrange)*statereads,numsaves)), "Mean Bizarreness"                             ),
+             "totalVar"      : (np.zeros((len(gridrange)*statereads,numsaves)), "Total Population Variation"                   ),
+             "maxCont"       : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Contiguousness"                       ),
+             "maxPop"        : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Population"                           ),
+             "popDiff"       : (np.zeros((len(gridrange)*statereads,numsaves)), "Maximum Population Difference"                ),
+             "hispDiff"      : (np.zeros((len(gridrange)*statereads,numsaves)), "Hispanic Boundary Difference Measure"         ),
+             "aframDiff"     : (np.zeros((len(gridrange)*statereads,numsaves)), "African American Boundary Difference Measure" ),
+             "baseEff"       : (np.zeros((len(gridrange)*statereads,numsaves)), "Baseline Vote Efficiency"                     ),
+             "aframEff"      : (np.zeros((len(gridrange)*statereads,numsaves)), "African American Vote Efficiency"             ),
+             "hispEff"       : (np.zeros((len(gridrange)*statereads,numsaves)), "Hispanic Vote Efficiency"                     ),
+             "aframEffRatio" : (np.zeros((len(gridrange)*statereads,numsaves)), "African American VE/Baseline"             ),
+             "hispEffRatio"  : (np.zeros((len(gridrange)*statereads,numsaves)), "Hispanic VE/Baseline"                     ),
+             "goodness"      : (np.zeros((len(gridrange)*statereads,numsaves)), "Goodness"                                     )}
 
 for startingpoint in range(statereads):
     for point in range(len(gridrange)):
         weights = gridrange[point]
+        goodnessWeights = np.array(weights)
         subfoldername = "grid%04d.%04d.%04d/"%(weights[1],weights[3],weights[5])
         position = startingpoint * len(gridrange) + point
         
@@ -120,9 +100,11 @@ for startingpoint in range(statereads):
             thisstate = pd.read_csv(foldername+subfoldername + 'state%04d_save%04d.csv'%(startingpoint, j+1))
             temphisp  = demoEfficiency(thisstate, hispcol,  "population", democrat, republican)
             tempafram = demoEfficiency(thisstate, aframcol, "population", democrat, republican)
-            arrayDict["hispEff" ][0][position, j] = temphisp[0]*100
-            arrayDict["aframEff"][0][position, j] = tempafram[0]*100
-            arrayDict["baseEff" ][0][position, j] = temphisp[1]*50 + tempafram[1]*50
+            arrayDict["hispEff"      ][0][position, j] = temphisp[0]*100
+            arrayDict["aframEff"     ][0][position, j] = tempafram[0]*100
+            arrayDict["hispEffRatio" ][0][position, j] = temphisp[0]/temphisp[1]
+            arrayDict["aframEffRatio"][0][position, j] = tempafram[0]/tempafram[1]
+            arrayDict["baseEff"      ][0][position, j] = temphisp[1]*50 + tempafram[1]*50
         print("Loaded grid%04d.%04d.%04d state %04d"%(weights[1],weights[3],weights[5], startingpoint))
 
 #os.mkdir(foldername + "summaryFigures")
@@ -140,342 +122,13 @@ for arr in arrayDict.keys():
     plt.clf()
 
 
-#I want to view all of the trandlines on one chart.
-for weights in paramList:
-    #Assign a color based on these weights
-    colorWeight = (0.8*np.log10(weights[1]/10)/2, 0.8*np.log10(weights[3])/2, 0.8*np.log10(weights[5])/2)
-    #Load state zero for these weights
-    subfoldername = "grid%04d.%04d.%04d/"%(weights[1],weights[3],weights[5])
-    for i in range(numstates):
-        if "maps_state%04d"%i not in os.listdir(foldername + subfoldername):
-            os.mkdir(foldername + subfoldername+ "maps_state%04d"%i)
-        for j in samplerate*np.arange(numreads/samplerate):
-            thisstate = pd.read_csv(foldername + subfoldername + "state%04d_save%04d.csv"%(i, j+1))
-            color_this_state(g, thisstate, foldername + subfoldername+ "maps_state%04d/save%04dmap.png"%(i, j), linewidth=0.3)
-            print("Made map of state %d, save %d"%(i,j))
-
-
 
 
 #####
 #Population Evenness attempts
 #####
 
-def flatPopulationRun_Better(state, threshold = 25000, report = 10000):
-    
-    global adjacencyFrame, metrics
-    #Prepare new state to change, and update globals
-    idealpop = float(sum(blockstats.population))/ndistricts
-    newstate = state.copy()
-    updateGlobals(newstate)
-    
-    currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    freshreport = currentdiff + report
-    
-    while currentdiff > threshold:
-        
-        if currentdiff <= freshreport - report:
-            print("Even-ing population.  Current range: %d"%currentdiff)
-            freshreport = currentdiff
-        
-        #Make changes to newstate based on randomly selected district.  Extremes are more likely to be chosen.
-        diffs = ((metrics.population - idealpop).abs() - float(threshold)/2).clip(0, np.inf)
-        weight = diffs/sum(diffs)
-        choicedist = np.random.choice(range(ndistricts), p = weight)
-        #Randomly select edge on the border of maxDist
-        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1) & (adjacencyFrame.length > 0) & ((adjacencyFrame.lowdist == choicedist) | (adjacencyFrame.highdist == choicedist))])
-        if metrics.population[adjacencyFrame.lowdist[switchedge]] < metrics.population[adjacencyFrame.highdist[switchedge]]:
-            smolnode     = adjacencyFrame.low[switchedge]
-            biggnode     = adjacencyFrame.high[switchedge]
-            tempsmoldist = adjacencyFrame.lowdist[switchedge]
-            tempbiggdist = adjacencyFrame.highdist[switchedge]
-        else:
-            biggnode     = adjacencyFrame.low[switchedge]
-            smolnode     = adjacencyFrame.high[switchedge]
-            tempbiggdist = adjacencyFrame.lowdist[switchedge]
-            tempsmoldist = adjacencyFrame.highdist[switchedge]
-        
-        biggadjacent = adjacencyFrame.ix[(adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode), ["high", "low", "highdist", "lowdist"]]
-        proposedChanges = biggadjacent.copy()
-        proposedChanges.ix[proposedChanges.low  == biggnode, "lowdist" ] = tempsmoldist
-        proposedChanges.ix[proposedChanges.high == biggnode, "highdist"] = tempsmoldist
-        proposedChanges.ix[:, "isSame"] = (proposedChanges.ix[:, "lowdist"] == proposedChanges.ix[:, "highdist"])
-        
-        #Check if this change would violate contiguousness
-        neighborhood = set(biggadjacent.low).union(set(biggadjacent.high))
-        proposedState = newstate.ix[neighborhood, :].copy()
-        proposedState.ix[biggnode, "value"] = tempsmoldist
-        
-        nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
-        oldContNeighborhood = contiguousness(newstate.loc[neighborhood], tempbiggdist, nhadj)
-        
-        nhadj.update(proposedChanges)
-        newContNeighborhood = contiguousness(proposedState, tempbiggdist, nhadj)
-        
-        #If local contiguousness changes, check the whole loserDist, since it could be an annulus.
-        if (oldContNeighborhood != newContNeighborhood):
-            tempframe = adjacencyFrame.copy()
-            tempframe.update(proposedChanges)
-            tempframe.lowdist  = tempframe.lowdist.astype(int)
-            tempframe.highdist = tempframe.highdist.astype(int)
-            tempframe.low      = tempframe.low.astype(int)
-            tempframe.high     = tempframe.high.astype(int)
-            tempstate = newstate.copy()
-            tempstate.value[biggnode] = tempsmoldist
-            newCont = contiguousness(tempstate, tempbiggdist, tempframe)
-        else:
-            newCont = newContNeighborhood
-        
-        if newCont == 1:
-            #Change everything for realz
-            popchange = blockstats.population[biggnode]
-            newstate.ix[biggnode, "value"] = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.low  == biggnode), "lowdist"]  = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.high == biggnode), "highdist"] = tempsmoldist
-            adjacencyFrame.ix[:, "isSame"] = (adjacencyFrame.ix[:, "lowdist"] == adjacencyFrame.ix[:, "highdist"])
-            metrics.ix[tempbiggdist, "population"] -= popchange
-            metrics.ix[tempsmoldist, "population"] += popchange
-        else:
-            pass
-            #Reject these changes, and hope for a better one on the next pass.
-        
-        currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    print("\n")
-    #return once currentdiff is less than threshold
-    
-    updateGlobals(newstate)
-    return newstate
-
-
-def flatPopulationRun_Betterer(state, threshold = 25000, report = 10000):
-    
-    global adjacencyFrame, metrics
-    #Prepare new state to change, and update globals
-    idealpop = float(sum(blockstats.population))/ndistricts
-    newstate = state.copy()
-    updateGlobals(newstate)
-    
-    currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    freshreport = currentdiff + report
-    
-    while currentdiff > threshold:
-        
-        if currentdiff <= freshreport - report:
-            print("Even-ing population.  Current range: %d"%currentdiff)
-            freshreport = currentdiff
-        
-        #Make changes to newstate based on randomly selected district.  Extremes are more likely to be chosen.
-        diffs = ((metrics.population - idealpop).abs() - float(threshold)/2).clip(0, np.inf)
-        weight = diffs/sum(diffs)
-        choicedist = np.random.choice(range(ndistricts), p = weight)
-        #Randomly select edge on the border of maxDist
-        switchedge = np.random.choice(adjacencyFrame.index[-(adjacencyFrame.isSame == 1) & (adjacencyFrame.length > 0) & ((adjacencyFrame.lowdist == choicedist) | (adjacencyFrame.highdist == choicedist))])
-        if metrics.population[adjacencyFrame.lowdist[switchedge]] < metrics.population[adjacencyFrame.highdist[switchedge]]:
-            smolnode     = adjacencyFrame.low[switchedge]
-            biggnode     = adjacencyFrame.high[switchedge]
-            tempsmoldist = adjacencyFrame.lowdist[switchedge]
-            tempbiggdist = adjacencyFrame.highdist[switchedge]
-        else:
-            biggnode     = adjacencyFrame.low[switchedge]
-            smolnode     = adjacencyFrame.high[switchedge]
-            tempbiggdist = adjacencyFrame.lowdist[switchedge]
-            tempsmoldist = adjacencyFrame.highdist[switchedge]
-        
-        biggadjacent = adjacencyFrame.ix[(adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode), ["high", "low", "highdist", "lowdist"]]
-        proposedChanges = biggadjacent.copy()
-        proposedChanges.ix[proposedChanges.low  == biggnode, "lowdist" ] = tempsmoldist
-        proposedChanges.ix[proposedChanges.high == biggnode, "highdist"] = tempsmoldist
-        proposedChanges.ix[:, "isSame"] = (proposedChanges.ix[:, "lowdist"] == proposedChanges.ix[:, "highdist"])
-        
-        #Check if this change would violate contiguousness
-        neighborhood = set(biggadjacent.low).union(set(biggadjacent.high))
-        proposedState = newstate.ix[neighborhood, :].copy()
-        proposedState.ix[biggnode, "value"] = tempsmoldist
-        
-        nhadj = adjacencyFrame.ix[adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood), ['low','high','length', 'lowdist', 'highdist']]
-        oldContNeighborhood = contiguousness(newstate.loc[neighborhood], tempbiggdist, nhadj)
-        
-        nhadj.update(proposedChanges)
-        newContNeighborhood = contiguousness(proposedState, tempbiggdist, nhadj)
-        
-        #If local contiguousness changes, check the whole loserDist, since it could be an annulus.
-        if (oldContNeighborhood != newContNeighborhood):
-            tempframe = adjacencyFrame.copy()
-            tempframe.update(proposedChanges)
-            tempframe.lowdist  = tempframe.lowdist.astype(int)
-            tempframe.highdist = tempframe.highdist.astype(int)
-            tempframe.low      = tempframe.low.astype(int)
-            tempframe.high     = tempframe.high.astype(int)
-            tempstate = newstate.copy()
-            tempstate.value[biggnode] = tempsmoldist
-            newCont = contiguousness(tempstate, tempbiggdist, tempframe)
-        else:
-            newCont = newContNeighborhood
-        
-        if newCont == 1:
-            #Change everything for realz
-            popchange = blockstats.population[biggnode]
-            newstate.ix[biggnode, "value"] = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.low  == biggnode), "lowdist"]  = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.high == biggnode), "highdist"] = tempsmoldist
-            adjacencyFrame.ix[:, "isSame"] = (adjacencyFrame.ix[:, "lowdist"] == adjacencyFrame.ix[:, "highdist"])
-            metrics.ix[tempbiggdist, "population"] -= popchange
-            metrics.ix[tempsmoldist, "population"] += popchange
-            
-            winnerNewEdges  = proposedChanges.index[-(proposedChanges.isSame)             ] #Are no longer the same
-            winnerLostEdges = proposedChanges.index[  proposedChanges.isSame              ] #Are now the same
-            loserNewEdges   = previousVersion.index[  previousVersion.isSame.astype(bool) ] #Were the same
-            loserLostEdges  = proposedChanges.index[-(previousVersion.isSame.astype(bool))] #Were different
-
-            newmetrics.ix[ loserDist,'numedges'] +=\
-                len( loserNewEdges) - len( loserLostEdges)
-            newmetrics.ix[winnerDist,'numedges'] +=\
-                len(winnerNewEdges) - len(winnerLostEdges)
-            
-            
-        else:
-            pass
-            #Reject these changes, and hope for a better one on the next pass.
-        
-        currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    print("\n")
-    #return once currentdiff is less than threshold
-    
-    updateGlobals(newstate)
-    return newstate
-
-def flatPopulationRun_Goodish(state, threshold = 25000, report = 10000):
-    
-    global adjacencyFrame, metrics, mutableBlockStats
-    #Prepare new state to change, and update globals
-    idealpop = float(sum(blockstats.population))/ndistricts
-    newstate = state.copy()
-    updateGlobals(newstate)
-    
-    currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    freshreport = currentdiff + report
-    
-    while currentdiff > threshold:
-        
-        if currentdiff <= freshreport - report:
-            print("Even-ing population.  Current range: %d"%currentdiff)
-            freshreport = currentdiff
-        
-        #Make changes to newstate based on randomly selected district.  Extremes are more likely to be chosen.
-        diffs = ((metrics.population - idealpop).abs() - float(threshold)/2).clip(0, np.inf)
-        weight = diffs/sum(diffs)
-        choicedist = np.random.choice(range(ndistricts), p = weight)
-        
-        """
-        SELECTION OF SMOLNODE AND BIGGNODE
-        """
-        
-        #Look at district boundaries
-        bounds = adjacencyFrame.index[-adjacencyFrame.isSame & (adjacencyFrame.length != 0) & \
-                                      ((adjacencyFrame.lowdist == choicedist ) | (adjacencyFrame.highdist == choicedist))]
-        #select other district based on population difference from choicedist
-        choicediff = (metrics.population[set(adjacencyFrame.lowdist[bounds]).union(set(adjacencyFrame.highdist[bounds]))] - metrics.population[choicedist]).abs()
-        choiceweight = choicediff/sum(choicediff)
-        otherdist = np.random.choice(choiceweight.index, p = choiceweight)
-        
-        #Compare sizes:
-        #    Set biggdist and smoldist
-        if metrics.population[choicedist] < metrics.population[otherdist]:
-            tempsmoldist = choicedist
-            tempbiggdist = otherdist
-        else:
-            tempbiggdist = choicedist
-            tempsmoldist = otherdist
-        
-        #Nodes in biggdist where the other node is in smoldist.
-        templow  = adjacencyFrame.ix[((adjacencyFrame.lowdist == tempbiggdist) & (adjacencyFrame.highdist == tempsmoldist)), "low"]
-        temphigh = adjacencyFrame.ix[((adjacencyFrame.lowdist == tempsmoldist) & (adjacencyFrame.highdist == tempbiggdist)), "high"]
-        
-        #For each of these, find number of edges shared by nodes in the same district.
-        shared = (blockstats.numAdjacent - mutableBlockStats.boundAdjacent)[set(templow).union(set(temphigh))]
-        
-        #Choose randomly from the ones with the smallest number of neighbors within.
-        lonelies = shared[shared == min(shared)]
-        biggnode = np.random.choice(lonelies.index)
-        """
-        END SELECTION OF SMOLNODE AND BIGGNODE
-        """
-        
-        #Check if this change would violate contiguousness
-        biggadjacent = adjacencyFrame.ix[((adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode)) & (adjacencyFrame.length != 0),["low","high", "lowdist", "highdist","isSame"]]
-        proposedChanges = biggadjacent.copy()
-        proposedChanges.ix[proposedChanges.low  == biggnode,  "lowdist"] = tempsmoldist
-        proposedChanges.ix[proposedChanges.high == biggnode, "highdist"] = tempsmoldist
-        proposedChanges.ix[:, "isSame"] = proposedChanges.lowdist == proposedChanges.highdist
-        neighborhood = set(biggadjacent.low).union(set(biggadjacent.high))
-        proposedState = newstate.ix[neighborhood, :].copy()
-        proposedState.ix[biggnode, "value"] = tempsmoldist
-        
-        nhadj = adjacencyFrame.ix[(adjacencyFrame.length != 0) & (adjacencyFrame.low.isin(neighborhood) & adjacencyFrame.high.isin(neighborhood)), ['low','high','length', 'lowdist', 'highdist']]
-        oldContNeighborhood = contiguousness(newstate.loc[neighborhood], tempbiggdist, nhadj)
-        
-        nhadj.ix[nhadj.low  == biggnode,  "lowdist"] = tempsmoldist
-        nhadj.ix[nhadj.high == biggnode, "highdist"] = tempsmoldist
-        newContNeighborhood = contiguousness(proposedState, tempbiggdist, nhadj)
-        
-        #If local contiguousness changes, check the whole loserDist, since it could be an annulus.
-        if (oldContNeighborhood != newContNeighborhood):
-            tempframe = adjacencyFrame.copy()
-            tempframe.update(proposedChanges)
-            tempframe.lowdist  = tempframe.lowdist.astype(int)
-            tempframe.highdist = tempframe.highdist.astype(int)
-            tempframe.low      = tempframe.low.astype(int)
-            tempframe.high     = tempframe.high.astype(int)
-            tempstate = newstate.copy()
-            tempstate.value[biggnode] = tempsmoldist
-            newCont = contiguousness(tempstate, tempbiggdist, tempframe)
-        else:
-            newCont = newContNeighborhood
-        
-        if newCont == 1:
-            #Change everything for realz
-            popchange = blockstats.population[biggnode]
-            newstate.ix[biggnode, "value"] = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.low  == biggnode), "lowdist"]  = tempsmoldist
-            adjacencyFrame.ix[(adjacencyFrame.high == biggnode), "highdist"] = tempsmoldist
-            adjacencyFrame.ix[:, "isSame"] = (adjacencyFrame.ix[:, "lowdist"] == adjacencyFrame.ix[:, "highdist"])
-            metrics.ix[tempbiggdist, "population"] -= popchange
-            metrics.ix[tempsmoldist, "population"] += popchange
-            
-            #Change numedge information
-            biggNewEdges   = biggadjacent.index[  biggadjacent.isSame ] #Were the same
-            biggLostEdges  = biggadjacent.index[-(biggadjacent.isSame)] #Were different
-            biggadjacent = adjacencyFrame.ix[(adjacencyFrame.low == biggnode) | (adjacencyFrame.high == biggnode),["low","high", "isSame"]]
-            smolNewEdges  = biggadjacent.index[-(biggadjacent.isSame)] #Are no longer the same
-            smolLostEdges = biggadjacent.index[  biggadjacent.isSame ] #Are now the same
-
-            metrics.ix[tempbiggdist,'numedges'] +=\
-                len(biggNewEdges) - len(biggLostEdges)
-            metrics.ix[tempsmoldist,'numedges'] +=\
-                len(smolNewEdges) - len(smolLostEdges)
-            
-            #For i in neighborhood, update mutableBlockStats to the correct value.
-            subMute = pd.DataFrame({"boundAdjacent": \
-                      [len(adjacencyFrame.index[-adjacencyFrame.isSame & ((adjacencyFrame.low == i) | \
-                                                (adjacencyFrame.high == i))])\
-                       for i in neighborhood]}, index = neighborhood)
-            
-            # NOTE FROM MARY: SHOULD THIS BE: 
-            # subMute.index = [i for i in neighborhood]
-            mutableBlockStats.ix[subMute.index, "boundAdjacent"] = subMute.boundAdjacent
-        else:
-            pass
-            #Reject these changes, and hope for a better one on the next pass.
-        
-        currentdiff = np.max(metrics['population']) - np.min(metrics['population'])
-    print("\n")
-    #return once currentdiff is less than threshold
-    
-    updateGlobals(newstate)
-    return newstate
-
-
-def flatPopulationRun_Gooder(state, threshold = 25000, report = 10000):
+def flatPopulationRun(state, threshold = 25000, report = 10000):
     
     global adjacencyFrame, metrics, mutableBlockStats
     #Prepare new state to change, and update globals
@@ -615,7 +268,7 @@ def flatPopulationRun_Gooder(state, threshold = 25000, report = 10000):
 
 start = contiguousStart()
 begin = time.time()
-final = flatPopulationRun_Gooder(start, threshold=50000)
+final = flatPopulationRun(start, threshold=50000)
 end = time.time()
 #color_this_state(g, start, "tests/start.png")
 color_this_state(g, final, "tests/final.png")
@@ -658,7 +311,7 @@ for startingpoint in range(numstates):
         starting_state.to_csv(foldername+subfoldername + "contiguous_start%04d.csv"%startingpoint, index = False)
         metrics.to_csv(foldername + subfoldername + 'contiguous_metrics%04d.csv'%startingpoint, index = False)
         
-        runningState = (flatPopulationRun_Gooder(starting_state, report = 25000), 1)
+        runningState = (flatPopulationRun(starting_state, report = 25000), 1)
         updateGlobals(runningState[0])
         runningState[0].to_csv(foldername+subfoldername + "evenpop_start%04d.csv"%startingpoint, index = False)
         metrics.to_csv(foldername + subfoldername + 'evenpop_metrics%04d.csv'%startingpoint, index = False)
@@ -692,7 +345,7 @@ for startingpoint in range(numstates):
         starting_state.to_csv(foldername+subfoldername + "contiguous_start%04d.csv"%startingpoint, index = False)
         metrics.to_csv(foldername + subfoldername + 'contiguous_metrics%04d.csv'%startingpoint, index = False)
         
-        runningState = (flatPopulationRun_Gooder(starting_state, report = 25000), 1)
+        runningState = (flatPopulationRun(starting_state, report = 25000), 1)
         updateGlobals(runningState[0])
         runningState[0].to_csv(foldername+subfoldername + "evenpop_start%04d.csv"%startingpoint, index = False)
         metrics.to_csv(foldername + subfoldername + 'evenpop_metrics%04d.csv'%startingpoint, index = False)
