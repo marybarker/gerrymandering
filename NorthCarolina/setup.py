@@ -75,6 +75,8 @@ g = package_vtds("./precinct/precinct.shp", "GEOIDToIDNUM.csv", ['GEOID10'])
 
 metrics = pd.DataFrame()
 
+perimeterNC = pd.read_csv("./currentNCBoundary.csv")
+
 
 
 

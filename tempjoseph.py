@@ -122,8 +122,6 @@ for arr in arrayDict.keys():
     plt.clf()
 
 
-
-
 #####
 #Population Evenness attempts
 #####
@@ -404,6 +402,108 @@ for startingpoint in range(numstates):
 #####
 #Supplements to setup_stuff.py
 #####
+
+def adjacencyGeom(connectivitydf, boundaries):
+    edgeGeoms = list()
+    totallength = np.shape(connectivitydf)[0]
+    for i in range(totallength): 
+        lo = connectivitydf.low[i]
+        hi = connectivitydf.high[i]
+        b1 = boundaries[lo]
+        b2 = boundaries[hi]
+        frontier = list()
+        for b11 in b1: 
+            b = len(b11)
+            if b > 1:
+                for b22 in b2:
+                    pointsInCommon = [ [b11[a], b11[(a+1)%b] ] for a in range(b) if ((b11[a] in b22) and (b11[(a+1)%b] in b22)) ]
+                    if len(pointsInCommon) > 0:
+                        addThis = [x[0] for x in pointsInCommon] + [pointsInCommon[-1][1]]
+                        frontier = frontier + [addThis]
+        edgeGeoms.append(frontier)
+        
+        if (i%(totallength/50) == 0):
+            print("%d%% completed with boundaries."%((i*100)/totallength))
+        
+    connectivitydf['geom'] = edgeGeoms
+    return connectivitydf
+
+def district_bounds_to_geom():
+    global adjacencyFrame, adjacencyGeomFrame, g, perimeterNC
+    whereBound = adjacencyFrame.index[-(adjacencyFrame.isSame)]
+    return {"names" : [x for x in whereBound] + ["outside"],
+            "paths" : [x for x in adjacencyGeomFrame.geom[whereBound]] + [[[(x[1], x[0], 0) for x in zip(perimeterNC.latitude,perimeterNC.longitude)]]],
+            "xlim"  : g['xlim'],
+            "ylim"  : g['ylim']}
+
+def patch_edges(geom_to_plot, color = "black", linewidth = 1):
+    #            In setup.py for each state, there should be a line like the following
+    #                g = package_vtds("./VTDS_of_Interest.shp")
+    #            g contains the geometries and names of the VTDS for your state space.
+    #                          |
+    #                          vtds_rgb_dict should be a dictionary of VTD names with RGB triples to color them.
+    
+    paths = geom_to_plot['paths']
+    names = geom_to_plot['names']
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        for subpath in path:
+            if len(subpath) > 1:
+                temp = [x for x in zip(*subpath)]
+                plt.plot(temp[0], temp[1], color = color, linewidth = linewidth)
+
+def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300, district_boundary = True, bound_args = [district_bounds_to_geom()]):
+    #            In setup.py for each state, there should be a line like the following
+    #                g = package_vtds("./VTDS_of_Interest.shp")
+    #            g contains the geometries and names of the VTDS for your state space.
+    #                          |
+    #                          vtds_rgb_dict should be a dictionary of VTD names with RGB triples to color them.
+    
+    subset = vtds_rgb_dict.keys()
+    thing = zip(geom_to_plot['paths'], geom_to_plot['names'])
+    paths = [x[0] for x in thing if x[1] in subset]
+    names = [x[1] for x in thing if x[1] in subset]
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlim(geom_to_plot['xlim'])
+    ax.set_ylim(geom_to_plot['ylim'])
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        facecolor = vtds_rgb_dict[names[p]]
+        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=linewidth)
+        ax.add_patch(patch)
+    
+    if district_boundary:
+        patch_edges(*bound_args)
+    
+    ax.set_aspect(1.0)
+    #plt.show()
+    plt.savefig(filename, dpi=DPI)
+    plt.clf()
+    del fig
+
+
+vtdfile = 'precinct/precinct.shp'
+ds = ogr.Open(vtdfile)
+lyr = ds.GetLayer(0)
+vtds = features(lyr)
+vtd_boundaries = boundaries(vtds, ['GEOID10'])
+
+connectivitydf = pd.read_csv("PRECINCTconnections.csv").ix[:, ['low', 'high']]
+adjacencyGeomFrame = adjacencyGeom(connectivitydf, vtd_boundaries)
+
+district_geom = district_bounds_to_geom()
+
+draw_these_edges(district_geom, "tests/dangle.png")
+
+highestblack = max(blockstats.aframcon)
+black = {blockstats.index[i] : (1 - blockstats.aframcon[i]/highestblack, 1 - 0.3*blockstats.aframcon[i]/highestblack, 1 - blockstats.aframcon[i]/highestblack) for i in blockstats.index}
+
+color_by_rgb(g, black, "tests/aframmapnoedge.png", 0, district_boundary = False)
+color_by_rgb(g, black, "tests/aframmapedge.png", 0)
 
 
 #####
