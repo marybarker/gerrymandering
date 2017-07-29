@@ -75,77 +75,140 @@ plt.scatter(allthingy['VR: All Reps']/allthingy['VR Total'],
             c=np.column_stack((np.zeros(x), meanAge / max(meanAge), 1. - meanAge / max(meanAge), np.ones(x)*0.125 )))
 """
 
-goodnessWeights=[1, 100, 100, 100, 0, 0]
-_exploration = 1
+lookup = dict(zip(blockstats.GEOID10, blockstats.ID))
 currentNCstate = pd.read_csv("VTD_to_CD.csv").loc[:, ['GEOID10', 'CD']].rename(columns={"GEOID10":"key", 'CD':'value'})
 currentNCstate.key   = [lookup.get(x) for x in currentNCstate.key]
 currentNCstate.value = [int(x) - 3701 for x in currentNCstate.value]
-compare_current_state_to_possible_perturbations(currentNCstate, 100, 1000000, foldername, "initial look at NC demographics")
 
-states = [(pd.read_csv(foldername+'data/state%d.csv'%i), 0) for i in range(10)]
+foldername="heckinMore/"
+os.makedirs(foldername+'data/pictures/')
+counter = 37
+currentNCstate.to_csv(foldername+'data/initState.csv', index=False)
+color_these_states(g, [(currentNCstate, 0)], foldername+'data/pictures/init', 0, 0.1)
+for i in range(37, 100):
+    updateGlobals(currentNCstate)
+    runningState = MH(currentNCstate, 100, neighbor, goodness, switchDistrict)
+    for j in range(9):
+        runningState = MH(runningState[0], 100, neighbor, goodness, switchDistrict)
+    if not dfEquiv(runningState[0], currentNCstate):
+        runningState[0].to_csv(foldername+'data/state%d.csv'%counter, index=False)
+        metrics.to_csv(foldername+'data/metrics%d.csv'%counter, index=False)
+        color_these_states(g, [runningState], foldername+'data/pictures/', counter, 0.1)
+        counter = counter + 1
+    print 'finished with step %d. %d states Written to %s. '%(i, counter, foldername)
 
+numStates = 142
+allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%(500+i)) for i in range(numStates)]
+for i in range(numStates):
+    thisState = pd.read_csv(foldername+'data/state%d.csv'%i)
+    updateGlobals(thisState)
+    newState = MH(thisState, 2000, neighbor, goodness, switchDistrict)
+    newState[0].to_csv(foldername+'data/state%d.csv'%(500+i),   index=False)
+    metrics.to_csv(    foldername+'data/metrics%d.csv'%(500+i), index=False)
+    color_these_states(g, [newState], foldername+'data/pictures/', 500+i, 0.1)
+    print 'finished with step %d'%i
+x = 0
+def switchDistrictGenerous(a, b):
+    global x
+    if b == float('-inf'):
+        x = x +  1
+        return -1
+    else: 
+        return 1.1
+goodnessWeights = [1, 200, 100, 100, 0, 0]
+for i in range(num_perturbations):
+    runningState = currentNCstate.copy()
+    updateGlobals(runningState)
+    
+    runningState = MH(runningState, 500, neighbor, goodness, switchDistrictGenerous)
+    color_these_states(g, [(runningState[-1], 0)], foldername+'data/pictures/', num_perturbations + i, 0.1)
+    
+    runningState = MH(runningState[-1], 3000, neighbor, goodness, switchDistrict)
+    runningState[0].to_csv(foldername+'data/state%d.csv'%i, index=False)
+    metrics.to_csv(foldername+'data/metrics%d.csv'%i, index=False)
+    color_these_states(g, [runningState], foldername+'data/pictures/', i, 0.1)
+    
+    print 'step %d finished'%i, dfEquiv(currentNCstate, runningState[0])
+    
+for i in range(num_perturbations):
+    startingState = pd.read_csv(foldername+'data/state%d.csv'%(300+i))
+    updateGlobals(startingState)
+    runningState = MH(startingState, 3000, neighbor, goodness, switchDistrict)
+    runningState[0].to_csv(foldername+'data/state%d.csv'%(400+i), index=False)
+    metrics.to_csv(foldername+'data/metrics%d.csv'%(400+i), index=False)
+    color_these_states(g, [runningState], foldername+'data/pictures/', 400+i, 0.1)
+    print "done with the next step %d"%i, dfEquiv(startingState, runningState[0])
+
+allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%(400 + i)) for i in range(num_perturbations)]
+
+
+numbers = [1, 11]
+
+np.median([met.mincon[1] for met in allMetrics])
+np.mean([met.mincon[1] for met in allMetrics])
+np.std([met.mincon[1] for met in allMetrics])
+
+actualvals = np.array([initmet.mincon[x] for x in range(ndistricts)])
+medians = np.array([np.median([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
+means = np.array([np.mean([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
+stds = np.array([np.std([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
+
+
+plt.scatter(range(ndistricts), abs(actualvals - means), label='difference')
+plt.scatter(range(ndistricts), stds, label='sigma')
+plt.scatter(range(ndistricts), abs(means - medians), label='median')
+plt.legend()
+
+plt.scatter(range(ndistricts), abs(medians - means))
+
+compare_current_state_to_possible_perturbations(currentNCstate, 100, 100, foldername, "Give NC an actual go for data")
+
+states = [(pd.read_csv(foldername+'data/state%d.csv'%i), 0) for i in range(246)]
+
+allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%i) for i in range(246)]
+for met in allMetrics:
+    plt.scatter(range(ndistricts), met.mincon)
+plt.scatter(range(ndistricts), initmet.mincon, c='black', s=10)
+plt.scatter(range(ndistricts), initmet.mincon, c='black', s=250, alpha=0.125)
+goodnesses  =[goodness(x) for x in allMetrics]
 
 def compare_current_state_to_possible_perturbations(current_state, num_perturbations, steps_per_perturbation, foldername, misc_data =''):
     import datetime, inspect
-    global goodnessWeights, goodnessParams
+    global goodnessWeights, goodnessParams, adjacencyFrame, metrics
     if not os.path.isdir(foldername):
         os.mkdir(foldername)
-    os.chdir(foldername)
-    
+
     metadata = 30*'+'+\
                 '\nDate: %s'%str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))+\
                 '\nSteps per run: %d'%(steps_per_perturbation)+\
                 '\ngoodness function: %s'%inspect.getsource(goodness)+\
                 '\ngoodness Weights: %s'%' '.join([str(x) for x in goodnessWeights])+\
-                '\ngoodness Params: %s'%' '.join([str(x) for x in goodnessParams])+\
+                '\ngoodness Params: %s'%' '.join([str(inspect.getsource(x)) for x in goodnessParams])+\ 
                 '\nmisc: %s'%misc_data
-    with open("Info.txt", "w") as metafile:
+    with open(foldername+"Info.txt", "w") as metafile:
         metafile.write(metadata)
     
-    if not os.path.isdir('data/'):
-        os.mkdir('data/')
-    if not os.path.isdir('pictures/'):
-        os.mkdir('pictures/')
+    if not os.path.isdir(foldername+'data/'):
+        os.mkdir(foldername+'data/')
+    if not os.path.isdir(foldername+'pictures/'):
+        os.mkdir(foldername+'pictures/')
     updateGlobals(current_state)
     
-    allStates = []
-    allMetrics = []
+    #allStates = []
+    #allMetrics = []
     
-    current_state.to_csv("data/initialState.csv", index=False)
-    metrics.to_csv("data/initialMetrics.csv", index=False)
+    current_state.to_csv(foldername+"data/initialState.csv", index=False)
+    metrics.to_csv(foldername+"data/initialMetrics.csv", index=False)
     initmet = metrics.copy()
     
     for i in range(num_perturbations):
         updateGlobals(current_state)
         runningState = MH(current_state, steps_per_perturbation, neighbor, goodness, switchDistrict)
-        runningState[0].to_csv("data/state%d.csv"%i, index=False)
-        metrics.to_csv("data/metrics%d.csv"%i, index=False)
-        allStates.append(runningState[0])
-        allMetrics.append(metrics)
+        runningState[0].to_csv(foldername+"data/state%d.csv"%i, index=False)
+        metrics.to_csv(foldername+"data/metrics%d.csv"%i, index=False)
+        #allStates.append(runningState[0])
+        #allMetrics.append(metrics)
         print 'finished with step %d of %d. Saved in %sdata/'%(i+1, num_perturbations, foldername)
-    
-    tempgoodnessParams  = [x for x in goodnessParams]
-    tempgoodnessWeights = [x for x in goodnessWeights]
-
-    goodnessParams  = [contScore, popVarScore]
-    goodnessWeights = np.array([1, 500])
-
-    allGoodnesses = [goodness(allMetrics[i]) for i in range(num_perturbations)]
-    plt.plot( allGoodnesses )
-    plt.savefig("pictures/goodness.png")
-    plt.clf()
-    for met in allMetrics:
-        plt.scatter(range(ndistricts), met.mincon)
-    plt.scatter(range(ndistricts), initmet.mincon, c='black',s=10)
-    plt.scatter(range(ndistricts), initmet.mincon, c='black',s=250, alpha=0.125)
-    plt.savefig("pictures/minorityConc.png", dpi=600)
-    plt.clf()
-    
-    goodnessParams  = tempgoodnessParams
-    goodnessWeights = tempgoodnessWeights
-    os.chdir("../")
-
-#def compare_current_state_to_possible_other_states()
 
 
 if False:
