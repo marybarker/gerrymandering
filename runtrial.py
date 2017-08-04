@@ -35,6 +35,7 @@ numsteps = 100
 numsaves = 1000
 samplerate = 1
 numreads = numsaves
+statereads = numstates
 #numreads = 734
 
 #########

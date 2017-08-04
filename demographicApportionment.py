@@ -41,7 +41,7 @@ def coordDist(c1, c2):
 def closestkvtds(p1, k=100):
     dists = [coordDist(p1,vtdCentroids[i]) for i in range(len(vtdCentroids))]
     return np.argpartition(dists, 10)[:10]
-
+    #implement similar function for closest k vtds in district for community detection
 
 blockCentroids = [block.geometry().Centroid() for block in blocks]
 blockCentroidPoints = [x.GetPoint() for x in blockCentroids]

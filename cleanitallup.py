@@ -631,6 +631,9 @@ def bizMaxScore(metrics):
 def aframEdgeScore(metrics):
     mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]
     return np.sum(metrics['sumAframDiff'][mindists]) / np.sum(metrics['numedges'])
+    #FIX THIS!
+    #  This is positive from low to high, but not necessarily from outside of the majmin district
+    #    to this inside of the majmindistrict
 
 def hispEdgeScore(metrics):
     mindists = metrics['mincon'].argsort()[-numMajMinDists:][::-1]

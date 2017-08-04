@@ -176,9 +176,9 @@ def package_vtds(shapefile_to_use, id_to_number_lookup_file, name_of_keys=['GEOI
     this_geom['names'] = names
     return this_geom
 
-def colorDict(n):
-    districtColors = {i: colorsys.hsv_to_rgb(float(i)/n, 1, 1) for i in range(n)}
-    districtColors[n] = colorsys.hsv_to_rgb(0, 0, 0.5)
+def colorDict(n, light = 0.5, saturation = 1):
+    districtColors = {i: colorsys.hls_to_rgb(float(i)/n, light, saturation) for i in range(n)}
+    districtColors[n] = colorsys.hls_to_rgb(0, 0.5, 0)
     return districtColors
 
 def color_these_states(geom_to_plot, list_of_states, foldername, number, linewidth = 1, DPI = 300):
@@ -241,8 +241,32 @@ def color_this_state(geom_to_plot, state, filename, linewidth = 1, DPI = 300):
     plt.clf()
     del fig
 
+def district_bounds_to_geom():
+    global adjacencyFrame, adjacencyGeomFrame, g, perimeterNC
+    whereBound = adjacencyFrame.index[-(adjacencyFrame.isSame)]
+    return {"names" : [x for x in whereBound] + ["outside"],
+            "paths" : [x for x in adjacencyGeomFrame.geom[whereBound]] + [[[(x[1], x[0], 0) for x in zip(perimeterNC.latitude,perimeterNC.longitude)]]],
+            "xlim"  : g['xlim'],
+            "ylim"  : g['ylim']}
 
-def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300):
+def patch_edges(geom_to_plot, color = "black", linewidth = 1):
+    #            In setup.py for each state, there should be a line like the following
+    #                g = package_vtds("./VTDS_of_Interest.shp")
+    #            g contains the geometries and names of the VTDS for your state space.
+    #                          |
+    #                          vtds_rgb_dict should be a dictionary of VTD names with RGB triples to color them.
+    
+    paths = geom_to_plot['paths']
+    names = geom_to_plot['names']
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        for subpath in path:
+            if len(subpath) > 1:
+                temp = [x for x in zip(*subpath)]
+                plt.plot(temp[0], temp[1], color = color, linewidth = linewidth)
+
+def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300, district_boundary = []):
     #            In setup.py for each state, there should be a line like the following
     #                g = package_vtds("./VTDS_of_Interest.shp")
     #            g contains the geometries and names of the VTDS for your state space.
@@ -253,6 +277,35 @@ def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300
     thing = zip(geom_to_plot['paths'], geom_to_plot['names'])
     paths = [x[0] for x in thing if x[1] in subset]
     names = [x[1] for x in thing if x[1] in subset]
+    """
+    fig = plt.figure(frameon=False)
+    ax = fig.add_axes([geom_to_plot['xlim'][0], geom_to_plot['ylim'][0], \
+                       geom_to_plot['xlim'][1], geom_to_plot['ylim'][1]])
+    
+    ax.axis('off')
+    
+    for p in range(len(paths)):
+        path = paths[p]
+        facecolor = vtds_rgb_dict[names[p]]
+        patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=linewidth)
+        ax.add_patch(patch)
+    
+    if district_boundary:
+        patch_edges(*district_boundary)
+    
+    #ax.set_aspect(1.0)
+    #plt.show()
+    
+    with open(foldername, 'w') as outfile:
+        fig.canvas.print_png(outfile)
+    
+    
+    #plt.savefig(filename, dpi=DPI)
+    
+    plt.clf()
+    del fig
+
+    """
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -264,11 +317,40 @@ def color_by_rgb(geom_to_plot, vtds_rgb_dict, filename, linewidth = 1, DPI = 300
         facecolor = vtds_rgb_dict[names[p]]
         patch = mpatches.PathPatch(path,facecolor=facecolor, edgecolor='black', linewidth=linewidth)
         ax.add_patch(patch)
+    
+    if district_boundary:
+        patch_edges(*district_boundary)
+    
     ax.set_aspect(1.0)
     #plt.show()
     plt.savefig(filename, dpi=DPI)
     plt.clf()
-    del fig
+    plt.close(fig)
+
+def adjacencyGeom(connectivitydf, boundaries):
+    edgeGeoms = list()
+    totallength = np.shape(connectivitydf)[0]
+    for i in range(totallength): 
+        lo = connectivitydf.low[i]
+        hi = connectivitydf.high[i]
+        b1 = boundaries[lo]
+        b2 = boundaries[hi]
+        frontier = list()
+        for b11 in b1: 
+            b = len(b11)
+            if b > 1:
+                for b22 in b2:
+                    pointsInCommon = [ [b11[a], b11[(a+1)%b] ] for a in range(b) if ((b11[a] in b22) and (b11[(a+1)%b] in b22)) ]
+                    if len(pointsInCommon) > 0:
+                        addThis = [x[0] for x in pointsInCommon] + [pointsInCommon[-1][1]]
+                        frontier = frontier + [addThis]
+        edgeGeoms.append(frontier)
+        
+        if (i%(totallength/50) == 0):
+            print("%d%% completed with boundaries."%((i*100)/totallength))
+        
+    connectivitydf['geom'] = edgeGeoms
+    return connectivitydf
 
 
 #precinctBoundaryFile =  'precinct/precinct.shp'
@@ -304,9 +386,10 @@ vtd_connectivities = adjacencies(vtds, ['GEOID10'])
 vtd_connectivities = adjacentEdgeLengths(vtd_connectivities, vtd_boundaries)
 vtd_connectivities.to_csv('PRECINCTconnections.csv')
 
+connectivitydf = pd.read_csv("PRECINCTconnections.csv").ix[:, ['low', 'high']]
+adjacencyGeomFrame = adjacencyGeom(connectivitydf, vtd_boundaries)
 
-
-
+adjacencyGeomFrame.to_csv("./adjacencyGeoms.csv", index = False)
 
 
 # plot neighbors of each VTD
