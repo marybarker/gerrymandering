@@ -12,7 +12,7 @@ We have a few goals for this project:
      - Use the many generated plans to identify outlier behavior.
      - Identify patterns to use as a heuristic to spot unfairness.
 
-![NC MH run 250 step](https://github.com/marybarker/gerrymandering/blob/master/visuals/sampleNC.gif "North Carolina Congressional District Run")
+![NC MH run 250 step](https://github.com/marybarker/gerrymandering/blob/master/visuals/cropSampleNC.gif "North Carolina Congressional District Run")
 
 ## Metropolis-Hastings
 
