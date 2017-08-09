@@ -338,6 +338,8 @@ def neighbor(state):
         newmetrics.ix[winnerDist,'perimeter'] +=\
             sum(previousVersion.length[winnerNewEdges]) - sum(previousVersion.length[winnerLostEdges])
         
+        #Flux now
+        """
         newmetrics.ix[ loserDist,'sumAframDiff'] +=\
             sum(previousVersion.aframdiff[ loserNewEdges].abs()) - sum(previousVersion.aframdiff[ loserLostEdges].abs())
         newmetrics.ix[winnerDist,'sumAframDiff'] +=\
@@ -347,6 +349,44 @@ def neighbor(state):
             sum(previousVersion.hispdiff[ loserNewEdges].abs()) - sum(previousVersion.hispdiff[ loserLostEdges].abs())
         newmetrics.ix[winnerDist,'sumHispDiff'] +=\
             sum(previousVersion.hispdiff[winnerNewEdges].abs()) - sum(previousVersion.hispdiff[winnerLostEdges].abs())
+        """
+        
+        #Need to take into account that low or high could be in district, and we don't know which.
+        loserchange = 0
+        for edge in winnerNewEdges:
+            if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
+                newmetrics.ix[winnerDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+            else:
+                newmetrics.ix[winnerDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+        
+        for edge in winnerlostEdges:
+            if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
+                newmetrics.ix[winnerDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+            else:
+                newmetrics.ix[winnerDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+        
+        for edge in loserNewEdges:
+            if adjacencyFrame.ix[edge, "highdist"] == loserDist:
+                newmetrics.ix[loserDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+            else:
+                newmetrics.ix[loserDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+        
+        for edge in loserlostEdges:
+            if adjacencyFrame.ix[edge, "highdist"] == loserDist:
+                newmetrics.ix[loserDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+            else:
+                newmetrics.ix[loserDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+        
+        newmetrics.ix[ loserDist,'sumAframDiff'] +=\
+            sum(previousVersion.aframdiff[ loserNewEdges].abs()) - sum(previousVersion.aframdiff[ loserLostEdges].abs())
+        newmetrics.ix[winnerDist,'sumAframDiff'] +=\
+            sum(previousVersion.aframdiff[winnerNewEdges].abs()) - sum(previousVersion.aframdiff[winnerLostEdges].abs())
+        
+        newmetrics.ix[ loserDist,'sumHispDiff'] +=\
+            sum(previousVersion.hispdiff[ loserNewEdges].abs()) - sum(previousVersion.hispdiff[ loserLostEdges].abs())
+        newmetrics.ix[winnerDist,'sumHispDiff'] +=\
+            sum(previousVersion.hispdiff[winnerNewEdges].abs()) - sum(previousVersion.hispdiff[winnerLostEdges].abs())
+        
         
         newmetrics.ix[ loserDist,'numedges'] +=\
             len( loserNewEdges) - len( loserLostEdges)
@@ -545,6 +585,17 @@ def conDiffSum(state, district, column):
     subframe = adjacencyFrame.ix[(-adjacencyFrame.isSame) & ((adjacencyFrame.lowdist == district) | (adjacencyFrame.highdist == district)), :]
     return sum(subframe[column].abs())
 
+def conFlux(state, district, column):
+    subframe = adjacencyFrame.ix[(-adjacencyFrame.isSame) & ((adjacencyFrame.lowdist == district) | (adjacencyFrame.highdist == district)), :]
+    neighbors = list(set(subframe.lowdist).union(set(subframe.highdist)) - {district})
+    total = 0
+    for nbr in neighbors:
+        #Do a thing to figure out what direction is positive. low value outside, high value inside
+        #     should be positive.
+        total += subframe.ix[(adjacencyFrame.highdist == district) & (adjacencyFrame.lowdist  == nbr), column]\
+               - subframe.ix[(adjacencyFrame.lowdist  == district) & (adjacencyFrame.highdist == nbr), column]
+    return total
+
 def updateGlobals(state):
     global metrics, adjacencyFrame, mutableBlockStats
     
@@ -567,8 +618,8 @@ def updateGlobals(state):
     stPerim  = [     perimeter(state, i) for i in range(ndistricts)]
     stArea   = [      distArea(state, i) for i in range(ndistricts)]
     
-    stdAfram = [conDiffSum(state, i, 'aframdiff') for i in range(ndistricts)]
-    stdHisp  = [conDiffSum(state, i,  'hispdiff') for i in range(ndistricts)]
+    stdAfram = [conFlux(state, i, 'aframdiff') for i in range(ndistricts)]
+    stdHisp  = [conFlux(state, i,  'hispdiff') for i in range(ndistricts)]
     
     stMincon = [minorityConc(state, i, 'mincon') for i in range(ndistricts)]
     stBiz    = [bizarreness(stArea[i], stPerim[i]) for i in range(ndistricts)]
