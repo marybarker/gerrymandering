@@ -1,0 +1,62 @@
+<! HTML >
+<html>
+
+  <! HEADER STUFF >
+  <head>
+    <meta charset="UTF-8" />
+    <title> Gerrymandering the Heck out of things </title>
+    <style>
+      html, body {
+        width: 100%;
+        height:100%;
+        margin: 1px;
+        border: 0;
+        overflow: hidden; /* no scrollbar */
+      }
+      /*# data-box {
+        background-color:'blue';
+        bottom:10px;
+        left:810px;
+        position:absolute;
+        height:10px;
+      }*/
+    </style>
+
+  </head>
+
+  <! BODY>
+  <body>
+    <div id="amap" style="width:800px; height:420px; position:absolute; margin-left:5px; margin-top:5px"></div>
+
+    <! Functions for building and interacting with map>
+    <script> 
+      function myMap(){
+
+        map = new google.maps.Map(document.getElementById("amap"), {
+          zoom:7, 
+          center: new google.maps.LatLng(35.0,-79.6) /*needs to be generalized*/
+        });
+        
+        map.data.loadGeoJson('NCPrecincts.json') /*needs to be generalized*/
+        map.data.setStyle(function(feature){
+          return ({
+            fillColor: '#FFFAFA', 
+            strokeWeight: .1
+          });
+        });
+        map.data.addListener('mouseover', function(event) {
+          document.getElementById('data-box').textContent =
+              event.feature.getProperty('NAME10');
+        });
+        
+      }
+    </script>
+
+    <! Now create map to look at>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmcXDZ1Pv-BImJhZceCVTmDSjXUCgzN80&callback=myMap">
+    </script>
+
+    <div id='data-box' style='margin-left:820px; width:20px; height:20px'> </div>
+    
+  </body>
+</html>
