@@ -17,48 +17,70 @@
     
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <script id="globalNames">
+
+      function add_new_color(){/*need to improve: results too similar*/
+         return '#'+Math.floor(Math.random()*16777215).toString(16);
+      }
+
       var jsonfilename = './NCPrecincts.json';
       var statsFileName = '';
       var shapeFileName = '';
       var centroid = [35.0, -79.9];
       var map;
-      var currentDistrict = 0;
-      var allColors=[];
-      function add_new_color(){
-         return '#'+Math.floor(Math.random()*16777215).toString(16);
-      }
-      allColors[currentDistrict] = add_new_color();
+      var currentDistrict = 1;
+      var districts = [0, currentDistrict];
+      var allColors=['#FFFAFA', add_new_color()];
 
-      var districts = [currentDistrict];
-
-      function addAnotherDistrict(){
-        currentDistrict = 0;
-        if (districts.length > 0){
-          currentDistrict = Math.max(districts) + 1;
-        }
-        districts.push(currentDistrict);
-        allColors[currentDistrict] = add_new_color()
-      }
     </script>
   </head>
   
   <! BODY>
   <body>
+    <script>
+
+      function sndDistChng(){
+        d = document.getElementById("SelectADistrict");
+        currentDistrict = d.options[d.selectedIndex].value;
+      }
+
+      function addAnotherDistrict(){
+        mycurrentDistrict = Math.max.apply(null, districts) + 1;
+
+        districts.push(mycurrentDistrict);
+        allColors.push(add_new_color());
+
+        allDists = document.getElementById("SelectADistrict");
+        oneToAdd = document.createElement("option");
+        oneToAdd.text = mycurrentDistrict;
+        allDists.options.add(oneToAdd, mycurrentDistrict);
+
+        document.getElementById("listContiguousness").innerHTML = '1';
+        document.getElementById("listCompactness").innerHTML = '1';
+        document.getElementById("listUnassigned").innerHTML = '1';
+
+
+      }
+    </script>
+
     <div id="amap" style="width:810px; height:420px; position:absolute; margin-left:5px; margin-top:5px"></div>
     
     <div id='summary-stats' style='margin-left:820px; margin-right:5px; border:2px; border-color:gray; color:gray'>
+
      <button onclick="addAnotherDistrict()">generate new districts </button> 
+
+     <select onchange = "sndDistChng()" id="SelectADistrict">
+       <option value=0> not Assigned </option>
+       <option value=1>1</option>
+     </select>
+
+
       <ul>
-        <li>Number of districts: 0</li>
-        <li>Current District: NA
-          <ul>
-             <li id="listContiguousness"> Contiguousness</li>
-             <li id="listCompactness"> Compactness</li>
-             <li id="listUnassigned"> Unnassigned</li>
-          </ul>
-        </li>
+         <li id="listContiguousness"> Contiguousness</li>
+         <li id="listCompactness"> Compactness</li>
+         <li id="listUnassigned"> Unnassigned</li>
       </ul>
     </div>
+
 
     <! Functions for building and interacting with map>
     <script> 
@@ -72,19 +94,11 @@
         map.data.loadGeoJson(jsonfilename);
         
         map.data.forEach(function(feature){
-          feature.setProperty('District', 'notAssigned');
+          feature.setProperty('District', 0);
         });
         
         map.data.setStyle(function(feature){
-          var  myColor = '#000000';
-          
-          if (feature.getProperty('District') == 'notAssigned'){
-            myColor="#FFFAFA";
-          }
-          if ( districts.includes(feature.getProperty('District')) ) {
-            myColor = allColors[feature.getProperty('District')];
-          }
-
+          myColor = allColors[feature.getProperty('District')];
           return ({
             fillColor: myColor, 
             strokeWeight: .1
