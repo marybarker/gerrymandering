@@ -1,3 +1,8 @@
+thisframe = adjacencyFrame.loc[(adjacencyFrame.low == thisDist | adjacencyFrame.high == thisDist), ['length', 'isSame']]
+
+thisframe.loc[~(thisframe.isSame), 'length'].sum() / thisframe.loc[ (thisframe.isSame), 'length'].sum()
+
+
 # Things I now know: 
 
 # Percent black  21.5
@@ -80,97 +85,45 @@ currentNCstate = pd.read_csv("VTD_to_CD.csv").loc[:, ['GEOID10', 'CD']].rename(c
 currentNCstate.key   = [lookup.get(x) for x in currentNCstate.key]
 currentNCstate.value = [int(x) - 3701 for x in currentNCstate.value]
 
-foldername="heckinMore/"
-os.makedirs(foldername+'data/pictures/')
-counter = 37
 currentNCstate.to_csv(foldername+'data/initState.csv', index=False)
 color_these_states(g, [(currentNCstate, 0)], foldername+'data/pictures/init', 0, 0.1)
-for i in range(37, 100):
-    updateGlobals(currentNCstate)
-    runningState = MH(currentNCstate, 100, neighbor, goodness, switchDistrict)
-    for j in range(9):
-        runningState = MH(runningState[0], 100, neighbor, goodness, switchDistrict)
-    if not dfEquiv(runningState[0], currentNCstate):
-        runningState[0].to_csv(foldername+'data/state%d.csv'%counter, index=False)
-        metrics.to_csv(foldername+'data/metrics%d.csv'%counter, index=False)
-        color_these_states(g, [runningState], foldername+'data/pictures/', counter, 0.1)
-        counter = counter + 1
-    print 'finished with step %d. %d states Written to %s. '%(i, counter, foldername)
 
-numStates = 142
-allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%(500+i)) for i in range(numStates)]
-for i in range(numStates):
-    thisState = pd.read_csv(foldername+'data/state%d.csv'%i)
-    updateGlobals(thisState)
-    newState = MH(thisState, 2000, neighbor, goodness, switchDistrict)
-    newState[0].to_csv(foldername+'data/state%d.csv'%(500+i),   index=False)
-    metrics.to_csv(    foldername+'data/metrics%d.csv'%(500+i), index=False)
-    color_these_states(g, [newState], foldername+'data/pictures/', 500+i, 0.1)
-    print 'finished with step %d'%i
-x = 0
-def switchDistrictGenerous(a, b):
-    global x
-    if b == float('-inf'):
-        x = x +  1
-        return -1
-    else: 
-        return 1.1
-goodnessWeights = [1, 200, 100, 100, 0, 0]
-for i in range(num_perturbations):
-    runningState = currentNCstate.copy()
-    updateGlobals(runningState)
+goodnessParams=[popVarScore, bizMeanScore, bizMaxScore]
+goodnessWeights=[0, 200, 200]
+for i in range(1, 100):
+    runningState = (currentNCstate.copy(), 0)
+    updateGlobals(runningState[0])
     
-    runningState = MH(runningState, 500, neighbor, goodness, switchDistrictGenerous)
-    color_these_states(g, [(runningState[-1], 0)], foldername+'data/pictures/', num_perturbations + i, 0.1)
-    
-    runningState = MH(runningState[-1], 3000, neighbor, goodness, switchDistrict)
+    for j in range(300):
+        if j > 200:
+            goodnessWeights= [200,200,200]
+        runningState = MH(runningState[0], 500, neighbor, goodness, switchDistrict)
+        
     runningState[0].to_csv(foldername+'data/state%d.csv'%i, index=False)
     metrics.to_csv(foldername+'data/metrics%d.csv'%i, index=False)
     color_these_states(g, [runningState], foldername+'data/pictures/', i, 0.1)
-    
-    print 'step %d finished'%i, dfEquiv(currentNCstate, runningState[0])
-    
-for i in range(num_perturbations):
-    startingState = pd.read_csv(foldername+'data/state%d.csv'%(300+i))
-    updateGlobals(startingState)
-    runningState = MH(startingState, 3000, neighbor, goodness, switchDistrict)
-    runningState[0].to_csv(foldername+'data/state%d.csv'%(400+i), index=False)
-    metrics.to_csv(foldername+'data/metrics%d.csv'%(400+i), index=False)
-    color_these_states(g, [runningState], foldername+'data/pictures/', 400+i, 0.1)
-    print "done with the next step %d"%i, dfEquiv(startingState, runningState[0])
+    print 'finished with step %d. '%i, dfEquiv(runningState[0], currentNCstate)
 
-allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%(400 + i)) for i in range(num_perturbations)]
+def switchDistrictGenerous(a, b):
+    if b == float('-inf'):
+        return -1
+    else: 
+        return 1.1
 
+#actualvals = np.array([initmet.mincon[x] for x in range(ndistricts)])
+#medians = np.array([np.median([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
+#means = np.array([np.mean([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
+#stds = np.array([np.std([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
 
-numbers = [1, 11]
+#plt.scatter(range(ndistricts), abs(actualvals - means), label='difference', c='orange')
+#plt.scatter(range(ndistricts), stds, label='sigma', c='green')
+#plt.scatter(range(ndistricts), abs(means - medians), label='median', c='blue')
+#plt.legend()
 
-np.median([met.mincon[1] for met in allMetrics])
-np.mean([met.mincon[1] for met in allMetrics])
-np.std([met.mincon[1] for met in allMetrics])
-
-actualvals = np.array([initmet.mincon[x] for x in range(ndistricts)])
-medians = np.array([np.median([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
-means = np.array([np.mean([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
-stds = np.array([np.std([met.mincon[x] for met in allMetrics]) for x in range(ndistricts)])
-
-
-plt.scatter(range(ndistricts), abs(actualvals - means), label='difference')
-plt.scatter(range(ndistricts), stds, label='sigma')
-plt.scatter(range(ndistricts), abs(means - medians), label='median')
-plt.legend()
-
-plt.scatter(range(ndistricts), abs(medians - means))
-
-compare_current_state_to_possible_perturbations(currentNCstate, 100, 100, foldername, "Give NC an actual go for data")
-
-states = [(pd.read_csv(foldername+'data/state%d.csv'%i), 0) for i in range(246)]
-
-allMetrics = [pd.read_csv(foldername+'data/metrics%d.csv'%i) for i in range(246)]
-for met in allMetrics:
-    plt.scatter(range(ndistricts), met.mincon)
-plt.scatter(range(ndistricts), initmet.mincon, c='black', s=10)
-plt.scatter(range(ndistricts), initmet.mincon, c='black', s=250, alpha=0.125)
-goodnesses  =[goodness(x) for x in allMetrics]
+#for met in allMetrics:
+#    plt.scatter(range(ndistricts), met.mincon)
+#plt.scatter(range(ndistricts), initmet.mincon, c='black', s=10)
+#plt.scatter(range(ndistricts), initmet.mincon, c='black', s=250, alpha=0.125)
 
 def compare_current_state_to_possible_perturbations(current_state, num_perturbations, steps_per_perturbation, foldername, misc_data =''):
     import datetime, inspect

@@ -1,0 +1,128 @@
+<! HTML >
+<html>
+  
+  <! HEADER STUFF >
+  <head>
+    <meta charset="UTF-8" />
+    <title> Gerrymandering the Heck out of things </title>
+    <style>
+      html, body {
+        width: 100%;
+        height:100%;
+        margin: 1px;
+        border: 0;
+        overflow: hidden; /* no scrollbar */
+      }
+    </style>
+    
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script id="globalNames">
+
+      function add_new_color(){/*need to improve: results too similar*/
+         return '#'+Math.floor(Math.random()*16777215).toString(16);
+      }
+
+      var jsonfilename = './NCPrecincts.json';
+      var statsFileName = '';
+      var shapeFileName = '';
+      var centroid = [35.0, -79.9];
+      var map;
+      var currentDistrict = 1;
+      var districts = [0, currentDistrict];
+      var allColors=['#FFFAFA', add_new_color()];
+
+    </script>
+  </head>
+  
+  <! BODY>
+  <body>
+    <script>
+
+      function sndDistChng(){
+        d = document.getElementById("SelectADistrict");
+        currentDistrict = d.options[d.selectedIndex].value;
+      }
+
+      function addAnotherDistrict(){
+        mycurrentDistrict = Math.max.apply(null, districts) + 1;
+
+        districts.push(mycurrentDistrict);
+        allColors.push(add_new_color());
+
+        allDists = document.getElementById("SelectADistrict");
+        oneToAdd = document.createElement("option");
+        oneToAdd.text = mycurrentDistrict;
+        allDists.options.add(oneToAdd, mycurrentDistrict);
+
+        document.getElementById("listContiguousness").innerHTML = '1';
+        document.getElementById("listCompactness").innerHTML = '1';
+        document.getElementById("listUnassigned").innerHTML = '1';
+
+
+      }
+    </script>
+
+    <div id="amap" style="width:810px; height:420px; position:absolute; margin-left:5px; margin-top:5px"></div>
+    
+    <div id='summary-stats' style='margin-left:820px; margin-right:5px; border:2px; border-color:gray; color:gray'>
+
+     <button onclick="addAnotherDistrict()">generate new districts </button> 
+
+     <select onchange = "sndDistChng()" id="SelectADistrict">
+       <option value=0> not Assigned </option>
+       <option value=1>1</option>
+     </select>
+
+
+      <ul>
+         <li id="listContiguousness"> Contiguousness</li>
+         <li id="listCompactness"> Compactness</li>
+         <li id="listUnassigned"> Unnassigned</li>
+      </ul>
+    </div>
+
+
+    <! Functions for building and interacting with map>
+    <script> 
+      function myMap(){
+        
+        map = new google.maps.Map(document.getElementById("amap"), {
+          zoom:7, 
+          center: new google.maps.LatLng(centroid[0],centroid[1]) 
+        });
+        
+        map.data.loadGeoJson(jsonfilename);
+        
+        map.data.forEach(function(feature){
+          feature.setProperty('District', 0);
+        });
+        
+        map.data.setStyle(function(feature){
+          myColor = allColors[feature.getProperty('District')];
+          return ({
+            fillColor: myColor, 
+            strokeWeight: .1
+          });
+        });
+        
+        map.data.addListener('click', function(event){
+          event.feature.setProperty("District", currentDistrict);
+        });
+        
+        map.data.addListener('mouseover', function(event){
+          map.data.revertStyle();
+          map.data.overrideStyle(event.feature, {strokeWeight:2});
+        });
+        
+        map.data.addListener('mouseout', function(event){
+          map.data.revertStyle();
+        });
+      }
+    </script>
+
+    <! Now create map to look at>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmcXDZ1Pv-BImJhZceCVTmDSjXUCgzN80&callback=myMap">
+    </script>
+    
+  </body>
+</html>
