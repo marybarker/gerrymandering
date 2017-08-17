@@ -26,21 +26,68 @@ function addAnotherDistrict(){
 function calculateAll(dist, funcName){
   var outputString = '';
 
+  /* COMPACTNESS */
   if(funcName == "compactness"){
-    var totInterior = 0;
-
+    var totInterior = 0.0;
+    var totExterior = 0.0;
+    var vtds = [];
     map.data.forEach(function(feature){
-      var val = feature.getProperty("District");
-
-      if (val == dist){
-        totInterior++;
+      if (feature.getProperty("District") == dist){
+        vtds.push(feature.getProperty("GEOID10"));
       }
     });
-    outputString += ("Compactness: " + totInterior.toString());
+    
+    for(var vtd in vtds){
+      name1 = vtds[vtd];
+      listA = [for (name2 of adjacencies[name1]) if (vtds.includes(name2)) name2];
+      listB = [for (name2 of adjacencies[name1]) name2];
+      if (listA.length == listB.length) {
+        totInterior+=1.0;
+      }else{
+        totExterior+=1.0;
+      }
+    }
+    if (totExterior < 1){
+      totExterior = 1.0;
+    }
+    var cpctVal = totInterior / totExterior;
+    outputString += ("Compactness: " + cpctVal.toFixed(3).toString());
   }
+
+  /* CONTIGUOUSNESS */
   if(funcName == "contiguousness"){
-    outputString += "Contiguousness: 1";
+    var contScore = 0;
+    var vtds = [];
+
+    map.data.forEach(function(feature){
+      if (feature.getProperty("District") == dist){
+        vtds.push(feature.getProperty("GEOID10"));
+      }
+    });
+    while(vtds.length > 0){
+      contScore++;
+      var currentRegion = new Set();
+      var addons = [ vtds[0] ];
+
+      while( addons.length > 0) {
+        for (i in addons){
+          currentRegion.add(addons[i]);
+        }
+        var subsubedges = new Set([for (x of addons) for (y of adjacencies[x]) if (vtds.includes(y)) y]); 
+        if (subsubedges.size > 0) {
+          addons = Array.from(subsubedges);
+          notToAdd = Array.from(currentRegion);
+          addons = [for (x of addons) if (notToAdd.indexOf(x) < 0) x];
+        }else{
+          addons = [];
+        }
+      }
+      vtds = [for (x of vtds) if (!(currentRegion.has(x))) x];
+    }
+    outputString += "Contiguousness: "+contScore;
   }
+
+  /* AREA */
   if(funcName == "area"){
     var totArea = 0;
 
@@ -52,6 +99,8 @@ function calculateAll(dist, funcName){
     });
     outputString += ("Total Area: " + totArea.toFixed(3).toString()+'<br>');
   }
+
+  /* AFRICAN AMERICAN CONCENTRATION */
   if(funcName == "aframcon"){
     var totConc = 0.0;
     var toDivide = 0;
@@ -72,6 +121,8 @@ function calculateAll(dist, funcName){
     totConc /= toDivide;
     outputString += ("African American Concentration: "+totConc.toFixed(3).toString()+'<br>');
   }
+
+  /* HISPANIC CONCENTRATION */
   if(funcName == "hispcon"){
     var totConc = 0.0;
     var toDivide = 0;
@@ -92,6 +143,7 @@ function calculateAll(dist, funcName){
     totConc /= toDivide;
     outputString += ("Hispanic Concentration: "+totConc.toFixed(3).toString()+'<br>');
   }
+
   return outputString;
 }
 
@@ -128,6 +180,39 @@ function loadCSVtoArrays(data){
     }
   }
 }
+function loadAdjacencyFrame(data){
+  var allRows = data.split("\n");
+  var low, high, lenIdx;
+
+  for(var singleRow=0; singleRow < allRows.length; singleRow++){
+    var rowCells = allRows[singleRow].split(',');
+
+    if (singleRow === 0) {
+      lenIdx = rowCells.indexOf("length");
+      low  = rowCells.indexOf("low");
+      high = rowCells.indexOf("high");
+
+    }else{
+      var length = parseFloat(rowCells[lenIdx]);
+
+      if (length > 0.0){
+        if (rowCells[low] in adjacencies) {
+          adjacencies[rowCells[low]].push(rowCells[high]);
+
+        }else{
+          adjacencies[rowCells[low]] = [rowCells[high]];
+
+        }
+        if (rowCells[high] in adjacencies) {
+          adjacencies[rowCells[high]].push(rowCells[low]);
+
+        }else{
+          adjacencies[rowCells[high]] = [rowCells[low]];
+        }
+      }
+    }
+  }
+}
 
 /* Don't need generalizing */
 var map;
@@ -142,6 +227,7 @@ var centroid=[35.0, -79.9];
 var indexingCol = "GEOID10";
 var listOfCols = ["ID", "ALAND", "aframcon", "hispcon", "population"];
 var blockstats = {};
+var adjacencies = {};
 
 /* depend on the current coding setup */
 var colList = ["#000000"];
@@ -154,6 +240,11 @@ $.ajax({
   dataType:'text',
 }).done(loadCSVtoArrays)
 
-//console.log(blockstats);
+$.ajax({
+  url:connectionsfilename,
+  dataType:'text',
+}).done(loadAdjacencyFrame) 
+
+//console.log(adjacencies);
 
 
