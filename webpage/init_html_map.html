@@ -23,7 +23,7 @@
         padding:5px;
       }
       #menuBar{
-        width:250px;
+        width:450px;
         height:97%;
         float:right;
         border:2px;
@@ -36,7 +36,7 @@
         padding-left:20px;
       }
     </style>
-    
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script type="text/javascript" src="pageGlobals.js"></script>
     <script type="text/javascript" src="mapFtns.js"></script>
     
@@ -57,11 +57,12 @@
           <input type="checkbox" onclick="addToList(this)" value="contiguousness">Contiguousness<br>
           <input type="checkbox" onclick="addToList(this)" value="compactness">Compactness<br>
           <input type="checkbox" onclick="addToList(this)" value="area" >Area<br>
+          <input type="checkbox" onclick="addToList(this)" value="aframcon" >African American Concentration<br>
+          <input type="checkbox" onclick="addToList(this)" value="hispcon" >Hispanic Concentration<br>
       </fieldset>
        
       <p id="unassigned"> Unassigned VTDS: </p>
-      <!button onclick="updateGlobalVars()"Update</button> 
-                
+          
       <p id="stats"> </p>
       
     </div>
