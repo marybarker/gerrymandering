@@ -20,7 +20,6 @@ function myMap(){
   });
   
   var drawingManager = new google.maps.drawing.DrawingManager({
-    drawingMode: google.maps.drawing.OverlayType.MARKER, 
     drawingControl: true, 
     drawingControlOptions: {
       position: google.maps.ControlPosition.TOP_CENTER, 
