@@ -19,6 +19,37 @@ function myMap(){
     });
   });
   
+  var drawingManager = new google.maps.drawing.DrawingManager({
+    drawingMode: google.maps.drawing.OverlayType.MARKER, 
+    drawingControl: true, 
+    drawingControlOptions: {
+      position: google.maps.ControlPosition.TOP_CENTER, 
+      drawingModes: ['polygon']
+    }
+  });
+  drawingManager.setMap(map);
+  
+  google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event){
+    //var values = event.feature.getProperty("District");
+    var theShape = event.overlay;
+    
+    map.data.forEach(function(feature){
+      var theGeom = feature.getGeometry();
+      var allPts=[];
+      theGeom.forEachLatLng(function(LatLng){
+        allPts.push(LatLng);
+      });
+      
+      var isIn = [for (pt of allPts) if (google.maps.geometry.poly.containsLocation(pt, theShape)) 1];
+      
+      if(isIn.length > 0){
+        feature.setProperty("District", currentDistrict);
+      }
+    });
+    
+    theShape.setMap(null);
+  });
+  
   map.data.addListener('click', function(event){
     // get district this feature was in before click
     var value = event.feature.getProperty("District");
