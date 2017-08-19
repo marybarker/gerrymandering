@@ -13,7 +13,7 @@
       }
       #mapCanvas {
         float:left;
-        width:800px;
+        width:60%;
         height:400px;
         margin-left:5px;
         margin-top:5px;
@@ -23,17 +23,27 @@
         padding:5px;
       }
       #menuBar{
-        width:450px;
+        width:35%;
         height:97%;
         float:right;
-        border:2px;
+        /*border:2px;
         border-style:outset;
-        border-color:gray;
+        border-color:gray;*/
         color:gray;
-        margin-top:2px;
+        margin-top:5px;
         margin-right:5px;
         padding-top:5px;
         padding-left:20px;
+      }
+      #choosemets{
+        width:30%;
+        color:gray;
+        height:30%;
+      }
+      #currentStateInfo{
+        width:25%;
+        color:gray;
+        margin-left:30%;
       }
     </style>
 
@@ -53,21 +63,29 @@
         <option value=0>0</option>
       </select>
       
+      <p id="stats"> </p>
+    </div>
+    
+    <div id="chooseMets">
       <fieldset>
-        <legend>Qualities to Calculate</legend>
+        <legend>Metrics to Calculate</legend>
+          <input type="checkbox" onclick="addToList(this)" value="numInDist">Number of vtds in district<br>
+          <input type="checkbox" onclick="addToList(this)" value="population">Population in district<br>
           <input type="checkbox" onclick="addToList(this)" value="contiguousness">Contiguousness<br>
           <input type="checkbox" onclick="addToList(this)" value="compactness">Compactness<br>
           <input type="checkbox" onclick="addToList(this)" value="area" >Area<br>
           <input type="checkbox" onclick="addToList(this)" value="aframcon" >African American Concentration<br>
           <input type="checkbox" onclick="addToList(this)" value="hispcon" >Hispanic Concentration<br>
       </fieldset>
-       
-      <p id="unassigned"> Unassigned VTDS: </p>
-          
-      <p id="stats"> </p>
-      
     </div>
     
+    <div id="currentStateInfo">
+      <ul>
+        <li id="currentDist"> Current district: </li>
+        <li id="unassigned"> Total vtds not assigned: </li>
+      </ul>
+    </div>
+       
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmcXDZ1Pv-BImJhZceCVTmDSjXUCgzN80&callback=myMap&libraries=drawing,geometry"></script>
   </body>
 </html>

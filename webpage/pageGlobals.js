@@ -5,10 +5,6 @@ function add_new_color(){
   return newCol;//'#'+Math.floor(Math.random()*16777215).toString(16);
 }
 
-function sndDistChng(){
-  d = document.getElementById("SelectADistrict");
-  currentDistrict = d.options[d.selectedIndex].value;
-}
 
 function addAnotherDistrict(){
   others = [for (x of districts) if (x != 'Not Assigned') x];
@@ -26,6 +22,16 @@ function addAnotherDistrict(){
 function calculateAll(dist, funcName){
   var outputString = '';
 
+  if (funcName == "numInDist") {
+    var tot = 0;
+    map.data.forEach(function(feature){
+      if (feature.getProperty("District") == dist) {
+        tot++;
+      }
+    });
+    outputString = ("Number of vtds in district: "+tot.toString()+"<br>");
+  }
+  
   /* COMPACTNESS */
   if(funcName == "compactness"){
     var totInterior = 0.0;
@@ -51,7 +57,7 @@ function calculateAll(dist, funcName){
       totExterior = 1.0;
     }
     var cpctVal = totInterior / totExterior;
-    outputString += ("Compactness: " + cpctVal.toFixed(3).toString());
+    outputString += ("Compactness: " + cpctVal.toFixed(3).toString()+"<br>");
   }
 
   /* CONTIGUOUSNESS */
@@ -84,7 +90,7 @@ function calculateAll(dist, funcName){
       }
       vtds = [for (x of vtds) if (!(currentRegion.has(x))) x];
     }
-    outputString += "Contiguousness: "+contScore;
+    outputString += "Contiguousness: "+contScore+"<br>";
   }
 
   /* AREA */
@@ -144,15 +150,45 @@ function calculateAll(dist, funcName){
     outputString += ("Hispanic Concentration: "+totConc.toFixed(3).toString()+'<br>');
   }
 
+  if(funcName == "population"){
+    var totPop = 0;
+    map.data.forEach(function(feature){
+      if(feature.getProperty("District") == dist){
+        totPop += parseFloat(blockstats[feature.getProperty("GEOID10")].population);
+      }
+    });
+    outputString += ("Total Population: "+totPop.toString()+"<br>");
+  }
+
   return outputString;
 }
 
+function updateCurrentStateInfo(){
+  var numVTDS = calculateAll(currentDistrict, "numInDist");
+  document.getElementById("currentDist").innerHTML="Current district: "+currentDistrict.toString();
+  //document.getElementById("numInDist").innerHTML="Number of vtds in district: "+numVTDS.toString();
+  document.getElementById("unassigned").innerHTML="Total vtds not assigned: "+yet_to_assign.toString();
+  //document.getElementById("population").innerHTML="Total population in district: "+calculateAll(currentDistrict, "population");
+
+  var statsString='';
+  for(var name of list_of_functions_to_compute){
+    statsString += (calculateAll(currentDistrict, name)) + '<br>';
+  }
+  document.getElementById("stats").innerHTML = statsString;
+}
+
+function sndDistChng(){
+  d = document.getElementById("SelectADistrict");
+  currentDistrict = d.options[d.selectedIndex].value;
+  updateCurrentStateInfo();
+}
 function addToList(thingy){
   if(thingy.checked){
     list_of_functions_to_compute.push(thingy.value);
   } else {
     list_of_functions_to_compute = [for (x of list_of_functions_to_compute) if (x != thingy.value) x];
   }
+  updateCurrentStateInfo();
 }
 
 function zip(a, b){

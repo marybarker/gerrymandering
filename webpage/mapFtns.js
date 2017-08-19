@@ -33,16 +33,15 @@ function myMap(){
     var theShape = event.overlay;
     
     map.data.forEach(function(feature){
-      var theGeom = feature.getGeometry();
-      var allPts=[];
-      theGeom.forEachLatLng(function(LatLng){
-        allPts.push(LatLng);
-      });
-      
-      var isIn = [for (pt of allPts) if (google.maps.geometry.poly.containsLocation(pt, theShape)) 1];
-      
-      if(isIn.length > 0){
-        feature.setProperty("District", currentDistrict);
+      if (feature.getProperty("District") != currentDistrict){
+        var bounds = new google.maps.LatLngBounds();
+        var theGeom = feature.getGeometry();
+        theGeom.forEachLatLng(function(LatLng){
+          bounds.extend(LatLng);
+        });
+        if (google.maps.geometry.poly.containsLocation(bounds.getCenter(), theShape) ){
+          feature.setProperty("District", currentDistrict);
+        }
       }
     });
     
@@ -66,11 +65,7 @@ function myMap(){
     document.getElementById("unassigned").innerHTML="Unassigned VTDS: "+yet_to_assign.toString();
     
     // now update stats on current district
-    var statsString='';
-    for(var name of list_of_functions_to_compute){
-      statsString += (calculateAll(currentDistrict, name)) + '<br>';
-    }
-    document.getElementById("stats").innerHTML = statsString;
+    updateCurrentStateInfo();
   });
   
   map.data.addListener('mouseover', function(event){
