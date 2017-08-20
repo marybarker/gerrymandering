@@ -17,6 +17,7 @@ function addAnotherDistrict(){
   oneToAdd = document.createElement("option");
   oneToAdd.text = mycurrentDistrict;
   allDists.options.add(oneToAdd, mycurrentDistrict);
+  document.getElementById("legendOfDists").innerHTML += '<li><span style="background:'+allColors[mycurrentDistrict]+'"></span>'+mycurrentDistrict.toString()+'</li>';
 }
 
 function calculateAll(dist, funcName){
@@ -270,6 +271,7 @@ var colList = ["#000000"];
 var currentDistrict="Not Assigned";
 var districts=["Not Assigned",0];
 var allColors={"Not Assigned":"#000000", 0:add_new_color()};
+
 
 $.ajax({
   url:statsfilename,

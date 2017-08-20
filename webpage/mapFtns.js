@@ -40,12 +40,19 @@ function myMap(){
           bounds.extend(LatLng);
         });
         if (google.maps.geometry.poly.containsLocation(bounds.getCenter(), theShape) ){
+          if (currentDistrict != "Not Assigned"){
+            yet_to_assign--;
+          }
+          if(feature.getProperty("District") >= 0){
+            yet_to_assign++;
+          }
           feature.setProperty("District", currentDistrict);
         }
       }
     });
     
     theShape.setMap(null);
+    updateCurrentStateInfo();
   });
   
   map.data.addListener('click', function(event){
@@ -62,8 +69,6 @@ function myMap(){
     if(value >= 0){
       yet_to_assign++;
     }
-    document.getElementById("unassigned").innerHTML="Unassigned VTDS: "+yet_to_assign.toString();
-    
     // now update stats on current district
     updateCurrentStateInfo();
   });

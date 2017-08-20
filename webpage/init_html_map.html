@@ -23,22 +23,25 @@
         padding:5px;
       }
       #menuBar{
-        width:35%;
+        width:25%;
         height:97%;
         float:right;
-        /*border:2px;
-        border-style:outset;
-        border-color:gray;*/
         color:gray;
         margin-top:5px;
         margin-right:5px;
         padding-top:5px;
         padding-left:20px;
       }
+      #legendBar{
+        width:10%;
+        height:100%;
+        float:right;
+      }
       #choosemets{
-        width:30%;
+        width:60%;
         color:gray;
         height:30%;
+        margin:5px;
       }
       #currentStateInfo{
         width:25%;
@@ -46,7 +49,21 @@
         margin-left:30%;
       }
     </style>
-
+    
+    <style type='text/css'>
+      legend-labels ul {
+        list-style:none;
+      }
+      ul.legend-labels li span{
+        display:block;
+        float:left;
+        height:16px;
+        width:30px;
+        border:1px solid #999;
+        opacity:0.5;
+      }
+    </style>
+    
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
     <script type="text/javascript" src="pageGlobals1.js"></script>
     <script type="text/javascript" src="mapFtns1.js"></script>
@@ -60,10 +77,19 @@
       <button onclick="addAnotherDistrict()">Add District</button> 
       <select onchange = "sndDistChng()" id="SelectADistrict">
         <option value='Not Assigned'> Pick a District </option>
-        <option value=0>0</option>
+        <option value=0>0  </option>
       </select>
+      <ul>
+        <li id="currentDist"> Current district: </li>
+        <li id="unassigned"> Total vtds not assigned: </li>
+      </ul>
       
       <p id="stats"> </p>
+    </div>
+    
+    <div id="legendBar">
+      <ul id="legendOfDists" class="legend-labels">
+      </ul>
     </div>
     
     <div id="chooseMets">
@@ -79,13 +105,9 @@
       </fieldset>
     </div>
     
-    <div id="currentStateInfo">
-      <ul>
-        <li id="currentDist"> Current district: </li>
-        <li id="unassigned"> Total vtds not assigned: </li>
-      </ul>
-    </div>
-       
+    <script>
+      document.getElementById("legendOfDists").innerHTML += '<li><span style="background:'+allColors[0]+'"></span> 0 </li>';
+    </script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBmcXDZ1Pv-BImJhZceCVTmDSjXUCgzN80&callback=myMap&libraries=drawing,geometry"></script>
   </body>
 </html>
