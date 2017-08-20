@@ -1,6 +1,8 @@
 function add_new_color(){
   do{
-    newCol='#'+Math.floor(Math.random()*16777215).toString(16);
+    //newCol='#'+Math.floor(Math.random()*16777215).toString(16);
+    //newCol='#'+Math.floor(Math.random()*0xFFFFFF<<0).toString(16);
+    newCol = "rgb("+Math.floor(Math.random() * 255)+","+(Math.random() * 255)+","+(Math.random() * 255)+")";
   } while( colList.includes(newCol) );
   return newCol;//'#'+Math.floor(Math.random()*16777215).toString(16);
 }
@@ -251,6 +253,38 @@ function loadAdjacencyFrame(data){
   }
 }
 
+function LoadStateAsDict(data){
+  var allRows = data.split("\n");
+  var vtdName, cdName, rowCells;
+  numDistsForState = 0;
+  
+  for(var singleRow=0; singleRow < allRows.length; singleRow++){
+    rowCells = allRows[singleRow].split(',');
+    if (singleRow == 0) {
+    }else{
+      vtdName = rowCells[1];
+      cdName = parseInt(rowCells[0]);
+      currentState[vtdName] = cdName;
+      if (cdName){
+        numDistsForState = (numDistsForState > cdName) ? numDistsForState : cdName;
+      }
+    }
+  }
+}
+
+function UseCurrentDistricting(){
+  var createdDistricts = Math.max.apply(null, [for (x of districts) if (x != "Not Assigned") x]);
+
+  for (var x = createdDistricts+1; x < (numDistsForState+1); x++){
+    addAnotherDistrict();
+    console.log(x);
+  }
+  
+  map.data.forEach(function(feature){
+    feature.setProperty("District", currentState[feature.getProperty("GEOID10")]);
+  });
+}
+
 /* Don't need generalizing */
 var map;
 var yet_to_assign;
@@ -260,11 +294,14 @@ var list_of_functions_to_compute = [];
 var jsonfilename="./NC/NCPrecincts.json";
 var connectionsfilename="./NC/PRECINCTconnections.csv"
 var statsfilename="./NC/vtdstats.csv"
+var cdsfilename="./NC/CurrentState.csv"
 var centroid=[35.0, -79.9];
 var indexingCol = "GEOID10";
 var listOfCols = ["ID", "ALAND", "aframcon", "hispcon", "population"];
 var blockstats = {};
 var adjacencies = {};
+var currentState={};
+var numDistsForState;
 
 /* depend on the current coding setup */
 var colList = ["#000000"];
@@ -284,5 +321,9 @@ $.ajax({
 }).done(loadAdjacencyFrame) 
 
 //console.log(adjacencies);
+$.ajax({
+  url:cdsfilename,
+  dataType:'text',
+}).done(LoadStateAsDict)
 
 

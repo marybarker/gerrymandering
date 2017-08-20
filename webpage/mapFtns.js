@@ -15,7 +15,8 @@ function myMap(){
     myColor = allColors[feature.getProperty('District')];
     return ({
       fillColor: myColor, 
-      strokeWeight: .1
+      strokeWeight: .1,
+      fillOpacity:0.8
     });
   });
   

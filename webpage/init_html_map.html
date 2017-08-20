@@ -17,10 +17,11 @@
         height:400px;
         margin-left:5px;
         margin-top:5px;
+        margin-right:0px;
         border:2px;
         border-style:outset;
         border-color:gray;
-        padding:5px;
+        /*padding:5px;*/
       }
       #menuBar{
         width:25%;
@@ -34,8 +35,9 @@
       }
       #legendBar{
         width:10%;
-        height:100%;
+        height:50%;
         float:right;
+        color:gray;
       }
       #choosemets{
         width:60%;
@@ -51,7 +53,16 @@
     </style>
     
     <style type='text/css'>
-      legend-labels ul {
+      .mylegend ul{
+        margin:0;
+        list-style:none;
+        float:left;
+        padding:0;
+      }
+      .legend-labels ul {
+        float:left;
+        padding:0;
+        margin:0;
         list-style:none;
       }
       ul.legend-labels li span{
@@ -60,13 +71,14 @@
         height:16px;
         width:30px;
         border:1px solid #999;
-        opacity:0.5;
+        opacity:0.8;
+        list-style:none;
       }
     </style>
     
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-    <script type="text/javascript" src="pageGlobals1.js"></script>
-    <script type="text/javascript" src="mapFtns1.js"></script>
+    <script type="text/javascript" src="pageGlobals.js"></script>
+    <script type="text/javascript" src="mapFtns.js"></script>
     
   </head>
   <body>
@@ -74,6 +86,7 @@
     <div id="mapCanvas"> </div>
     
     <div id="menuBar">
+      <button onclick="UseCurrentDistricting()">Load current district plan</button> 
       <button onclick="addAnotherDistrict()">Add District</button> 
       <select onchange = "sndDistChng()" id="SelectADistrict">
         <option value='Not Assigned'> Pick a District </option>
@@ -87,9 +100,12 @@
       <p id="stats"> </p>
     </div>
     
-    <div id="legendBar">
+    <div id="legendBar" class="mylegend">
+      District colors:
+      <p> 
       <ul id="legendOfDists" class="legend-labels">
       </ul>
+      </p>
     </div>
     
     <div id="chooseMets">
