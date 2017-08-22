@@ -1,12 +1,9 @@
 function add_new_color(){
   do{
-    //newCol='#'+Math.floor(Math.random()*16777215).toString(16);
-    //newCol='#'+Math.floor(Math.random()*0xFFFFFF<<0).toString(16);
     newCol = "rgb("+Math.floor(Math.random() * 255)+","+(Math.random() * 255)+","+(Math.random() * 255)+")";
   } while( colList.includes(newCol) );
-  return newCol;//'#'+Math.floor(Math.random()*16777215).toString(16);
+  return newCol;
 }
-
 
 function addAnotherDistrict(){
   others = [for (x of districts) if (x != 'Not Assigned') x];
@@ -34,7 +31,6 @@ function calculateAll(dist, funcName){
     });
     outputString = ("Number of vtds in district: "+tot.toString()+"<br>");
   }
-  
   /* COMPACTNESS */
   if(funcName == "compactness"){
     var totInterior = 0.0;
@@ -62,7 +58,6 @@ function calculateAll(dist, funcName){
     var cpctVal = totInterior / totExterior;
     outputString += ("Compactness: " + cpctVal.toFixed(3).toString()+"<br>");
   }
-
   /* CONTIGUOUSNESS */
   if(funcName == "contiguousness"){
     var contScore = 0;
@@ -95,7 +90,6 @@ function calculateAll(dist, funcName){
     }
     outputString += "Contiguousness: "+contScore+"<br>";
   }
-
   /* AREA */
   if(funcName == "area"){
     var totArea = 0;
@@ -108,7 +102,6 @@ function calculateAll(dist, funcName){
     });
     outputString += ("Total Area: " + totArea.toFixed(3).toString()+'<br>');
   }
-
   /* AFRICAN AMERICAN CONCENTRATION */
   if(funcName == "aframcon"){
     var totConc = 0.0;
@@ -130,7 +123,6 @@ function calculateAll(dist, funcName){
     totConc /= toDivide;
     outputString += ("African American Concentration: "+totConc.toFixed(3).toString()+'<br>');
   }
-
   /* HISPANIC CONCENTRATION */
   if(funcName == "hispcon"){
     var totConc = 0.0;
@@ -152,7 +144,7 @@ function calculateAll(dist, funcName){
     totConc /= toDivide;
     outputString += ("Hispanic Concentration: "+totConc.toFixed(3).toString()+'<br>');
   }
-
+  /* POPULATION */
   if(funcName == "population"){
     var totPop = 0;
     map.data.forEach(function(feature){
@@ -169,9 +161,7 @@ function calculateAll(dist, funcName){
 function updateCurrentStateInfo(){
   var numVTDS = calculateAll(currentDistrict, "numInDist");
   document.getElementById("currentDist").innerHTML="Current district: "+currentDistrict.toString();
-  //document.getElementById("numInDist").innerHTML="Number of vtds in district: "+numVTDS.toString();
   document.getElementById("unassigned").innerHTML="Total vtds not assigned: "+yet_to_assign.toString();
-  //document.getElementById("population").innerHTML="Total population in district: "+calculateAll(currentDistrict, "population");
 
   var statsString='';
   for(var name of list_of_functions_to_compute){
@@ -185,6 +175,7 @@ function sndDistChng(){
   currentDistrict = d.options[d.selectedIndex].value;
   updateCurrentStateInfo();
 }
+
 function addToList(thingy){
   if(thingy.checked){
     list_of_functions_to_compute.push(thingy.value);
@@ -219,6 +210,7 @@ function loadCSVtoArrays(data){
     }
   }
 }
+
 function loadAdjacencyFrame(data){
   var allRows = data.split("\n");
   var low, high, lenIdx;
@@ -283,6 +275,8 @@ function UseCurrentDistricting(){
   map.data.forEach(function(feature){
     feature.setProperty("District", currentState[feature.getProperty("GEOID10")]);
   });
+  yet_to_assign = 0;
+  updateCurrentStateInfo();
 }
 
 /* Don't need generalizing */
@@ -320,7 +314,6 @@ $.ajax({
   dataType:'text',
 }).done(loadAdjacencyFrame) 
 
-//console.log(adjacencies);
 $.ajax({
   url:cdsfilename,
   dataType:'text',

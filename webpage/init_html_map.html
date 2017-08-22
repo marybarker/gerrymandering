@@ -86,12 +86,8 @@
     <div id="mapCanvas"> </div>
     
     <div id="menuBar">
-      <button onclick="UseCurrentDistricting()">Load current district plan</button> 
-      <button onclick="addAnotherDistrict()">Add District</button> 
-      <select onchange = "sndDistChng()" id="SelectADistrict">
-        <option value='Not Assigned'> Pick a District </option>
-        <option value=0>0  </option>
-      </select>
+      <button onclick="UseCurrentDistricting()">Load current district plan</button> <br>
+      <button onclick="addAnotherDistrict()">Add District</button> <br>
       <ul>
         <li id="currentDist"> Current district: </li>
         <li id="unassigned"> Total vtds not assigned: </li>
@@ -101,11 +97,15 @@
     </div>
     
     <div id="legendBar" class="mylegend">
-      District colors:
+      District color:
       <p> 
       <ul id="legendOfDists" class="legend-labels">
       </ul>
       </p>
+      <select onchange = "sndDistChng()" id="SelectADistrict">
+        <option value='Not Assigned'> Pick a District </option>
+        <option value=0>0  </option>
+      </select>
     </div>
     
     <div id="chooseMets">
