@@ -15,7 +15,7 @@ function myMap(){
   
   /* COLOR VTDS */
   map.data.setStyle(function(feature){
-    myColor = allColors[feature.getProperty('District')];
+    myColor = (feature.getProperty("District") === undefined) ? allColors['Not Assigned'] : allColors[feature.getProperty('District')];
     return ({
       fillColor: myColor, 
       strokeWeight: .1,
@@ -38,17 +38,17 @@ function myMap(){
     var theShape = event.overlay;
     // select which vtds are inside the polygon
     map.data.forEach(function(feature){
-      if (feature.getProperty("District") != currentDistrict){
+      if (feature.getProperty("District") != currentDistrict) {
         var bounds = new google.maps.LatLngBounds();
         var theGeom = feature.getGeometry();
         theGeom.forEachLatLng(function(LatLng){
           bounds.extend(LatLng);
         });
         if (google.maps.geometry.poly.containsLocation(bounds.getCenter(), theShape) ){
-          if (currentDistrict != "Not Assigned"){
+          if (currentDistrict != "Not Assigned") {
             yet_to_assign--;
           }
-          if(feature.getProperty("District") >= 0){
+          if (feature.getProperty("District") >= 0) {
             yet_to_assign++;
           }
           feature.setProperty("District", currentDistrict);
@@ -67,10 +67,10 @@ function myMap(){
     // set the feature to be in district currentDistrict
     event.feature.setProperty("District", currentDistrict);
     // update total number of unassigned features.
-    if (currentDistrict != "Not Assigned"){
+    if (currentDistrict != "Not Assigned") {
       yet_to_assign--;
     }
-    if(value >= 0){
+    if (value >= 0) {
       yet_to_assign++;
     }
     // now update stats on current district
