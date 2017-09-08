@@ -2,16 +2,21 @@
   <head>
     
     <meta charset="UTF-8"/>
-    
+
+    <!THESE STYLE PARAMETERS ARE FOR THE PAGE LAYOUT. 
+      EACH BLOCK OF THE PAGE IS SPECIFIED BY NAME
+      (e.g. MapCanvas is the part of the page with the map)
+      THIS HAS NOTHING TO DO WITH THE FUNCTION OF 
+      THE COMPONENTS THEMSELVES>
     <style>
-      html, body{
-        width: 100%;
+      html, body{/* whole page: fills browser window and hides scrollbar */
+        width: 100%; 
         height: 100%; 
         margin:1px;
         border: 0;
         overflow: hidden;
       }
-      #mapCanvas {
+      #mapCanvas {/* map: width, side of page, color of border*/
         float:left;
         width:60%;
         height:400px;
@@ -21,9 +26,9 @@
         border:2px;
         border-style:outset;
         border-color:gray;
-        /*padding:5px;*/
       }
-      #menuBar{
+      #menuBar{/*sidebar that has button for generating districts and switching 
+	between them: width, side of page, border, etc*/
         width:25%;
         height:97%;
         float:right;
@@ -33,19 +38,19 @@
         padding-top:5px;
         padding-left:20px;
       }
-      #legendBar{
+      #legendBar{/*part that displays color of each district */
         width:10%;
         height:50%;
         float:right;
         color:gray;
       }
-      #choosemets{
+      #choosemets{/*below the map checkboxes for which metrics to calculate*/
         width:60%;
         color:gray;
         height:30%;
         margin:5px;
       }
-      #currentStateInfo{
+      #currentStateInfo{/*where the metrics are displayed*/
         width:25%;
         color:gray;
         margin-left:30%;
@@ -53,6 +58,8 @@
     </style>
     
     <style type='text/css'>
+      /*This style section is for the color-to-district 
+	lookup part of the page */
       .mylegend ul{
         margin:0;
         list-style:none;
@@ -75,9 +82,14 @@
         list-style:none;
       }
     </style>
-    
+    <! load jquery for reading the csv and json files>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
+    <! pageGlobals has all of the setup for reading csv and calculating metrics>
     <script type="text/javascript" src="pageGlobals.js"></script>
+
+    <!mapFtns has a function called myMap() that generates the map and uses the 
+      metadata defined in pageGlobals for coloring and interacting with the map>
     <script type="text/javascript" src="mapFtns.js"></script>
     
   </head>

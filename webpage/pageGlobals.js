@@ -1,3 +1,35 @@
+/* * * * * * * * * * * * * *\
+*      GLOBAL VARIABLES 
+\* * * * * * * * * * * * * */
+
+/* Don't need generalizing */
+var map;
+var yet_to_assign;
+var list_of_functions_to_compute = [];
+
+/* depends on which state you want */
+var jsonfilename="./NC/NCPrecincts.json";
+var connectionsfilename="./NC/PRECINCTconnections.csv"
+var statsfilename="./NC/vtdstats.csv"
+var cdsfilename="./NC/CurrentState.csv"
+var centroid=[35.0, -79.9];
+var indexingCol = "GEOID10";
+var listOfCols = ["ID", "ALAND", "aframcon", "hispcon", "population"];
+var blockstats = {};
+var adjacencies = {};
+var currentState={};
+var numDistsForState;
+
+/* depend on the current coding setup */
+var colList = ["#FFFFFF"];
+var currentDistrict="Not Assigned";
+var districts=["Not Assigned",0];
+var allColors={"Not Assigned":"#FFFFFF"};
+
+
+/* * * * * * * * * * * * *\
+*      FUNCTIONS 
+\* * * * * * * * * * * * */
 function add_new_color(){
   do{
     newCol = "rgb("+Math.floor(Math.random() * 255)+","+(Math.random() * 255)+","+(Math.random() * 255)+")";
@@ -6,8 +38,9 @@ function add_new_color(){
 }
 
 function addAnotherDistrict(){
-  others = [for (x of districts) if (x != 'Not Assigned') x];
-  mycurrentDistrict = Math.max.apply(null, others) + 1;
+  var others = [];//[for (x of districts) if (x != 'Not Assigned') x];
+  districts.forEach(function(element){if(element != 'Not Assigned'){others.push(element);}});
+  var mycurrentDistrict = Math.max.apply(null, others) + 1;
 
   districts.push(mycurrentDistrict);
   allColors[mycurrentDistrict] = add_new_color();
@@ -44,8 +77,15 @@ function calculateAll(dist, funcName){
     
     for (var vtd in vtds) {
       name1 = vtds[vtd];
-      listA = [for (name2 of adjacencies[name1]) if (vtds.includes(name2)) name2];
-      listB = [for (name2 of adjacencies[name1]) name2];
+      listA = [];
+      listB = [];
+      adjacencies[name1].forEach(function(element){
+        if(vtds.includes(element)){
+          listA.push(element);
+        }
+        listB.push(element);
+      });
+      
       if (listA.length == listB.length) {
         totInterior+=1.0;
       } else {
@@ -77,16 +117,44 @@ function calculateAll(dist, funcName){
         for (i in addons) {
           currentRegion.add(addons[i]);
         }
-        var subsubedges = new Set([for (x of addons) for (y of adjacencies[x]) if (vtds.includes(y)) y]); 
+
+        var mylistofthings=[];
+        for(var xx in addons){
+          var toIter=adjacencies[addons[xx]];
+          for(var yy in toIter){
+            if(vtds.includes(toIter[yy])){
+              mylistofthings.push(toIter[yy]);
+            }
+          }
+	}
+        var subsubedges = new Set(mylistofthings);////new Set([for (x of addons) for (y of adjacencies[x]) if (vtds.includes(y)) y]); 
+
         if (subsubedges.size > 0) {
           addons = Array.from(subsubedges);
           notToAdd = Array.from(currentRegion);
-          addons = [for (x of addons) if (notToAdd.indexOf(x) < 0) x];
+
+          ////[for (x of addons) if (notToAdd.indexOf(x) < 0) x];
+          var newAddons=[];
+          addons.forEach(function(element){
+            if(notToAdd.indexOf(element) < 0){
+              newAddons.push(element)
+            }
+          });
+          addons=newAddons;
+
         } else {
           addons = [];
         }
       }
-      vtds = [for (x of vtds) if (!(currentRegion.has(x))) x];
+
+      var newvtds = [];//[for (x of vtds) if (!(currentRegion.has(x))) x];
+      vtds.forEach(function(element){
+        if(!currentRegion.has(element)){
+          newvtds.push(element);
+        }
+      });
+      vtds=newvtds;
+
     }
     outputString += "Contiguousness: "+contScore+"<br>";
   }
@@ -180,7 +248,14 @@ function addToList(thingy){
   if(thingy.checked){
     list_of_functions_to_compute.push(thingy.value);
   } else {
-    list_of_functions_to_compute = [for (x of list_of_functions_to_compute) if (x != thingy.value) x];
+
+    var newlist=[];
+    list_of_functions_to_compute.forEach(function(element){
+      if (element != thingy.value){
+        newlist.push(element);
+      }
+    });
+    list_of_functions_to_compute = newlist;////[for (x of list_of_functions_to_compute) if (x != thingy.value) x];
   }
   updateCurrentStateInfo();
 }
@@ -204,9 +279,15 @@ function loadCSVtoArrays(data){
     
     if (singleRow === 0) {
       idIdx = rowCells.indexOf(indexingCol);
-      otherList = [for (x of listOfCols) rowCells.indexOf(x)];
+      otherList = [];////[for (x of listOfCols) rowCells.indexOf(x)];
+
+      listOfCols.forEach(function(element){
+        //otherList.push(rowCells.indexOf(element);
+        otherList.push(rowCells[rowCells.indexOf(element)]);
+      });
     } else {
-      blockstats[rowCells[idIdx]] = zip(listOfCols, [for (x of otherList) rowCells[x]]);
+      blockstats[rowCells[idIdx]] = zip(listOfCols, otherList);
+      ////blockstats[rowCells[idIdx]] = zip(listOfCols, [for (x of otherList) rowCells[x]]);
     }
   }
 }
@@ -262,11 +343,17 @@ function LoadStateAsDict(data){
 }
 
 function UseCurrentDistricting(){
-  var createdDistricts = Math.max.apply(null, [for (x of districts) if (x != "Not Assigned") x]);
+  var createdDistricts=[];
+  districts.forEach(function(element){
+    if(element!='Not Assigned'){
+      createdDistricts.push(element);
+    }
+  });
+  ////var createdDistricts = Math.max.apply(null, [for (x of districts) if (x != "Not Assigned") x]);
+  createdDistricts = Math.max.apply(null, createdDistricts);
 
   for (var x = createdDistricts+1; x < (numDistsForState+1); x++) {
     addAnotherDistrict();
-    console.log(x);
   }
   
   map.data.forEach(function(feature){
@@ -276,30 +363,7 @@ function UseCurrentDistricting(){
   updateCurrentStateInfo();
 }
 
-/* Don't need generalizing */
-var map;
-var yet_to_assign;
-var list_of_functions_to_compute = [];
-
-/* depends on which state you want */
-var jsonfilename="./NC/NCPrecincts.json";
-var connectionsfilename="./NC/PRECINCTconnections.csv"
-var statsfilename="./NC/vtdstats.csv"
-var cdsfilename="./NC/CurrentState.csv"
-var centroid=[35.0, -79.9];
-var indexingCol = "GEOID10";
-var listOfCols = ["ID", "ALAND", "aframcon", "hispcon", "population"];
-var blockstats = {};
-var adjacencies = {};
-var currentState={};
-var numDistsForState;
-
-/* depend on the current coding setup */
-var colList = ["#FFFFFF"];
-var currentDistrict="Not Assigned";
-var districts=["Not Assigned",0];
-var allColors={"Not Assigned":"#FFFFFF", 0:add_new_color()};
-
+allColors[0]=add_new_color();
 
 $.ajax({
   url:statsfilename,
