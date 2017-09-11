@@ -127,13 +127,12 @@ function calculateAll(dist, funcName){
             }
           }
 	}
-        var subsubedges = new Set(mylistofthings);////new Set([for (x of addons) for (y of adjacencies[x]) if (vtds.includes(y)) y]); 
+        var subsubedges = new Set(mylistofthings);
 
         if (subsubedges.size > 0) {
           addons = Array.from(subsubedges);
           notToAdd = Array.from(currentRegion);
 
-          ////[for (x of addons) if (notToAdd.indexOf(x) < 0) x];
           var newAddons=[];
           addons.forEach(function(element){
             if(notToAdd.indexOf(element) < 0){
@@ -147,7 +146,7 @@ function calculateAll(dist, funcName){
         }
       }
 
-      var newvtds = [];//[for (x of vtds) if (!(currentRegion.has(x))) x];
+      var newvtds = [];
       vtds.forEach(function(element){
         if(!currentRegion.has(element)){
           newvtds.push(element);
@@ -255,7 +254,7 @@ function addToList(thingy){
         newlist.push(element);
       }
     });
-    list_of_functions_to_compute = newlist;////[for (x of list_of_functions_to_compute) if (x != thingy.value) x];
+    list_of_functions_to_compute = newlist;
   }
   updateCurrentStateInfo();
 }
@@ -279,15 +278,19 @@ function loadCSVtoArrays(data){
     
     if (singleRow === 0) {
       idIdx = rowCells.indexOf(indexingCol);
-      otherList = [];////[for (x of listOfCols) rowCells.indexOf(x)];
-
+      otherList = [];
       listOfCols.forEach(function(element){
-        //otherList.push(rowCells.indexOf(element);
-        otherList.push(rowCells[rowCells.indexOf(element)]);
+        otherList.push(rowCells.indexOf(element));
       });
+
     } else {
-      blockstats[rowCells[idIdx]] = zip(listOfCols, otherList);
-      ////blockstats[rowCells[idIdx]] = zip(listOfCols, [for (x of otherList) rowCells[x]]);
+      var values = [];
+
+      otherList.forEach(function(element){
+        values.push(rowCells[element]);
+      });
+      blockstats[rowCells[idIdx]] = zip(listOfCols, values);
+      console.log(blockstats[rowCells[idIdx]]);
     }
   }
 }
@@ -349,7 +352,6 @@ function UseCurrentDistricting(){
       createdDistricts.push(element);
     }
   });
-  ////var createdDistricts = Math.max.apply(null, [for (x of districts) if (x != "Not Assigned") x]);
   createdDistricts = Math.max.apply(null, createdDistricts);
 
   for (var x = createdDistricts+1; x < (numDistsForState+1); x++) {
