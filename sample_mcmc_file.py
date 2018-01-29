@@ -23,23 +23,23 @@ execfile(THIS_STATE_SETUP_FILE) # setup datastructure for current state based on
 
 ndistricts=13 # how many congressional districts wanted 
 
+
 # create random initial state 
 initial_state=contiguousStart()
 
 # save as a png file to see 
-color_this_state(g,initial_state,'test_example.png'.1)
+color_this_state(g,initial_state,'test_example.png',.1)
+
+updateGlobals(initial_state)
+initial_state_metrics=metrics.copy()
+
+# run MCMC
+new_state = MH(initial_state, 500, neighbor, goodness, switchDistrict)
+
+# get new state of things and compare
+updated_state_metrics=metrics.copy()
+
+color_these_states(g, [(initial_state,0), new_state], '', 0, 0.1)
 
 
-for i in range(1, 100):
-    runningState = (currentNCstate.copy(), 0)
-    updateGlobals(runningState[0])
-    
-    for j in range(300):
-        if j > 200:
-            goodnessWeights= [200,200,200]
-        runningState = MH(runningState[0], 500, neighbor, goodness, switchDistrict)
-        
-    runningState[0].to_csv(foldername+'data/state%d.csv'%i, index=False)
-    metrics.to_csv(foldername+'data/metrics%d.csv'%i, index=False)
-    color_these_states(g, [runningState], foldername+'data/pictures/', i, 0.1)
-    print 'finished with step %d. '%i, dfEquiv(runningState[0], currentNCstate)
+

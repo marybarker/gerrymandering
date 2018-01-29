@@ -355,27 +355,27 @@ def neighbor(state):
         loserchange = 0
         for edge in winnerNewEdges:
             if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
-                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframdiff"]
             else:
-                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframdiff"]
         
-        for edge in winnerlostEdges:
+        for edge in winnerLostEdges:
             if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
-                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframdiff"]
             else:
-                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframdiff"]
         
         for edge in loserNewEdges:
             if adjacencyFrame.ix[edge, "highdist"] == loserDist:
-                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframdiff"]
             else:
-                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframdiff"]
         
-        for edge in loserlostEdges:
+        for edge in loserLostEdges:
             if adjacencyFrame.ix[edge, "highdist"] == loserDist:
-                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframdiff"]
             else:
-                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframdiff"]
         
         newmetrics.ix[ loserDist,'sumAframDiff'] +=\
             sum(previousVersion.aframdiff[ loserNewEdges].abs()) - sum(previousVersion.aframdiff[ loserLostEdges].abs())
@@ -594,7 +594,7 @@ def conFlux(state, district, column):
         #     should be positive.
         total += subframe.ix[(adjacencyFrame.highdist == district) & (adjacencyFrame.lowdist  == nbr), column]\
                - subframe.ix[(adjacencyFrame.lowdist  == district) & (adjacencyFrame.highdist == nbr), column]
-    return total
+    return total.sum()
 
 def updateGlobals(state):
     global metrics, adjacencyFrame, mutableBlockStats

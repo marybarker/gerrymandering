@@ -17,11 +17,15 @@ for key in blockstats.keys():
 blockstats = blockstats.set_index(blockstats.ID).sort_index()
 totalpopulation = sum(blockstats.population)
 
-conccolumn = 'aframcon'
+conccolumn = 'hispcon'
+blockstats['hispcon'] = 0
 blockstats['aframcon'] = blockstats.B02009e1.values/blockstats.B02001e1.values
 stateconcentration = np.nansum(blockstats.B02009e1.values)/np.nansum(blockstats.B02001e1.values)
 numMajMinDists = min(totalpopulation/1975932, int(18*stateconcentration)) 
 #number found from blobbing out majorityminority districts once.  This result is suspect.
+
+blockstats['mincon'] = blockstats.loc[:,['aframcon','hispcon']].sum(axis=1)
+blockstats.mincon[blockstats.mincon > 1.0] = 1.0
 
 cdtable = pd.read_csv('../cdbystate1.txt', '\t')
 ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
@@ -32,8 +36,18 @@ adjacencyFrame = pd.read_csv('noIslandsPrecinctConnections.csv')
 lookup=dict(zip(blockstats.VTD,blockstats.ID))
 adjacencyFrame['low']=[lookup.get(x) for x in adjacencyFrame.low]
 adjacencyFrame['high']=[lookup.get(x) for x in adjacencyFrame.high]
-#adjacencyFrame.columns = ['low', 'high', 'length']
+
+conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'low', right_on = 'ID').aframcon
+conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "aframcon"]], left_on = 'high', right_on = 'ID').aframcon
+adjacencyFrame["aframdiff"] = conhigh - conlow
+
+conlow = pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'low', right_on = 'ID').hispcon
+conhigh= pd.merge(adjacencyFrame, blockstats.ix[:, ["ID", "hispcon"]], left_on = 'high', right_on = 'ID').hispcon
+adjacencyFrame["hispdiff"] = conhigh - conlow
+
+mutableBlockStats = {}
 
 g = package_vtds("precinct/precinct.shp", "GEOIDToIDNUM.csv")
+
 
 
