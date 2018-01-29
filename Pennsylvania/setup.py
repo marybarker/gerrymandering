@@ -1,11 +1,20 @@
 stateSHORT = 'PA'
 
-blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="ID")
+#blockstats = pd.read_csv('./noIslandsVTDStats.csv').merge(pd.read_csv('GEOIDToIDNUM.csv'),left_on="VTD",right_on="GEOID")
+#blockstats.rename(columns={"IDNUM":"ID"},inplace=True)
+#blockstats=blockstats.merge(pd.read_csv('noIslandsApportionmentData.csv'),on="ID")
+#blockstats['VTD']=blockstats['VTD_x'].copy()
+blockstats = pd.read_csv('./precinctstats.csv').rename(columns={"Unnamed: 0":"ID"}).merge(pd.read_csv('./noIslandsApportionmentData.csv'), on="ID")
+blockstats['VTD']=blockstats['VTD.1'].copy()
 for key in blockstats.keys():
     if (key[:4] == "ID.") or (key[:9] == 'Unnamed: '):
         blockstats = blockstats.drop(key, 1)
+    if (key == "POP100"):
+        blockstats.rename(columns={key:"population"},inplace=True)
+    if (key[:3]=='VTD') and (len(key)>4):
+        blockstats=blockstats.drop(key,1)
 
-blockstats = blockstats.set_index(blockstats.ID)
+blockstats = blockstats.set_index(blockstats.ID).sort_index()
 totalpopulation = sum(blockstats.population)
 
 conccolumn = 'aframcon'
@@ -19,7 +28,12 @@ ndistricts = int(cdtable[cdtable['STATE']==stateSHORT].CD)
 nvtd = len(blockstats.VTD)
 
 adjacencyFrame = pd.read_csv('noIslandsPrecinctConnections.csv')
-adjacencyFrame = adjacencyFrame.drop('Unnamed: 0', 1)
+
+lookup=dict(zip(blockstats.VTD,blockstats.ID))
+adjacencyFrame['low']=[lookup.get(x) for x in adjacencyFrame.low]
+adjacencyFrame['high']=[lookup.get(x) for x in adjacencyFrame.high]
 #adjacencyFrame.columns = ['low', 'high', 'length']
 
 g = package_vtds("precinct/precinct.shp", "GEOIDToIDNUM.csv")
+
+

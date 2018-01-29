@@ -355,27 +355,27 @@ def neighbor(state):
         loserchange = 0
         for edge in winnerNewEdges:
             if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
-                newmetrics.ix[winnerDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
             else:
-                newmetrics.ix[winnerDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
         
         for edge in winnerlostEdges:
             if adjacencyFrame.ix[edge, "highdist"] == winnerDist:
-                newmetrics.ix[winnerDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
             else:
-                newmetrics.ix[winnerDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[winnerDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
         
         for edge in loserNewEdges:
             if adjacencyFrame.ix[edge, "highdist"] == loserDist:
-                newmetrics.ix[loserDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
             else:
-                newmetrics.ix[loserDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
         
         for edge in loserlostEdges:
             if adjacencyFrame.ix[edge, "highdist"] == loserDist:
-                newmetrics.ix[loserDist,'sumAframDiff'] -=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] -= adjacencyFrame.ix[edge, "aframcon"]
             else:
-                newmetrics.ix[loserDist,'sumAframDiff'] +=\ adjacencyFrame.ix[edge, "aframcon"]
+                newmetrics.ix[loserDist,'sumAframDiff'] += adjacencyFrame.ix[edge, "aframcon"]
         
         newmetrics.ix[ loserDist,'sumAframDiff'] +=\
             sum(previousVersion.aframdiff[ loserNewEdges].abs()) - sum(previousVersion.aframdiff[ loserLostEdges].abs())
